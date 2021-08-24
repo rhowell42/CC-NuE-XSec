@@ -73,7 +73,7 @@ SAMPLE_CUTS = {
         #precuts
         "NoCut",
         "HasNoBackExitingTracks",
-        "HasNoNonEMExitingTracks",
+        #"HasNoNonEMExitingTracks",
         "HasTracks",
         #fiducial vertex
         #"HasFiducialVertex",
@@ -121,7 +121,7 @@ SAMPLE_CUTS = {
     #     "Afterpulsing",
     # ],
     "Excess_Low_Inline" : [
-        "HasNoNonEMExitingTracks",
+        #"HasNoNonEMExitingTracks",
         "NoCut",
         "HasTracks",
         "HasNoBackExitingTracks",
@@ -144,7 +144,7 @@ SAMPLE_CUTS = {
         #"Euv"
     ],
      "Excess_High_Inline" : [
-        "HasNoNonEMExitingTracks",
+        #"HasNoNonEMExitingTracks",
         "NoCut",
         "HasTracks",
         "HasNoBackExitingTracks",
@@ -167,7 +167,7 @@ SAMPLE_CUTS = {
         #"Euv"
     ],
     "Pi0" : [
-        "HasNoNonEMExitingTracks",
+        #"HasNoNonEMExitingTracks",
         "NoCut",
         "Vertex_Z",
         "Vertex_Apothem",

@@ -77,7 +77,7 @@ if os.getenv("PLOTUTILSVERSION")=="ROOT6":
     try:
         import PyCintex # needed to enable Cintex if it exists
         del PyCintex
-    except ImportError:
+    except (ImportError, SyntaxError):
         pass
 else:
     import PyCintex

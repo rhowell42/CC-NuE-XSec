@@ -209,8 +209,8 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
 
     @Utilities.decorator_ReLU
     def RecoilClustersCalorimetry(self,splined): #MeV
-        #return self.GetCalorimetryQ0() if splined else self.GetEAvailable()
-        return self.recoile_spline_both if splined else (self.recoile_passive_tracker+self.recoile_passive_ecal)*SystematicsConfig.AVAILABLE_E_CORRECTION
+        return self.GetCalorimetryQ0() if splined else self.GetEAvailable()
+        #return self.recoile_spline_both if splined else (self.recoile_passive_tracker+self.recoile_passive_ecal)*SystematicsConfig.AVAILABLE_E_CORRECTION
 
     # A function wrapper that maps negative values to zero
     @Utilities.decorator_ReLU

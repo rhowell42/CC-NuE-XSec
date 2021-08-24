@@ -189,7 +189,7 @@ SAMPLE_CUTS = {
     #     #"Euv"
     # ],
     "Signal" : [
-        #"InverseHasNoBackExitingTracks",
+        "InverseHasNoBackExitingTracks",
         "Vertex_Z",
         "Vertex_Apothem",
         "Neutrino Helicity",

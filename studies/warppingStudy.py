@@ -24,6 +24,7 @@ stepChi2 = 50
 remove=""#"163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180"
 NUniverses_per_job = 100
 K=0
+Sys_on_Data=True
 
 def GetPaths(baseDir):
   l = baseDir.split("/")
@@ -121,10 +122,10 @@ def DoFancyTuneToMigration(migration,reco,reco_truth,data_truth,k):
 
 def ConsolidateInputs(Temp_path,mig,reco,reco_truth,data,data_truth):
   f = ROOT.TFile(Temp_path,"RECREATE")
-  DoFancyTuneToMigration(mig,reco,reco_truth,data_truth,K)
+  #DoFancyTuneToMigration(mig,reco,reco_truth,data_truth,K)
   for h in [data,data_truth]:
         h = h.Clone("{}_dataclone".format(h.GetName()))
-        h.Scale(pot_scale)
+        h.Scale(1e21/data_pot)
         for i in range(h.GetSize()):
           h.SetBinError(i,math.sqrt(h.GetBinContent(i)))
   mig.Write("migration")
@@ -263,7 +264,7 @@ Measurables = [
 if __name__ == '__main__':
   playlist=AnalysisConfig.playlist
   type_path_map = { t:AnalysisConfig.SelectionHistoPath(playlist,t =="data",False) for t in AnalysisConfig.data_types}
-  data_file,mc_file,pot_scale = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag)
+  data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag,True)
   #unfolded_file = ROOT.TFile.Open(AnalysisConfig.UnfoldedHistoPath(playlist,False))
   ifile="fin.root"
   release_path,relative_path=GetPaths(baseDir)
@@ -290,7 +291,21 @@ if __name__ == '__main__':
     if not MnvMCSignal:
       MnvMCSignal = MnvMigration.ProjectionX("_reco",0,-1)
     dimension = MnvMCreco.GetDimension()
-    print(dimension)
+    MnvDataMigration = Utilities.GetHistogram(data_file, prefix+ "_migration")
+    if not MnvDataMigration:
+      MnvDataMigration=MnvMigration
+      MnvDatareco = MnvMCreco
+      MnvDatatruth = MnvMCtruth
+      MnvDataSignal = MnvMCSignal
+    else:
+      MnvDatareco = Utilities.GetHistogram(data_file,prefix)
+      MnvDatatruth = Utilities.GetHistogram(data_file, prefix+ "_migration_truth")
+      if not MnvDatatruth:
+        MnvDatatruth = MnvDataMigration.ProjectionY("_truth",0,-1)
+      MnvDataSignal = Utilities.GetHistogram(data_file, prefix+ "_migration_reco")
+      if not MnvDataSignal:
+        MnvDataSignal = MnvDataMigration.ProjectionX("_reco",0,-1)
+
     if dimension ==1:
       H2D = PlotUtils.MnvH1D
     else:
@@ -298,21 +313,24 @@ if __name__ == '__main__':
 
 
     for model,value in AlternativeModels.items():
-      data_migration = PlotUtils.MnvH2D(MnvMigration.GetCVHistoWithStatError())
-      data_truth = H2D(MnvMCtruth.GetCVHistoWithStatError())
-      data_reco = H2D(MnvMCreco.GetCVHistoWithStatError())
-      data_signal = H2D(MnvMCSignal.GetCVHistoWithStatError())
-      if model=="CV":
-        model_migration = PlotUtils.MnvH2D(MnvMigration.GetCVHistoWithStatError())
-        model_truth=H2D(MnvMCtruth.GetCVHistoWithStatError())
-        model_signal=H2D(MnvMCSignal.GetCVHistoWithStatError())
-        model_reco=H2D(MnvMCreco.GetCVHistoWithStatError())
-      else:
+      data_truth = H2D(MnvDatatruth.GetCVHistoWithStatError())
+      data_reco = H2D(MnvDatareco.GetCVHistoWithStatError())
+      data_signal = H2D(MnvDataSignal.GetCVHistoWithStatError())
+      model_migration = PlotUtils.MnvH2D(MnvMigration.GetCVHistoWithStatError())
+      model_truth=H2D(MnvMCtruth.GetCVHistoWithStatError())
+      model_signal=H2D(MnvMCSignal.GetCVHistoWithStatError())
+      model_reco=H2D(MnvMCreco.GetCVHistoWithStatError())
+      if model!="CV":
         try:
-          model_migration = PlotUtils.MnvH2D(MnvMigration.GetVertErrorBand(value[0]).GetHist(value[1]))
-          model_truth = H2D(MnvMCtruth.GetVertErrorBand(value[0]).GetHist(value[1]))
-          model_signal= H2D(MnvMCSignal.GetVertErrorBand(value[0]).GetHist(value[1]))
-          model_reco= H2D(MnvMCreco.GetVertErrorBand(value[0]).GetHist(value[1]))
+          if Sys_on_Data:
+            data_truth = H2D(MnvDatatruth.GetVertErrorBand(value[0]).GetHist(value[1]))
+            data_signal= H2D(MnvDataSignal.GetVertErrorBand(value[0]).GetHist(value[1]))
+            data_reco= H2D(MnvDatareco.GetVertErrorBand(value[0]).GetHist(value[1]))
+          else:
+            model_migration = PlotUtils.MnvH2D(MnvMigration.GetVertErrorBand(value[0]).GetHist(value[1]))
+            model_truth = H2D(MnvMCtruth.GetVertErrorBand(value[0]).GetHist(value[1]))
+            model_signal= H2D(MnvMCSignal.GetVertErrorBand(value[0]).GetHist(value[1]))
+            model_reco= H2D(MnvMCreco.GetVertErrorBand(value[0]).GetHist(value[1]))
         except TypeError as e:
           print(e)
           continue

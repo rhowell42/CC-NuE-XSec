@@ -276,7 +276,7 @@ CUT_CONFIGS = {
     },
 
     "Neutrino Helicity" : {
-        "value_getter": lambda event, nprong: -1 if event.NuECCQE_nuHelicity ==1 else 1,
+        "value_getter": lambda event, nprong: -1 if event.MasterAnaDev_nuHelicity ==1 else 1,
         "cut_fn": lambda val: CutConfig.HELICITY is None or val * CutConfig.HELICITY>0,
         "variable_range": [-1.1,0,1.1]
     },
