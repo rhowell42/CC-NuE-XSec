@@ -343,12 +343,33 @@ if CutConfig.HACK_R2:
     }
 
 # make SelectionCut objects now
-CUTS = {}
-for name, config in CUT_CONFIGS.items():
-    config["name"] = name
-    CUTS[name] = SelectionCut(**config)
 
-for name, config in KINEMATICS_CUT_CONFIGS.items():
-    config["name"] = name
-    CUTS[name] = SelectionCut(**config)
+class Cuts(object):
+    def __init__(self):
+        self.cutmap = {}
+    def __getitem__(self,key):
+        if key in self.cutmap:
+            return self.cutmap[key]
+        elif key in CUT_CONFIGS:
+            config = CUT_CONFIGS[key]
+            config["name"]=key
+            self.cutmap[key]=SelectionCut(**config)
+            return self.cutmap[key]
+        elif key in KINEMATICS_CUT_CONFIGS:
+            config = KINEMATICS_CUT_CONFIGS[key]
+            config["name"]=key
+            self.cutmap[key]=SelectionCut(**config)
+            return self.cutmap[key]
+        else:
+            raise KeyError("Cut {} not defined")
+
+
+CUTS = Cuts()
+# for name, config in CUT_CONFIGS.items():
+#     config["name"] = name
+#     CUTS[name] = SelectionCut(**config)
+
+# for name, config in KINEMATICS_CUT_CONFIGS.items():
+#     config["name"] = name
+#     CUTS[name] = SelectionCut(**config)
 

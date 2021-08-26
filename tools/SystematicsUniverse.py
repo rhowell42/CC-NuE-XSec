@@ -114,7 +114,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
             self.LeptonEnergy  = self.GetEmu
             self.LeptonP3D = self.GetPmu
             self.M_lep_sqr =  M_mu_sqr
-            self.GetCorrection = self.GetFuzzCorrection
+            self.GetCorrection = self.GetNuEFuzz
 
     @property
     def nsigma(self):
@@ -158,14 +158,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         w = GetModelWeight(self, 'Eel',"Pi0") # (Ee, Theta, ETh), (PCElectron, PCPhoton, PCPi0)
         return w
 
-    def GetLeakageCorrection(self):
-        return SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw())
 
-    def GetFuzzCorrection(self):
-        return 0
-
-    def GetEMEnergyShift(self):
-        return self.prong_ECALCalibE[0]*SystematicsConfig.EM_ENERGY_SCALE_SHIFT_ECAL if self.nsigma is None else 0
 
     #################### functions to be overide in systematics shift universes #################
 
@@ -207,20 +200,6 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         return vet
 
 
-    @Utilities.decorator_ReLU
-    def RecoilClustersCalorimetry(self,splined): #MeV
-        return self.GetCalorimetryQ0() if splined else self.GetEAvailable()
-        #return self.recoile_spline_both if splined else (self.recoile_passive_tracker+self.recoile_passive_ecal)*SystematicsConfig.AVAILABLE_E_CORRECTION
-
-    # A function wrapper that maps negative values to zero
-    @Utilities.decorator_ReLU
-    def RecoilEnergy(self):
-        return (self.RecoilClustersCalorimetry(False) - self.GetCorrection() + (random.uniform(0,20) if self.mc and (self.mc_intType == 4 or (self.mc_current==2 and self.mc_intType==10)) else 0 ))/1e3
-
-    @Utilities.decorator_ReLU
-    def SplineCorrectedRecoilEnergy(self):
-        return (self.RecoilClustersCalorimetry(True) - self.GetCorrection())/1e3
-
     def PrimaryProtonScore(self):
         score = self.MasterAnaDev_proton_score 
         return score if score>=0 else -1
@@ -228,6 +207,38 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
     def PrimaryProtonTheta(self):
         theta = self.MasterAnaDev_proton_theta
         return math.degrees(theta) if theta>=0 else -1
+
+
+    # =============== collcetion of all recoil energy stuff.========
+    def GetEAvailable(self):
+        return self.blob_recoil_E_tracker+self.blob_recoil_E_ecal
+
+    def GetNuEFuzz(self):
+        return self.blob_nuefuzz_E_tracker+self.blob_nuefuzz_E_ecal
+
+    def GetLeakageCorrection(self):
+        return SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw())
+
+    def Pi0_Additional_Leakage(self):
+        return random.uniform(0,20) if self.mc and (self.mc_intType == 4 or (self.mc_current==2 and self.mc_intType==10)) else 0
+
+    # A function wrapper that maps negative values to zero
+    # returning MeV
+    @Utilities.decorator_ReLU
+    def AvailableEnergy(self):
+        return (self.GetEAvailable()-self.GetCorrection())* SystematicsConfig.AVAILABLE_E_CORRECTION + self.Pi0_Additional_Leakage()
+
+
+    @Utilities.decorator_ReLU
+    def RecoilEnergy(self):
+        return sum(self.__getattr__("blob_recoil_E_{}".format(i)) for i in ["tracker","ecal","hcal","od","nucl"]) - self.GetCorrection()
+
+    def GetFuzzCorrection(self):
+        return 0
+
+    def GetEMEnergyShift(self):
+        return self.prong_ECALCalibE[0]*SystematicsConfig.EM_ENERGY_SCALE_SHIFT_ECAL if self.nsigma is None else 0
+
     # def GetLLR(self):
     #     if CVUniverse.LLR is not None:
     #         return CVUniverse.LLR
@@ -352,6 +363,17 @@ class ResponseUniverse(ROOT.PlotUtils.ResponseUniverse(ROOT.PythonMinervaUnivers
     def __init__(self,chain,nsigma,name):
         super(ResponseUniverse,self).__init__(chain,nsigma,name)
         super(ROOT.PlotUtils.ResponseUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,1)
+        self.re = "blob_.*_E_.*"
+
+
+    def __getattr__(self,attrName):
+        if re.match(self.re,attrName) is None:
+            return super(ResponseUniverse,self).__getattr__(attrName)
+        else:
+            r = super(ResponseUniverse,self).__getattr__(attrName)
+            shift = super(ResponseUniverse,self).__getattr__("{}_{}".format(attrName,self.m_name))* self.m_frac_unc
+            return r+self.nsigma*shift
+
 
     def RecoilClustersCalorimetry(self,splined):
         return super(ResponseUniverse,self).RecoilClustersCalorimetry(splined)+self.GetRecoilShift()

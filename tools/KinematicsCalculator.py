@@ -56,7 +56,7 @@ class KinematicsCalculator(object):
             self.Cals.append(self.CalculateRecoKinematics)
         if self.calc_true:
             self.Cals.append(self.CalculatePCTrueKinematics if self.is_pc else self.CalculateTrueKinematics)
-        self.spliner = NuESpline()
+        self.spliner = NuMuSpline()
 
     @staticmethod
     def calcq3(Q2, Enu, Elep):
@@ -135,16 +135,15 @@ class KinematicsCalculator(object):
         #decide if whether it is muon or electron event, and get lepton kinematics
         self.reco_theta_lep_rad = event.LeptonTheta()
         self.reco_E_lep = event.LeptonEnergy()/1e3
-        print(event.GetEmu(),self.reco_E_lep)
         self.M_lep_sqr = event.M_lep_sqr/1e6
         self.reco_P_lep = math.sqrt(max(0,self.reco_E_lep**2-self.M_lep_sqr))
         self.reco_cos_theta_lep = math.cos(self.reco_theta_lep_rad)
         self.reco_theta_lep = math.degrees(self.reco_theta_lep_rad)
 
         #now hadronic calorimetry
-        self.reco_q0 = event.SplineCorrectedRecoilEnergy()
-        self.reco_visE = event.RecoilEnergy()
-        #self.reco_q0 = self.spliner.get_q0(self.reco_visE)
+        self.reco_q0 = event.GetCalorimetryQ0()/1e3
+        self.reco_visE = event.AvailableEnergy()/1e3
+        self.reco_q0_myspline = self.spliner.get_q0(event.RecoilEnergy()/1e3)
         # calc q2, q3
         self.reco_E_nu_cal = self.reco_E_lep + self.reco_q0
         #self.reco_E_nu_QE = KinematicsCalculator.Enu_QE(self.reco_E_lep, self.reco_P_lep, self.reco_theta_lep_rad,math.sqrt(self.M_lep_sqr))
@@ -279,7 +278,7 @@ class KinematicsCalculator(object):
             else:
                 Eavail+=E
 
-            if abs(pdg) == self.event.mc_primaryLepton:
+            if abs(pdg) == 12 or abs(pdg) == 14:
                 E_primary_lepton += E
 
         #a = max(0,Eavail - E_primary_lepton)
@@ -363,14 +362,9 @@ class q3_spline(object):
         self.fp = fp
         self.s = s
 
-    def get_q0(self,eavail):
-        return self.s * interp(eavail,self.xp,self.fp)
-
-class NuESpline(q3_spline):
-    def __init__(self):
-        path = "{}/Calibrations/energy_calib/CCNueCalorimetryTunning.txt".format(os.environ["MPARAMFILES"])
-        name = "CCNuE_Nu_Tracker"
-        scale =1.0
+    @staticmethod
+    def initByFile(path,name):
+        scale = 1.0
         x =[]
         y =[]
         reading = False
@@ -378,6 +372,8 @@ class NuESpline(q3_spline):
             lines = f.readlines()
             for line in lines:
                 line = line.split();
+                if len(line)==0:
+                    continue
                 if line[0]=="BEGIN" and line[1] == name:
                     reading = True
                     continue
@@ -392,4 +388,21 @@ class NuESpline(q3_spline):
                     x.append(float(line[1]))
                     y.append(float(line[2]))
                     continue
-        super(NuESpline, self).__init__(scale,x,y)
+        return scale,x,y
+
+
+    def get_q0(self,eavail):
+        return self.s * interp(eavail,self.xp,self.fp)
+
+class DefaultSpline(q3_spline):
+    def __init__(self):
+        super(DefaultSpline,self).__init__(1,[0,50],[0.50])
+
+
+class NuESpline(q3_spline):
+    def __init__(self):
+        super(NuESpline, self).__init__(*q3_spline.initByFile( "{}/Calibrations/energy_calib/CCNueCalorimetryTunning.txt".format(os.environ["MPARAMFILES"]),"CCNuE_Nu_Tracker"))
+
+class NuMuSpline(q3_spline):
+    def __init__(self):
+         super(NuMuSpline, self).__init__(*q3_spline.initByFile( "{}/Calibrations/energy_calib/NukeCCInclusiveTunings.txt".format(os.environ["MPARAMFILES"]),"NukeCC_Nu_Tracker"))

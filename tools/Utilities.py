@@ -269,6 +269,12 @@ def PopulateTH2DByTH1D(hist_out,hist_in,populateXAxis = None):
                 hist_out.SetBinContent(i,j,hist_in.GetBinContent(i))
                 hist_out.SetBinError(i,j,hist_in.GetBinError(i))
 
+def decorator_PrintNReturn(func):
+    def f(*args,**kwargs):
+        r = func(*args,**kwargs)
+        print("returning: {}".format(r))
+        return r
+    return f
 
 def decorator_ReLU(func,minimal=0):
     def Rectifier(*args,**kwargs):

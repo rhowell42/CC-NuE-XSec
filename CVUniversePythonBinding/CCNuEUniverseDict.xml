@@ -1,0 +1,26 @@
+<lcgdict>
+    <!-- PlotUtils objects -->
+    <!-- PlotUtils systematic universes classes (new sys framework)-->
+    <class name="PythonMinervaUniverse"/>
+    <class name="PlotUtils::FluxUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::GenieUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::GenieRvx1piUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::GenieFaCCQEUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::ResponseUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::BeamAngleXUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::BeamAngleYUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::Universe2p2h<PythonMinervaUniverse>" />
+    <class name="PlotUtils::RPAUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::LowQ2PionUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::MuonUniverseMinerva<PythonMinervaUniverse>" />
+    <class name="PlotUtils::MuonUniverseMinos<PythonMinervaUniverse>" />
+    <class name="PlotUtils::Cut<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+    <class name="PlotUtils::detail::empty" />
+    <class name="reco::HasMINOSMatch<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+    <class name="reco::ZRange<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+    <class name="reco::Apothem<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+    <class name="PlotUtils::Model<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+    <class name="PlotUtils::Reweighter<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+    <class name="PlotUtils::GENIEReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+</lcgdict>
+
