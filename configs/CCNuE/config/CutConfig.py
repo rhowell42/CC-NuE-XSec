@@ -132,7 +132,7 @@ SAMPLE_CUTS = {
         "ODCalVisE",
         "HasNoVertexMismatch",
         "VertexTrackMultiplicity",
-        "Psi",         #differnt from signal
+        #"Psi",         #differnt from signal
         "NonMIPClusFrac",
         "TransverseGapScore",
         "DeadTime",
@@ -155,7 +155,7 @@ SAMPLE_CUTS = {
         "ODCalVisE",
         "HasNoVertexMismatch",
         "VertexTrackMultiplicity",
-        "Psi",         #differnt from signal
+        #"Psi",         #differnt from signal
         "NonMIPClusFrac",
         "TransverseGapScore",
         "DeadTime",
@@ -166,28 +166,28 @@ SAMPLE_CUTS = {
         #"Exuv",
         #"Euv"
     ],
-    "Pi0" : [
-        #"HasNoNonEMExitingTracks",
-        "NoCut",
-        "Vertex_Z",
-        "Vertex_Apothem",
-        "HasTracks",
-        "HasNoBackExitingTracks",
-        "EMLikeTrackScore",
-        "DSCalVisE",
-        "ODCalVisE",
-        "HasNoVertexMismatch",
-        "VertexTrackMultiplicity",
-        "NonMIPClusFrac",
-        "TransverseGapScore",
-        "DeadTime",
-        "Afterpulsing",
-        "Eavail",
-        "InverseMeanFrontdEdX",
-        "InversePsi"
-        #"Exuv",
-        #"Euv"
-    ],
+    # "Pi0" : [
+    #     #"HasNoNonEMExitingTracks",
+    #     "NoCut",
+    #     "Vertex_Z",
+    #     "Vertex_Apothem",
+    #     "HasTracks",
+    #     "HasNoBackExitingTracks",
+    #     "EMLikeTrackScore",
+    #     "DSCalVisE",
+    #     "ODCalVisE",
+    #     "HasNoVertexMismatch",
+    #     "VertexTrackMultiplicity",
+    #     "NonMIPClusFrac",
+    #     "TransverseGapScore",
+    #     "DeadTime",
+    #     "Afterpulsing",
+    #     "Eavail",
+    #     "InverseMeanFrontdEdX",
+    #     "InversePsi"
+    #     #"Exuv",
+    #     #"Euv"
+    # ],
     "Muon" : [
         "HasMINOSMatch",
         "Vertex_Z",

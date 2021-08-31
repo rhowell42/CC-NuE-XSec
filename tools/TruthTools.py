@@ -4,15 +4,11 @@ from operator import itemgetter
 import random
 
 def GetIndexlistFromPDG(event,PDG,include_anti_particle):
-    con = (lambda x,y : abs(x)==abs(y)) if include_anti_particle else (lambda x,y :x==y)
-    particle_index = [i for i,x in enumerate(event.mc_FSPartPDG) if cond(x,PDG)]
+    cond = (lambda x,y : abs(x)==abs(y)) if include_anti_particle else (lambda x,y :x==y)
+    return [i for i,x in enumerate(event.mc_FSPartPDG) if cond(x,PDG)]
 
-def MostEnergeticParticle(event,PDG,anti_particle=True): 
-    if anti_particle:
-        particle_index = [i for i,x in enumerate(event.mc_FSPartPDG) if abs(x) == abs(PDG)]
-    else:
-        particle_index = [i for i,x in enumerate(event.mc_FSPartPDG) if x == PDG]
-
+def MostEnergeticParticle(event,PDG,anti_particle=True):
+    particle_index = GetIndexlistFromPDG(event,PDG,anti_particle)
     if len(particle_index) == 0 :
         return None
     elif len(particle_index) > 1:
@@ -21,6 +17,12 @@ def MostEnergeticParticle(event,PDG,anti_particle=True):
     else : 
         return particle_index[0]
 
+def LeadingParticleEnergy(event,PDG,anti_particle=True):
+    particle_index = GetIndexlistFromPDG(event,PDG,anti_particle)
+    if len(particle_index) == 0 :
+        return None
+    else:
+        return max(event.mc_FSPartE[i] for i in particle_index)
 
 def CalcApothem(x,y):
     x=abs(x)

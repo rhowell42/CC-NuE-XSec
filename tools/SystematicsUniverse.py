@@ -214,7 +214,8 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         return self.blob_recoil_E_tracker+self.blob_recoil_E_ecal
 
     def GetNuEFuzz(self):
-        return self.blob_nuefuzz_E_tracker+self.blob_nuefuzz_E_ecal
+        return 0
+        #return self.blob_nuefuzz_E_tracker+self.blob_nuefuzz_E_ecal
 
     def GetLeakageCorrection(self):
         return SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw())
@@ -231,7 +232,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
 
     @Utilities.decorator_ReLU
     def RecoilEnergy(self):
-        return sum(self.__getattr__("blob_recoil_E_{}".format(i)) for i in ["tracker","ecal","hcal","od","nucl"]) - self.GetCorrection()
+        return sum(self.__getattr__("blob_recoil_E_{}".format(i)) for i in ["tracker","ecal","hcal","od","nucl"])
 
     def GetFuzzCorrection(self):
         return 0

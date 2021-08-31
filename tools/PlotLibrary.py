@@ -92,6 +92,21 @@ VARIABLE_DICT = {
         "value_getter" : Utilities.decorator_ReLU(lambda event: sum(event.ExtraEnergy)/1e3-0.008*event.mc_FSPartE[0]/1e3)
     },
 
+    "Leading Pi0 E" : {
+        "name":"Leading_Pi0_E",
+        "title":"Leading E_{pi0} (GeV)",
+        "binning":PlotConfig.PI0_ENERGY_BINNING,
+        "value_getter": lambda event: (TruthTools.LeadingParticleEnergy(event,111,False) or -1.0)/1e3
+    },
+
+    "PsiEe" : {
+        "name":"PsiEe",
+        "title":"Psi * E_e (GeV)",
+        "binning": [0.2*i for i in range(11)],
+        "value_getter": lambda event: event.Psi*event.kin_cal.reco_E_lep
+    },
+
+
     "Visible Zoomin" : {
         "name":"Visible_zoomin",
         "title": "Visible Energy (MeV)",

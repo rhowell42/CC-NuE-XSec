@@ -3,6 +3,8 @@ from collections import OrderedDict
 from config import PlotConfig
 from tools.PlotLibrary import HistHolder
 from tools import PlotTools
+from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS,DETAILED_ERROR_GROUPS
+
 
 
 Default_Plot_Type="stacked"
@@ -135,7 +137,8 @@ NuEElasticCategory = {
 DefaultPlotters={
     "comp":{"func": PlotTools.PrepareComp},
     "ratio":{"func": PlotTools.PrepareRatio},
-    "err": {"func": PlotTools.PrepareErr},
+    "err": {"func": PlotTools.PrepareErr,
+            "args":(True,False,CONSOLIDATED_ERROR_GROUPS)},
     "stacked":{"func":PlotTools.PrepareStack,
                "args": (Categories,)},
     "diff":{"func":PlotTools.PrepareDiff},
@@ -165,6 +168,13 @@ PLOTS_TO_MAKE = [
     #  "plot_type" : "sigdep",},
     {"name":"Visible Energy",
      "plot_type" : "err",},
+    {"variables":["Leading Pi0 E","PsiEe"],
+     "slicer":lambda hist: PlotTools.Make2DSlice(hist,True),
+     },
+    {"variables":["PsiEe","Lepton Energy"],
+     "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
+     "sideband_group": ("Excess",("Excess_High_Inline","Excess_Low_Inline")),
+     },
     # {"name":"Q0",
     #  "plot_type" : "err",},
     # {"name":"Q3",

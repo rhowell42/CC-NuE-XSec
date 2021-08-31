@@ -103,7 +103,7 @@ class CustomizedWeighter(object):
             "COH": [1],
             "DFR": [1],
         }
-        self.weight = RHC_Factors
+        self.weight = Default
 
     def GetWeight(self,universe):
         return self.GetCohWeight(universe)*self.GetDFRWeight(universe)

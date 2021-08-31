@@ -105,7 +105,7 @@ LowQ2PiWeightSysChannel = ["JOINT","NUPI0"]
 NumZExpansionUniverses = 0 #Means Don't use Zexpansion. 100 is default Z expansion
 
 RESPONSE_BRANCHES = [
-    "proton",
+    "p",
     "meson",
     "em",
     "other",

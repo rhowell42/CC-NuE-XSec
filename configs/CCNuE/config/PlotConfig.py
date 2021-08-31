@@ -249,6 +249,14 @@ HISTS_TO_MAKE = [
      "tags": {"sideband","truth_class"},
      },
 
+    {"variables":["Leading Pi0 E","PsiEe"],
+     "tags":{"sideband","truth_class","mc_only"},
+     },
+    {"variables":["PsiEe","Lepton Energy"],
+     "tags":{"sideband","truth_class"},
+     },
+
+
      # {"variables":["Visible Zoomin","Lepton Energy"],
      # "tags": {"truth_class","sideband"},
      # "cuts":[lambda event: event.kin_cal.reco_q2_cal<0.02, lambda event: event.kin_cal.reco_Etheta2<0.0032]
