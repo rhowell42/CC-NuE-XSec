@@ -122,6 +122,8 @@ QSQUARED_BINNING_CCQE_LIKE = [0, 0.1, 0.2, 0.35, 0.5, 0.65, 0.8, 1.0, 1.25, 2.0]
 QSQUARED_BINNING_GENIE_CCQE = [0, 0.1, 0.2, 0.4, 0.8, 1.2, 2.0]
 QSQUARED_BINNING_INC = [0.1 *i for i in range(101) ]
 EXCESS_ENERGY_BINNING = [0, 3, 6, 9, 12, 15, 20]
+NUECONE_BINNING = [10* i for i in range(0,51)]
+
 
 #QSQUARED_BINNING = QSQUARED_BINNING_CCQE_LIKE if AnalysisConfig.signal_defn != AnalysisConfig.SIGNAL_DEFNS.GENIE_CCQE else QSQUARED_BINNING_GENIE_CCQE
 QSQUARED_BINNING = QSQUARED_BINNING_INC
@@ -249,13 +251,22 @@ HISTS_TO_MAKE = [
      "tags": {"sideband","truth_class"},
      },
 
-    {"variables":["Leading Pi0 E","PsiEe"],
+    {"variables":["PsiEe","Lepton Theta"],
      "tags":{"sideband","truth_class","mc_only"},
      },
     {"variables":["PsiEe","Lepton Energy"],
      "tags":{"sideband","truth_class"},
      },
 
+    #  {"variables":["Epi(1-cos(pi))"],
+    #  "tags":{"sideband","truth_class"},
+    #  },
+    # {"variables":["Delta"],
+    #  "tags":{"sideband","truth_class"},
+    #  },
+     # {"variables":["Shower Width"],
+     # "tags":{"sideband","truth_class"},
+     # },
 
      # {"variables":["Visible Zoomin","Lepton Energy"],
      # "tags": {"truth_class","sideband"},
@@ -293,7 +304,7 @@ HISTS_TO_MAKE = [
     #  },
 
     "Visible Energy vs q3",
-    "Visible Energy vs q3 Migration",
+    #"Visible Energy vs q3 Migration",
     "True Signal Visible Energy vs q3",
     "Visible Energy vs Lepton Pt Migration",
     "True Signal Visible Energy vs Lepton Pt",
@@ -302,6 +313,7 @@ HISTS_TO_MAKE = [
     # "Lepton Pt Migration",
 
     "Lepton Energy",
+    "Lepton Theta",
     #"Lepton Energy High Inline",
     # {"variables":["W"],
     #  "tags": {"sideband","truth_class"}

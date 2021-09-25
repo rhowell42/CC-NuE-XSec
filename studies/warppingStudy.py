@@ -234,8 +234,8 @@ def RunTransWrapper(ifile,ofile):
 
 
 AlternativeModels = {
-  #"CV":None,
-   #"LowQ2Pi0": ("LowQ2Pi",0),
+  "CV":None,
+   "LowQ2Pi0": ("LowQ2Pi",0),
   # "LowQ2Pi1": ("LowQ2Pi",1),
   # "LowQ2Pi2": ("LowQ2Pi",2),
   # "LowQ2Pi3": ("LowQ2Pi",3),
@@ -244,10 +244,10 @@ AlternativeModels = {
   # "2p2h2": ("Low_Recoil_2p2h_Tune",2),
   # "RPA_highq20" :("RPA_HighQ2",0),
   # "RPA_highq21" :("RPA_HighQ2",1),
-  #"RPA_lowq20" :("RPA_LowQ2",0),
+  # "RPA_lowq20" :("RPA_LowQ2",0),
   # "RPA_lowq21" :("RPA_LowQ2",1),
   # "MK_Model":("MK_model",0),
-  "FSI_Weight0":("fsi_weight",0),
+  # "FSI_Weight0":("fsi_weight",0),
   # "FSI_Weight1":("fsi_weight",1),
   # "FSI_Weight2":("fsi_weight",2),
   # "SuSA2p2h":("SuSA_Valencia_Weight",0),
@@ -257,8 +257,8 @@ AlternativeModels = {
 
 Measurables = [
   "Eavail_q3",
-  "Eavail",
-  "Eavail_Lepton_Pt"
+  # "Eavail",
+  # "Eavail_Lepton_Pt"
 ]
 
 if __name__ == '__main__':
@@ -267,19 +267,19 @@ if __name__ == '__main__':
   data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag,True)
   #unfolded_file = ROOT.TFile.Open(AnalysisConfig.UnfoldedHistoPath(playlist,False))
   ifile="fin.root"
-  release_path,relative_path=GetPaths(baseDir)
+  #release_path,relative_path=GetPaths(baseDir)
   PNFS_switch = "persistent"
   # Automatically generate unique output directory
   #processingID = '%s_%s-%s' % ("CCNUE_selection", dt.date.today() , dt.datetime.today().strftime("%H") )
-  processingID = "CCNUE_Warping5"
+  # processingID = "CCNUE_Warping5"
   
-  outdir_hists = "/pnfs/minerva/%s/users/%s/%s_hists" % (PNFS_switch,os.environ["USER"],processingID)
-  os.system( "mkdir %s" % outdir_hists )
-  outdir_logs = "/pnfs/minerva/%s/users/%s/%s_logs" % (PNFS_switch,os.environ["USER"],processingID)
-  os.system( "mkdir %s" % outdir_logs )
-  os.system( "mkdir -p grid_wrappers/%s" % processingID )
-  outdir_tarball="/pnfs/minerva/resilient/tarballs/hsu-%s.tar.gz" % (processingID)
-  createTarball(release_path,outdir_tarball)
+  # outdir_hists = "/pnfs/minerva/%s/users/%s/%s_hists" % (PNFS_switch,os.environ["USER"],processingID)
+  # os.system( "mkdir %s" % outdir_hists )
+  # outdir_logs = "/pnfs/minerva/%s/users/%s/%s_logs" % (PNFS_switch,os.environ["USER"],processingID)
+  # os.system( "mkdir %s" % outdir_logs )
+  # os.system( "mkdir -p grid_wrappers/%s" % processingID )
+  # outdir_tarball="/pnfs/minerva/resilient/tarballs/hsu-%s.tar.gz" % (processingID)
+  # createTarball(release_path,outdir_tarball)
   memory =2000
   for prefix in Measurables:
     MnvMigration = Utilities.GetHistogram(mc_file, prefix+ "_migration")

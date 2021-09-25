@@ -134,6 +134,9 @@ PLOTS_TO_MAKE = [
      "plot_type":"err"},
      {"name":"Visible Energy vs q3",
      "plot_type":"sigdepRatio"},
+    {"name":"Visible Energy vs q3",
+     "plot_type":"sigdep"},
+
     {"variables":["Q0","True Visible Energy"],
      "scale":lambda hist:hist.AreaScale(True),
      "slicer":lambda hist: PlotTools.Make2DSlice(hist,True),
@@ -274,5 +277,22 @@ PLOTS_TO_MAKE = [
     #  #"sideband_group": ("Merged",("Signal","Excess","Pi0"))},
     # {"variables":["Vertex Y","Visible Energy"]},
     # {"variables":["Vertex Z","Visible Energy"]}
+    {"variables":["Visible Energy","Lepton Pt"],},
+    {"variables":["NuEFuzz Muon","Lepton Pt"],},
+    {"variables":["NuEFuzz Muon","Q3"],},
+    {"variables":["NuEFuzz E","Lepton Pt"],},
+    {"variables":["NuEFuzz E","Q3"]},
+    {"variables":["NuEFuzz Proton","Lepton Pt"] },
+    {"variables":["NuEFuzz Proton","Q3"] },
+    {"variables":["NuEFuzz Meson","Lepton Pt"] },
+    {"variables":["NuEFuzz Meson","Q3"]  },
+     {"variables":["NuEFuzz Neutron","Lepton Pt"] },
+    {"variables":["NuEFuzz Meson","Q3"]  },
+     {"variables":["NuEFuzz Neutron","Lepton Pt"] },
+    {"variables":["NuEFuzz Meson","Q3"]  },
+     {"variables":["NuEFuzz Xtalk","Lepton Pt"] },
+    {"variables":["NuEFuzz Xtalk","Q3"]  },
+     {"variables":["NuEFuzz Other","Lepton Pt"] },
+    {"variables":["NuEFuzz Other","Q3"]  },
 ]
 

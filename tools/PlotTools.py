@@ -173,8 +173,10 @@ def PrepareStack(data_hists,mc_hists,Grouping = None):
         plotfunction =  lambda mnvplotter, data_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, legend="TR")(data_hist,mc_ints)
         hists = [data_hists.GetHist()]
     else :
-        plotfunction =  lambda mnvplotter, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, legend = "TR")(None,mc_ints)
-        hists =[]
+        plotfunction =  lambda mnvplotter, mc_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, legend = "TR")(mc_hist,mc_ints)
+        tmp = mc_hists.GetHist().Clone()
+        tmp.Reset()
+        hists =[tmp]
     hists.extend(mc_list)
     return plotfunction,hists
 

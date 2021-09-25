@@ -1,11 +1,11 @@
-stag="col8"
+stag="col9"
 ntag="Had"
 tarball="/pnfs/minerva/resilient/tarballs/hsu-gridselection-macro.tar.gz"
 if [[ -f $tarball ]]; then
     rm  $tarball
 fi
 
-common_flag="--selection_tag ${stag} --ntuple_tag ${ntag}  --use_sideband Excess_High_Inline Excess_Low_Inline Pi0 --tarball ${tarball}"
+common_flag="--selection_tag ${stag} --ntuple_tag ${ntag}  --use_sideband Excess_High_Inline Excess_Low_Inline --tarball ${tarball}"
 echo python gridSelection.py $common_flag
 python gridSelection.py $common_flag --truth
 #echo python gridSelection.py $common_flag --ext_2p2h --count 10

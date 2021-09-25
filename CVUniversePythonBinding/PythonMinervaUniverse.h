@@ -39,5 +39,5 @@ public:
   }
 };
 
-
+//PythonMinervaUniverse::Q0Spline PythonMinervaUniverse::current_spline;
 #endif /* PYTHONMINERVAUNIVERSE_H */

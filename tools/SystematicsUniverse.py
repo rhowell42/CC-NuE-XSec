@@ -45,14 +45,6 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         self.nEntries = chain.GetEntries()
         self.mc = nsigma is not None
         self.chain=chain
-        # self.weighters = [ self.GetGenieWeight, self.GetFluxAndCVWeight]
-        # if SystematicsConfig.UNIVERSES_2P2H:
-        #     self.weighters.append(self.GetLowRecoil2p2hWeight)
-        # if SystematicsConfig.RPA_UNIVERSES:
-        #     self.weighters.append(self.GetRPAWeight)
-        # if SystematicsConfig.LowQ2PiWeightChannel:
-        #     self.weighters.append(lambda : self.GetLowQ2PiWeight(SystematicsConfig.LowQ2PiWeightChannel.upper())) 
-        #self.SetTruth(nsigma is not None)
 
     # magic function that allow direct access to TBranch by Universe.TBranch, but prohibit any python magic variable being generated.
     def __getattr__(self,attrName):
@@ -210,8 +202,11 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
 
 
     # =============== collcetion of all recoil energy stuff.========
-    def GetEAvailable(self):
-        return self.blob_recoil_E_tracker+self.blob_recoil_E_ecal
+    def GetEAvail(self):
+        if self.GetAnaToolName() == "MasterAnaDev":
+            return self.blob_recoil_E_tracker+self.blob_recoil_E_ecal
+        else:
+            return self.recoile_passive_tracker+self.recoile_passive_ecal
 
     def GetNuEFuzz(self):
         return 0
@@ -227,18 +222,36 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
     # returning MeV
     @Utilities.decorator_ReLU
     def AvailableEnergy(self):
-        return (self.GetEAvailable()-self.GetCorrection())* SystematicsConfig.AVAILABLE_E_CORRECTION + self.Pi0_Additional_Leakage()
+        #return self.GetEAvail()* SystematicsConfig.AVAILABLE_E_CORRECTION
+        return (self.GetEAvail()-self.GetCorrection())* SystematicsConfig.AVAILABLE_E_CORRECTION + self.Pi0_Additional_Leakage()
 
 
     @Utilities.decorator_ReLU
     def RecoilEnergy(self):
-        return sum(self.__getattr__("blob_recoil_E_{}".format(i)) for i in ["tracker","ecal","hcal","od","nucl"])
+        if self.GetAnaToolName() == "MasterAnaDev":
+            return sum(self.__getattr__("blob_recoil_E_{}".format(i)) for i in ["tracker","ecal","hcal","od","nucl"])
+        else:
+            return sum(self.__getattr__("recoile_passive_{}".format(i)) for i in ["tracker","ecal","hcal","odclus","nucl"])
 
     def GetFuzzCorrection(self):
         return 0
 
     def GetEMEnergyShift(self):
         return self.prong_ECALCalibE[0]*SystematicsConfig.EM_ENERGY_SCALE_SHIFT_ECAL if self.nsigma is None else 0
+
+    def dedxDelta(self):
+        dedx = self.GetVecDouble("dEdXs")
+        dedx_dz  = self.GetVecDouble("dEdXs_dz")
+        dedx_proj  = self.GetVecDouble("dEdXs_proj")
+        total = 0
+        outer = 0
+        if dedx.size() == 0:
+            return 0.9999
+        for i in range(0,dedx.size()):
+            if dedx_proj[i]>400:
+                outer+=dedx[i]
+            total+=dedx[i]
+        return outer/total 
 
     # def GetLLR(self):
     #     if CVUniverse.LLR is not None:
@@ -364,7 +377,7 @@ class ResponseUniverse(ROOT.PlotUtils.ResponseUniverse(ROOT.PythonMinervaUnivers
     def __init__(self,chain,nsigma,name):
         super(ResponseUniverse,self).__init__(chain,nsigma,name)
         super(ROOT.PlotUtils.ResponseUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,1)
-        self.re = "blob_.*_E_.*"
+        self.re = "^blob_.*_E_(tracker|ecal|od|nucl|hcal)$"
 
 
     def __getattr__(self,attrName):
@@ -608,6 +621,23 @@ class SusaValenciaUniverse(CVUniverse,object):
     def GetSystematicsUniverses(chain):
         return [SusaValenciaUniverse(chain,1)]
 
+class LeakageUniverse(CVUniverse,object):
+    def __init__(self,chain,nsigma):
+        super(LeakageUniverse,self).__init__(chain,nsigma)
+
+    def GetLeakageCorrection(self):
+        return super(LeakageUniverse,self).GetLeakageCorrection() + self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS
+
+    def ShortName(self):
+        return "Leakage_Uncertainty"
+
+    def LatexName(self):
+        return "Leakage Unvertainty"
+
+    @staticmethod
+    def GetSystematicsUniverses(chain):
+        return [LeakageUniverse(chain,1)]
+
 
 def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=None):
     #use list because I want to control the order, process cv first, then vertical shifts, then lateral shifts
@@ -688,7 +718,7 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             # #birk shift universe
             # #universes.extend(BirksShiftUniverse.GetSystematicsUniverses(chain ))
 
-            #MKModelUniverse
+            # MKModelUniverse
             #universes.extend(MKModelUniverse.GetSystematicsUniverses(chain ))
 
             # #FSIWeighUniverse
@@ -699,6 +729,9 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
 
             #hadron reweight shifting universe
             universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
+
+            universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
+
 
     # Group universes in dict.
     univ_dict = OrderedDict()

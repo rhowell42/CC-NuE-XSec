@@ -99,13 +99,88 @@ VARIABLE_DICT = {
         "value_getter": lambda event: (TruthTools.LeadingParticleEnergy(event,111,False) or -1.0)/1e3
     },
 
+    "NuEFuzz Muon" : {
+        "name":"NuECone_E_muon",
+        "title":"Muon Contribution in Cone(MeV)",
+        "binning": PlotConfig.NUECONE_BINNING,
+        "value_getter": lambda event: event.blob_nuefuzz_E_tracker_mu+event.blob_nuefuzz_E_ecal_mu
+    },
+
+     "NuEFuzz Proton" : {
+        "name":"NuECone_E_proton",
+        "title":"Proton Contribution in Cone(MeV)",
+        "binning": PlotConfig.NUECONE_BINNING,
+        "value_getter": lambda event: event.blob_nuefuzz_E_tracker_p+event.blob_nuefuzz_E_ecal_p
+    },
+
+    "NuEFuzz E" : {
+        "name":"NuECone_E",
+        "title":"Energy in Cone(MeV)",
+        "binning": PlotConfig.NUECONE_BINNING,
+        "value_getter": lambda event: event.blob_nuefuzz_E_tracker+event.blob_nuefuzz_E_ecal
+    },
+
+    "NuEFuzz Meson" : {
+        "name":"NuECone_E_meson",
+        "title":"Energy in Cone(MeV)",
+        "binning": PlotConfig.NUECONE_BINNING,
+        "value_getter": lambda event: event.blob_nuefuzz_E_tracker_meson+event.blob_nuefuzz_E_ecal_meson
+    },
+
+     "NuEFuzz Neutron" : {
+        "name":"NuECone_E_neutron",
+        "title":"Energy in Cone(MeV)",
+        "binning": PlotConfig.NUECONE_BINNING,
+        "value_getter": lambda event: event.blob_nuefuzz_E_tracker_lown+event.blob_nuefuzz_E_ecal_lown+event.blob_nuefuzz_E_tracker_midn+event.blob_nuefuzz_E_ecal_midn+event.blob_nuefuzz_E_tracker_highn+event.blob_nuefuzz_E_ecal_highn
+    },
+
+     "NuEFuzz Xtalk" : {
+        "name":"NuECone_E_xtalk",
+        "title":"Energy in Cone(MeV)",
+        "binning": PlotConfig.NUECONE_BINNING,
+        "value_getter": lambda event: event.blob_nuefuzz_E_tracker_xtalk+event.blob_nuefuzz_E_ecal_xtalk
+    },
+
+     "NuEFuzz Other" : {
+        "name":"NuECone_E_other",
+        "title":"Energy in Cone(MeV)",
+        "binning": PlotConfig.NUECONE_BINNING,
+        "value_getter": lambda event: event.blob_nuefuzz_E_tracker_other+event.blob_nuefuzz_E_ecal_other
+    },
+     "NuEFuzz EM" : {
+        "name":"NuECone_E_em",
+        "title":"Energy in Cone(MeV)",
+        "binning": PlotConfig.NUECONE_BINNING,
+        "value_getter": lambda event: event.blob_nuefuzz_E_tracker_em+event.blob_nuefuzz_E_ecal_em
+    },
+
+    "Epi(1-cos(pi))" : {
+        "name":"Epi_cospi",
+        "title":"E_#pi(1-cos(#theta_#pi)) (GeV)",
+        "binning": [0.005* i for i in range(0,41)],
+        "value_getter": lambda event: event.kin_cal.reco_E_lep*(1-event.kin_cal.reco_cos_theta_lep)
+    },
+
     "PsiEe" : {
         "name":"PsiEe",
         "title":"Psi * E_e (GeV)",
-        "binning": [0.2*i for i in range(11)],
+        "binning": [0.2*i for i in range(21)],
         "value_getter": lambda event: event.Psi*event.kin_cal.reco_E_lep
     },
 
+    "Delta" : {
+        "name":"Delta",
+        "title":"energy ratio outer/total",
+        "binning": [0.02*i for i in range(51)],
+        "value_getter": lambda event: event.dedxDelta()
+    },
+
+    "Shower Width" : {
+        "name":"Shower_width",
+        "title":"median shower width (cm)",
+        "binning": [0.1*i for i in range(31)],
+        "value_getter": lambda event: event.prong_MedianPlaneShowerWidth[0]
+    },
 
     "Visible Zoomin" : {
         "name":"Visible_zoomin",

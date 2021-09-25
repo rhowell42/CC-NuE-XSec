@@ -141,9 +141,8 @@ class KinematicsCalculator(object):
         self.reco_theta_lep = math.degrees(self.reco_theta_lep_rad)
 
         #now hadronic calorimetry
-        self.reco_q0 = event.GetCalorimetryQ0()/1e3
-        self.reco_visE = event.AvailableEnergy()/1e3
-        self.reco_q0_myspline = self.spliner.get_q0(event.RecoilEnergy()/1e3)
+        self.reco_q0 = self.spliner.get_q0(self.event.RecoilEnergy()/1e3)
+        self.reco_visE = self.event.AvailableEnergy()/1e3
         # calc q2, q3
         self.reco_E_nu_cal = self.reco_E_lep + self.reco_q0
         #self.reco_E_nu_QE = KinematicsCalculator.Enu_QE(self.reco_E_lep, self.reco_P_lep, self.reco_theta_lep_rad,math.sqrt(self.M_lep_sqr))
@@ -154,6 +153,7 @@ class KinematicsCalculator(object):
         self.reco_W2 = (M_n/1e3)**2+2*M_n/1e3*self.reco_q0-self.reco_q2_cal
         self.reco_W = math.sqrt(self.reco_W2) if self.reco_W2>=0 else -1
         self.reco_Etheta2 = self.reco_E_lep * self.reco_theta_lep_rad**2
+        #print(self.event.GetLowRecoilQ3(),self.reco_q3)
         # try:
         #     viewE = (self.event.prong_XViewE[0], self.event.prong_VViewE[0],self.event.prong_UViewE[0])
         #     self.Ex = (viewE[0])/sum(viewE)
@@ -229,7 +229,7 @@ class KinematicsCalculator(object):
                 else:
                     self.pion_momenta.append(mom_mag)
                     self.pion_thetas.append(theta)
-        
+
         return True
         #       print E_e, self.E_nu_QE, self.Q2_QE
 
@@ -256,13 +256,12 @@ class KinematicsCalculator(object):
             -211: (lambda E: E-M_pion),
             111 : totalE,
             22 : totalE,
-            11 : totalE,
-            -11: totalE,
-            13: totalE,
-            -13: totalE,
+            11 : (lanbda E:0),
+            -11: (lanbda E:0),
+            13:  (lanbda E:0),
+            -13: (lanbda E:0),
         }
         Eavail = 0.0
-        E_primary_lepton = 0.0
         for i in range(len(self.event.mc_FSPartPDG)):
             E = self.event.mc_FSPartE[i]
             pdg  = self.event.mc_FSPartPDG[i]
@@ -278,11 +277,8 @@ class KinematicsCalculator(object):
             else:
                 Eavail+=E
 
-            if abs(pdg) == 12 or abs(pdg) == 14:
-                E_primary_lepton += E
-
         #a = max(0,Eavail - E_primary_lepton)
-        return max(0,Eavail - E_primary_lepton)/1000
+        return max(0,Eavail)/1000
 
         # protonE = 0.0
         # neutronE = 0.0

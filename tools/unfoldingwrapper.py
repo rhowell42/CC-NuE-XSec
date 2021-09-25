@@ -1,6 +1,8 @@
+
 import ROOT
 import math
 import PlotUtils
+from array import array
 
 class MyResponseMaker(object):
     def setup(self,response, mc_signal = None, mc_background=None,mc_truth = None):
@@ -122,5 +124,75 @@ class WithBackgroundWrapper(MyResponseMaker):
 
 
 
+class TruthHistogramMapper(object):
+    def __init__(self,mig,truth):
+        self.mig = mig
+        self.truth = truth
+        self.new_mig = None
+        self.new_truth = None
+        self.binnings = None
 
+    def truncating1D(self,hist,target):
+        if not isinstance(hist,TH1D):
+            raise ValueError("put in 1d histogram please")
+        segment = [hist.GetBinLowEdge(1)]
+        accu = 0
+        for i in range(1,hist.GetNbinsX()+1):
+            if accu >= target:
+                accu = 0
+                segment.append(hist.GetBinLowEdge(i))
+            accu += hist.GetBinContent(i)
+        segment.append(hist.GetBinLowEdge(hist.GetNbinsX()+1))
+        return array('d',segment)
 
+    def truncating(self,hist,target):
+        binnings = []
+        if hist.GetNbinsY()==1:
+            binnings.append(hist,target)
+            return binnings
+
+        for i in range(hist.GetNbinsY()+2):
+            binnings.append(self.truncating1D(hist.ProjectionY("",i,i),target))
+        return binnings
+
+    def rebin(self,hist):
+        if hist.GetNbinsY()==1:
+            return hist.Rebin(len(self.binnings[0])-1,"{}_rebined".format(hist.GetName()),self.binnings[0])
+
+        hists = []
+        for i in range(hist.GetNbinsY()+2):
+            hists.append(hist.ProjectionY("_px_{}".format(i),i,i).Rebin(len(self.binnings[i]-1),"",self.binnings[i]))
+        return hists
+
+    def match(self,hist,hists,Nbin):
+        ybin = Nbin//(hist.GetNbinsX()+2)
+        xbin = Nbin %(hist.GetNbinsX()+2)
+        xcenter = hist.GetXaxis().GetBinCenter(xbin)
+        offset = sum(hists[i].GetSize() for i in range(ybin))
+        return offset + hists[ybin].GetBin(xcenter)
+
+    def mergeMigbins(self):
+        Nbins = sum(hist.GetSize() for hist in self.new_truth)
+        hist = self.mig
+        new_hist = ROOT.TH2D("{}_merged".format(hist.GetName()),hist.GetNbinsX(),0,hist.GetNbinsX(),Nbins,0,Nbins)
+        for i in range(hist.GetNbinsY()+2):
+            bin_new = self.match(self.truth,self.new_truth,i)
+            for j in range(0,hist.GetNbinsX()+2):
+                new_hist.AddBinContent(bin_new,hist.GetBinContent(j,i))
+        return new_hist
+
+    def flatten(self,hists):
+        size = sum(hist.GetSize() for hist in hists)
+        new_hist = ROOT.TH1D("flatten_{}".format(hists[0].GetName()),size-2,0,size-2)
+        j = 0
+        for h in hists:
+            for i in range(h.GetSize()):
+                new_hist.AddBinContent(j,h.GetBinContent(i))
+                j+=1
+        return new_hist
+
+    def GetNewMigration(self,target):
+        self.binnings = self.truncating(self.truth,target)
+        self.new_truth = self.rebin(self.truth)
+        self.new_mig = self.mergeMigbins()
+        

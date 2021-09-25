@@ -93,6 +93,8 @@ class MnvResponseWrapper(object):
         mig_x = self.migration_hist.hist.GetXaxis().GetBinCenter(super(PlotUtils.MnvH2D, self.reco_hist.hist).FindBin(reco_x,reco_y))
         mig_y = self.migration_hist.hist.GetYaxis().GetBinCenter(super(PlotUtils.MnvH2D, self.truth_hist.hist).FindBin(truth_x,truth_y))
 
+        #print(mig_x,mig_y)
+
         self.reco_hist.FillUniverse(universe,reco_x,reco_y,wgt)
         self.truth_hist.FillUniverse(universe,truth_x,truth_y,wgt)
         self.migration_hist.FillUniverse(universe,mig_x,mig_y,wgt)
