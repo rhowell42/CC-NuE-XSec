@@ -22,7 +22,7 @@ QE_binding_E = 34 # MeV  (same as nu_mu PRL for FHC)
 
 # these will be used repeatedly in calculations.
 # better just do the arithmetic once here.
-M_n_star = M_n - QE_binding_E
+M_n_star = (M_n - QE_binding_E)
 M_e_sqr = M_e**2
 M_mu_sqr = M_mu**2
 M_n_star_sqr = M_n_star**2
@@ -126,10 +126,10 @@ class KinematicsCalculator(object):
 
     def CalculateRecoKinematics(self):
         self._clear = False
-        self.event.SetLeptonType()
-        nParticles = self.event.GetVecInt("prong_nParticles")
-        if len(nParticles) < 1 or nParticles[0] < 1:
-            return False
+        if self.event.SetLeptonType():
+            nParticles = self.event.GetVecInt("prong_nParticles")
+            if len(nParticles) < 1 or nParticles[0] < 1:
+                return False
         event = self.event
 
         #decide if whether it is muon or electron event, and get lepton kinematics
@@ -145,7 +145,7 @@ class KinematicsCalculator(object):
         self.reco_visE = self.event.AvailableEnergy()/1e3
         # calc q2, q3
         self.reco_E_nu_cal = self.reco_E_lep + self.reco_q0
-        #self.reco_E_nu_QE = KinematicsCalculator.Enu_QE(self.reco_E_lep, self.reco_P_lep, self.reco_theta_lep_rad,math.sqrt(self.M_lep_sqr))
+        self.reco_E_nu_QE = KinematicsCalculator.Enu_QE(self.reco_E_lep, self.reco_P_lep, self.reco_theta_lep_rad, self.M_lep_sqr)
         self.reco_q2_cal = KinematicsCalculator.Q2_cal(self.reco_E_lep, self.reco_theta_lep_rad, self.reco_P_lep, self.M_lep_sqr, self.reco_E_nu_cal)
 
         self.reco_q3 = self.calcq3(self.reco_q2_cal,self.reco_E_nu_cal,self.reco_E_lep)
@@ -154,13 +154,12 @@ class KinematicsCalculator(object):
         self.reco_W = math.sqrt(self.reco_W2) if self.reco_W2>=0 else -1
         self.reco_Etheta2 = self.reco_E_lep * self.reco_theta_lep_rad**2
         #print(self.event.GetLowRecoilQ3(),self.reco_q3)
-        # try:
-        #     viewE = (self.event.prong_XViewE[0], self.event.prong_VViewE[0],self.event.prong_UViewE[0])
-        #     self.Ex = (viewE[0])/sum(viewE)
-        #     self.Eu = (viewE[1])/sum(viewE)
-        #     self.Ev = (viewE[2])/sum(viewE)
-        #     self.Exuv = self.Ex-self.Eu-self.Ev
-        #     self.Euv = self.Eu-self.Ev
+        viewE = (self.event.prong_XViewE[0], self.event.prong_VViewE[0],self.event.prong_UViewE[0])
+        self.Ex = (viewE[0])/sum(viewE)
+        self.Eu = (viewE[1])/sum(viewE)
+        self.Ev = (viewE[2])/sum(viewE)
+        self.Exuv = self.Ex-self.Eu-self.Ev
+        self.Euv = self.Eu-self.Ev
             #self.LLR = self.event.GetLLR()
         # except RuntimeError:
             #this ntuple does not have these variables
@@ -234,9 +233,9 @@ class KinematicsCalculator(object):
         #       print E_e, self.E_nu_QE, self.Q2_QE
 
     @staticmethod
-    def Enu_QE(E_lep, p_lep, theta_e,m_lep):
-        numerator = M_p_sqr - M_n_star_sqr - M_lep_sqr + 2 * M_n_star * E_e
-        denominator = 2 * (M_n_star - E_e + p_e * math.cos(theta_e))
+    def Enu_QE(E_lep, p_lep, theta_lep,m_lep_sqr):
+        numerator = M_p_sqr/1e6 - M_n_star_sqr/1e6 - m_lep_sqr + 2 * M_n_star/1e3 * E_lep
+        denominator = 2 * (M_n_star/1e3 - E_lep + p_lep * math.cos(theta_lep))
         
         if denominator == 0:
             return None
@@ -256,10 +255,10 @@ class KinematicsCalculator(object):
             -211: (lambda E: E-M_pion),
             111 : totalE,
             22 : totalE,
-            11 : (lanbda E:0),
-            -11: (lanbda E:0),
-            13:  (lanbda E:0),
-            -13: (lanbda E:0),
+            11 : (lambda E:0),
+            -11: (lambda E:0),
+            13:  (lambda E:0),
+            -13: (lambda E:0),
         }
         Eavail = 0.0
         for i in range(len(self.event.mc_FSPartPDG)):

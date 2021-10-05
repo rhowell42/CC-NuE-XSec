@@ -130,3 +130,4 @@ class HistWrapper(object):
 
       for i,systematicUniverse in enumerate(univVec):
         self.eventToUnivMap[systematicUniverse] = self.hist.GetVertErrorBand(systematicUniverseClass).GetHist(i)
+        systematicUniverse.ithInWrapper = i

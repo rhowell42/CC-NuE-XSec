@@ -29,9 +29,9 @@ M_p_sqr = M_p**2
 NQ3 = 8
 NQ0 = 19
 LOW_RECOIL_BIN_Q3 = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2]
-LOW_RECOIL_BIN_Q3_Truth = [0.0, 0.2, 0.3, 0.4, 0.6, 0.9, 1.2, 1.6, 2]
+LOW_RECOIL_BIN_Q3_Truth = [0.0, 0.2, 0.3, 0.4, 0.6, 0.9, 1.2]
 LOW_RECOIL_BIN_Q0_Truth = [0.0, 0.04, 0.08,0.12,0.16,0.24,
-                           0.32,0.4,0.6,0.8,1.0,1.2,1.6,2]
+                           0.32,0.4,0.6,1.0,1.2]
 BACKGROUND_FIT_Q3_BIN = [0.0, 0.6, 0.8, 1.0, 1.2, 1.6, 2]
 LOW_RECOIL_BIN_Q0 = [0.0, 0.04, 0.08,
 		             0.12, 0.16, 0.2,
@@ -251,12 +251,16 @@ HISTS_TO_MAKE = [
      "tags": {"sideband","truth_class"},
      },
 
-    {"variables":["PsiEe","Lepton Theta"],
-     "tags":{"sideband","truth_class","mc_only"},
-     },
+    # {"variables":["PsiEe","Lepton Theta"],
+    #  "tags":{"sideband","truth_class","mc_only"},
+    #  },
     {"variables":["PsiEe","Lepton Energy"],
      "tags":{"sideband","truth_class"},
      },
+    {"variables":["Neutrino Energy"],
+     "tags":{"truth_class"}},
+    {"variables":["Neutrino Energy QE"],
+     "tags":{"truth_class"}},
 
     #  {"variables":["Epi(1-cos(pi))"],
     #  "tags":{"sideband","truth_class"},
@@ -304,16 +308,23 @@ HISTS_TO_MAKE = [
     #  },
 
     "Visible Energy vs q3",
-    #"Visible Energy vs q3 Migration",
-    "True Signal Visible Energy vs q3",
+    "Visible Energy vs q3 Migration",
+    #"True Signal Visible Energy vs q3",
     "Visible Energy vs Lepton Pt Migration",
-    "True Signal Visible Energy vs Lepton Pt",
+    #"True Signal Visible Energy vs Lepton Pt",
 
     # "Q3 Migration",
     # "Lepton Pt Migration",
 
     "Lepton Energy",
     "Lepton Theta",
+
+    {"variables": ["Inline Upstream Energy","Lepton Energy"],
+     "tags":{"truth_class","sideband"}},
+    # {"variables": ["Euv"],
+    #  "tags":{"truth_class","sideband"}},
+    # {"variables": ["Exuv"],
+    #  "tags":{"truth_class","sideband"}},
     #"Lepton Energy High Inline",
     # {"variables":["W"],
     #  "tags": {"sideband","truth_class"}

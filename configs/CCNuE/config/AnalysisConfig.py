@@ -317,6 +317,10 @@ parser.add_argument("--truth",
                     action="store_true",
                     default=False)
 
+parser.add_argument("--extra_weighter",
+                    help="Name of extra weighter you want to use",
+                    default=None)
+
 
 options = parser.parse_args()
 

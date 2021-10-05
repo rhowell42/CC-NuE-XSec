@@ -1,40 +1,17 @@
 from collections import OrderedDict
 import ROOT
 
-# HIST_TO_FIT= "Q3"
-
-# SCALE_FACTORS = OrderedDict()
-# #SCALE_FACTORS["Signal"] =  [0,0.4,0.6,0.8,1.0,1.2]
-# SCALE_FACTORS["Pi0"] =  [0,0.6,0.8,1.0,1.2,1.6,2.0]
-# #SCALE_FACTORS["ExcessNorm"] =  [0,0.4,0.6,0.8,1.0,1.2]
-# #SCALE_FACTORS["NCCoh"] =  [0,0.4,0.6,0.8,1.0,1.2]
-
-# CATEGORY_FACTORS= {
-# #    "CCNuE":"Signal",
-# #    "CCNuEQE":"Signal",
-# #    "CCNuEDIS":"Signal",
-# #    "CCNuEDelta":"Signal",
-# #    "CCNuE2p2h":"Signal",
-# #    "NonPhaseSpace":"Signal",
-# #    "CCNuEAntiNu":"Signal",
-#     "NCPi0":"Pi0",
-# #    "CCPi0":"Pi0",
-#     #"NCCOH":"NCCoh",
-# #    "ExcessModel":"ExcessNorm"
-# }
-#make sure all groups have a color and defination
-#assert set(BACKGROUND_GROUP.keys())==set(BACKGROUND_GROUP_COLOR.keys())
 
 USE_NLL = True
 #HIST_TO_FIT= "Lepton Energy"
 #HIST_TO_FIT= "Q3"
 HIST_TO_FIT= "Lepton Energy"
-HIST_OBSERVABLE= "Visible Energy vs Lepton Pt"
+HIST_OBSERVABLE= {"variables":["PsiEe","Lepton Energy"]}
 
 REGULATION_PARAMETER = 0.001
 SCALE_FACTORS = OrderedDict()
 #SCALE_FACTORS["Signal"] =  [0,0.4,0.6,0.8,1.0,1.2]
-SCALE_FACTORS["Pi0"] =  [0,20]
+SCALE_FACTORS["DIS"] =  [0,20]
 #SCALE_FACTORS["Pi0"] =  [0,2.5,4,6,9,12,15,20]
 #SCALE_FACTORS["Pi0"] =  [0,2.0]
 #SCALE_FACTORS["Pi0"] =  [0,1.2,2.0]
@@ -43,22 +20,24 @@ SCALE_FACTORS["Pi0"] =  [0,20]
 #SCALE_FACTORS["Pi0"] =  [0,0.4,0.6,0.8,1.0,1.2,1.6]
 #SCALE_FACTORS["Excess"] =  [0,2.5,4,6,9,12,15,20]
 #SCALE_FACTORS["NCCoh"] =  [0,2.5,4,6,9,12,15,20]
-SCALE_FACTORS["NCCoh"] =  [0,20]
-SCALE_FACTORS["Excess"] =  [0,20]
+SCALE_FACTORS["NCCoh"] =  [0,2.5,5,7.5,10,12.5,15,20]
+SCALE_FACTORS["Excess"] =  [0,2.5,5,7.5,10,12.5,15,20]
+SCALE_FACTORS["Signal"] =  [0,20]
 #SCALE_FACTORS["NCCoh"] =  [0,2.0]
 #SCALE_FACTORS["Excess"] =  [0,2.0]
+Yaxis =True
 
 CATEGORY_FACTORS= {
-#    "CCNuE":"Signal",
-#    "CCNuEQE":"Signal",
-#    "CCNuEDIS":"Signal",
-#    "CCNuEDelta":"Signal",
-#    "CCNuE2p2h":"Signal",
-#    "NonPhaseSpace":"Signal",
-#    "CCNuEAntiNu":"Signal",
-    "NCDIS":"Pi0",
+   "CCNuE":"Signal",
+   "CCNuEQE":"Signal",
+   "CCNuEDIS":"Signal",
+   "CCNuEDelta":"Signal",
+   "CCNuE2p2h":"Signal",
+   #"NonPhaseSpace":"Signal",
+   #"CCNuEAntiNu":"Signal",
+    "NCDIS":"DIS",
 #    "NCMultiMeson": "Pi0",
-#    "CCDIS":"Pi0",
+    "CCDIS":"DIS",
     "NCCOH":"NCCoh",
     "ExcessModel":"Excess"
 }

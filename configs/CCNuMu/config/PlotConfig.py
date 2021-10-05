@@ -336,6 +336,10 @@ HISTS_TO_MAKE = [
 
     # "Q3 Migration",
     # "Lepton Pt Migration",
+    {"variables":["Neutrino Energy"],
+     "tags":{"truth_class"}},
+    {"variables":["Neutrino Energy QE"],
+     "tags":{"truth_class"}},
 
     "Lepton Energy",
     #"Lepton Energy High Inline",

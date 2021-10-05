@@ -101,12 +101,14 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
             self.LeptonP3D = self.ElectronP3D
             self.M_lep_sqr =  M_e_sqr
             self.GetCorrection = self.GetLeakageCorrection
+            return True
         else:
             self.LeptonTheta = self.GetThetamu
             self.LeptonEnergy  = self.GetEmu
             self.LeptonP3D = self.GetPmu
             self.M_lep_sqr =  M_mu_sqr
             self.GetCorrection = self.GetNuEFuzz
+            return False
 
     @property
     def nsigma(self):
@@ -209,11 +211,11 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
             return self.recoile_passive_tracker+self.recoile_passive_ecal
 
     def GetNuEFuzz(self):
-        return 0
-        #return self.blob_nuefuzz_E_tracker+self.blob_nuefuzz_E_ecal
+        #return 0
+        return (self.blob_nuefuzz_E_tracker+self.blob_nuefuzz_E_ecal) * SystematicsConfig.AVAILABLE_E_CORRECTION
 
     def GetLeakageCorrection(self):
-        return SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw())
+        return SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw()) - (10 if self.nsigma is not None else 0)
 
     def Pi0_Additional_Leakage(self):
         return random.uniform(0,20) if self.mc and (self.mc_intType == 4 or (self.mc_current==2 and self.mc_intType==10)) else 0
@@ -223,8 +225,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
     @Utilities.decorator_ReLU
     def AvailableEnergy(self):
         #return self.GetEAvail()* SystematicsConfig.AVAILABLE_E_CORRECTION
-        return (self.GetEAvail()-self.GetCorrection())* SystematicsConfig.AVAILABLE_E_CORRECTION + self.Pi0_Additional_Leakage()
-
+        return self.GetEAvail()* SystematicsConfig.AVAILABLE_E_CORRECTION -self.GetCorrection()
 
     @Utilities.decorator_ReLU
     def RecoilEnergy(self):
@@ -550,13 +551,14 @@ class GeantHadronUniverse(ROOT.PlotUtils.GeantHadronUniverse(ROOT.PythonMinervaU
 class MKModelUniverse(CVUniverse,object):
     def __init__(self,chain,nsigma):
         super(MKModelUniverse,self).__init__(chain,nsigma)
+        self.reweighter = ROOT.PlotUtils.MKReweighter(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)()
 
     def IsVerticalOnly(self):
         return True
 
     def GetStandardWeight(self):
         weight = super(MKModelUniverse,self).GetStandardWeight()
-        weight*= self.GetMKWeight()
+        weight*= self.reweighter.GetWeight(self,ROOT.PlotUtils.detail.empty())
         return weight
 
     def ShortName(self):
@@ -573,14 +575,14 @@ class MKModelUniverse(CVUniverse,object):
 class FSIWeightUniverse(CVUniverse,object):
     def __init__(self,chain,nsigma,iweight):
         super(FSIWeightUniverse,self).__init__(chain,nsigma)
-        self.iweight = iweight
+        self.reweighter = ROOT.PlotUtils.FSIReweighter(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)((iweight+1)//2,(iweight+1)%2)
 
     def IsVerticalOnly(self):
         return True
 
     def GetStandardWeight(self):
         weight = super(FSIWeightUniverse,self).GetStandardWeight()
-        weight*= self.GetFSIWeight(self.iweight)
+        weight*= self.reweighter.GetWeight(self,ROOT.PlotUtils.detail.empty())
         return weight
 
     def ShortName(self):
@@ -596,6 +598,7 @@ class FSIWeightUniverse(CVUniverse,object):
 class SusaValenciaUniverse(CVUniverse,object):
     def __init__(self,chain,nsigma):
         super(SusaValenciaUniverse,self).__init__(chain,nsigma)
+        self.reweighter = ROOT.PlotUtils.SuSAFromValencia2p2hReweighter(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)()
 
     def IsVerticalOnly(self):
         return True
@@ -614,7 +617,7 @@ class SusaValenciaUniverse(CVUniverse,object):
 
     def GetStandardWeight(self):
         weight = super(SusaValenciaUniverse,self).GetStandardWeight()
-        weight*= self.GetSuSAValencia2p2hWeight()
+        weight*= self.reweighter.GetWeight(self,ROOT.PlotUtils.detail.empty())
         return weight
 
     @staticmethod
@@ -626,7 +629,7 @@ class LeakageUniverse(CVUniverse,object):
         super(LeakageUniverse,self).__init__(chain,nsigma)
 
     def GetLeakageCorrection(self):
-        return super(LeakageUniverse,self).GetLeakageCorrection() + self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS
+        return super(LeakageUniverse,self).GetLeakageCorrection() * (1+self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS)
 
     def ShortName(self):
         return "Leakage_Uncertainty"
@@ -636,7 +639,7 @@ class LeakageUniverse(CVUniverse,object):
 
     @staticmethod
     def GetSystematicsUniverses(chain):
-        return [LeakageUniverse(chain,1)]
+        return [LeakageUniverse(chain,i) for i in OneSigmaShift]
 
 
 def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=None):
@@ -730,7 +733,8 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             #hadron reweight shifting universe
             universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
 
-            universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
+            #leakage universe
+            #universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
 
 
     # Group universes in dict.

@@ -14,9 +14,26 @@
 #include "PlotUtils/CCInclusiveCuts.h"
 #include "PlotUtils/Model.h"
 #include "PlotUtils/GENIEReweighter.h"
+#include "PlotUtils/FSIReweighter.h"
+#include "PlotUtils/FluxAndCVReweighter.h"
+#include "PlotUtils/LowRecoil2p2hReweighter.h"
+#include "PlotUtils/LowQ2PiReweighter.h"
+#include "PlotUtils/MKReweighter.h"
+#include "PlotUtils/MINOSEfficiencyReweighter.h"
+#include "PlotUtils/RPAReweighter.h"
+#include "PlotUtils/SuSAFromValencia2p2hReweighter.h"
+
 template class PlotUtils::Model<PythonMinervaUniverse>;
 template class PlotUtils::Reweighter<PythonMinervaUniverse>;
 template class PlotUtils::GENIEReweighter<PythonMinervaUniverse>;
+template class PlotUtils::FSIReweighter<PythonMinervaUniverse>;
+template class PlotUtils::FluxAndCVReweighter<PythonMinervaUniverse>;
+template class PlotUtils::LowRecoil2p2hReweighter<PythonMinervaUniverse>;
+template class PlotUtils::LowQ2PiReweighter<PythonMinervaUniverse>;
+template class PlotUtils::MKReweighter<PythonMinervaUniverse>;
+template class PlotUtils::MINOSEfficiencyReweighter<PythonMinervaUniverse>;
+template class PlotUtils::RPAReweighter<PythonMinervaUniverse>;
+template class PlotUtils::SuSAFromValencia2p2hReweighter<PythonMinervaUniverse>;
 template class PlotUtils::BeamAngleXUniverse<PythonMinervaUniverse>;
 template class PlotUtils::BeamAngleYUniverse<PythonMinervaUniverse>;
 template class PlotUtils::FluxUniverse<PythonMinervaUniverse>;
@@ -35,3 +52,5 @@ template class reco::HasMINOSMatch<PythonMinervaUniverse>;
 template class reco::ZRange<PythonMinervaUniverse>;
 template class reco::Apothem<PythonMinervaUniverse>;
 #endif /* CVUNIVERSEPYTHONBINDING_H */
+
+

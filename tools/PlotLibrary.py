@@ -99,6 +99,7 @@ VARIABLE_DICT = {
         "value_getter": lambda event: (TruthTools.LeadingParticleEnergy(event,111,False) or -1.0)/1e3
     },
 
+    
     "NuEFuzz Muon" : {
         "name":"NuECone_E_muon",
         "title":"Muon Contribution in Cone(MeV)",
@@ -443,7 +444,14 @@ VARIABLE_DICT = {
 
         "binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
         "value_getter" : lambda event: event.kin_cal.reco_E_nu_cal,
-        "dec" : ["high"]
+    },
+     "Neutrino Energy QE":
+    {
+        "name" : "Enu_qe",
+        "title" : "E_{#nu}^{QE} (GeV)",
+
+        "binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
+        "value_getter" : lambda event: event.kin_cal.reco_E_nu_QE,
     },
     "Start Multiplicity":
     {

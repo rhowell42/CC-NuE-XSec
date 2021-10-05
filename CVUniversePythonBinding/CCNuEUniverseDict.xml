@@ -22,5 +22,11 @@
     <class name="PlotUtils::Model<PythonMinervaUniverse,PlotUtils::detail::empty>" />
     <class name="PlotUtils::Reweighter<PythonMinervaUniverse,PlotUtils::detail::empty>" />
     <class name="PlotUtils::GENIEReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+    <class name="PlotUtils::FSIReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+    <class name="PlotUtils::LowQ2PiReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+    <class name="PlotUtils::MKReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+    <class name="PlotUtils::MINOSEfficiencyReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+    <class name="PlotUtils::RPAReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+    <class name="PlotUtils::SuSAFromValencia2p2hReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>" />
 </lcgdict>
 

@@ -98,7 +98,7 @@ if "PLOTUTILSROOT" in os.environ:
         setattr(PlotUtils, cls, getattr(ROOT.PlotUtils, cls))
   # ROOT wont add templated function to object attribute until explicitly access?
 else:
-    print("Note: $PLOTUTILSROOT is not defined in the current environment.  PlotUtils libraries were not loaded.", file=sys.stderr)
+    print("Note: $PLOTUTILSROOT is not defined in the current environment.  PlotUtils libraries were not loaded.")
 	
 # now that ROOT has done its thing,
 # we can restore the arguments...

@@ -155,7 +155,7 @@ CUT_CONFIGS = {
     },
 
     "StartPointVertexMultiplicity": {
-        "cut_fn": REQUIRE_POSITIVE_INT,
+        "cut_fn": REQUIRE_UNITY_INT,
         "variable_range": list(range(0,6))
     },
 

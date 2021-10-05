@@ -93,7 +93,7 @@ SAMPLE_CUTS = {
         #"Exuv",
         #"Euv",
         # rejection high recoil events
-        #"StartPointVertexMultiplicity",
+        "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
         # Pi0 rejection
         "MeanFrontdEdX",
@@ -132,6 +132,7 @@ SAMPLE_CUTS = {
         "ODCalVisE",
         "HasNoVertexMismatch",
         "VertexTrackMultiplicity",
+        "StartPointVertexMultiplicity",
         #"Psi",         #differnt from signal
         "NonMIPClusFrac",
         "TransverseGapScore",
@@ -155,6 +156,7 @@ SAMPLE_CUTS = {
         "ODCalVisE",
         "HasNoVertexMismatch",
         "VertexTrackMultiplicity",
+         "StartPointVertexMultiplicity",
         #"Psi",         #differnt from signal
         "NonMIPClusFrac",
         "TransverseGapScore",
