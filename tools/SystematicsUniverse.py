@@ -161,7 +161,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
 
     @Utilities.decorator_ReLU
     def ElectronEnergy(self):
-        return self.ElectronEnergyRaw() + self.GetCorrection() + self.GetEMEnergyShift()
+        return self.ElectronEnergyRaw() + self.GetEMEnergyShift()
 
     def ElectronP3D(self):
         allp = self.GetVecOfVecDouble("prong_part_E")

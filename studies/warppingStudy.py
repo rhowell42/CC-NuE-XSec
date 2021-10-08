@@ -332,7 +332,7 @@ if __name__ == '__main__':
           print(e)
           continue
 
-      ConsolidateInputs(ifile,model_migration,model_signal,model_truth,data_signal,data_truth)
+      ConsolidateInputs(ifile,model_migration,model_reco,model_truth,data_reco,data_truth)
       njobs = 11#int(math.ceil(1.0*NUniverses/NUniverses_per_job))
       cmdString = "CCNuE-%s-%s" % (playlist,"mc")
       #wrapper.setup(migration,cv_reco,cv_bkg)

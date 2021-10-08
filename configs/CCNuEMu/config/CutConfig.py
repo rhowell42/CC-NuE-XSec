@@ -69,38 +69,38 @@ FRONT_DEDX_PI0_UPPERBOUND = 5
 # choose the cuts you want from cut library
 
 SAMPLE_CUTS = {
-    # "Signal" : [
-    #     #precuts
-    #     "NoCut",
-    #     "HasNoBackExitingTracks",
-    #     "HasNoNonEMExitingTracks",
-    #     "HasTracks",
-    #     #fiducial vertex
-    #     #"HasFiducialVertex",
-    #     #"Vertex_Z_Centralized",
-    #     "Vertex_Z",
-    #     "Vertex_Apothem",
-    #     #EM shower quality
-    #     "EMLikeTrackScore",
-    #     "DSCalVisE",
-    #     "ODCalVisE",
-    #     "DeadTime",
-    #     "Afterpulsing",
-    #     "NonMIPClusFrac",
-    #     "TransverseGapScore",
-    #     "HasNoVertexMismatch",
-    #     #"RecoQ3",
-    #     #"Exuv",
-    #     #"Euv",
-    #     # rejection high recoil events
-    #     #"StartPointVertexMultiplicity",
-    #     "VertexTrackMultiplicity",
-    #     # Pi0 rejection
-    #     "MeanFrontdEdX",
-    #     "Eavail"
-    #     #"LLR",
-    #     #"Psi",
-    # ],
+    "Signal" : [
+        #precuts
+        "NoCut",
+        "HasNoBackExitingTracks",
+        #"HasNoNonEMExitingTracks",
+        "HasTracks",
+        #fiducial vertex
+        #"HasFiducialVertex",
+        #"Vertex_Z_Centralized",
+        "Vertex_Z",
+        "Vertex_Apothem",
+        #EM shower quality
+        "EMLikeTrackScore",
+        "DSCalVisE",
+        "ODCalVisE",
+        "DeadTime",
+        "Afterpulsing",
+        "NonMIPClusFrac",
+        "TransverseGapScore",
+        "HasNoVertexMismatch",
+        #"RecoQ3",
+        #"Exuv",
+        #"Euv",
+        # rejection high recoil events
+        "StartPointVertexMultiplicity",
+        "VertexTrackMultiplicity",
+        # Pi0 rejection
+        "MeanFrontdEdX",
+        "Eavail"
+        #"LLR",
+        #"Psi",
+    ],
     # "High_Psi" : [
     #     "NoCut",
     #     "HasFiducialVertex",
@@ -120,54 +120,56 @@ SAMPLE_CUTS = {
     #     "DeadTime",
     #     "Afterpulsing",
     # ],
-    # "Excess_Low_Inline" : [
-    #     "HasNoNonEMExitingTracks",
-    #     "NoCut",
-    #     "HasTracks",
-    #     "HasNoBackExitingTracks",
-    #     "Vertex_Z",
-    #     "Vertex_Apothem",
-    #     "EMLikeTrackScore",
-    #     "DSCalVisE",
-    #     "ODCalVisE",
-    #     "HasNoVertexMismatch",
-    #     "VertexTrackMultiplicity",
-    #     "Psi",         #differnt from signal
-    #     "NonMIPClusFrac",
-    #     "TransverseGapScore",
-    #     "DeadTime",
-    #     "Afterpulsing",
-    #     "Eavail",
-    #     "InverseMeanFrontdEdX",
-    #     "Low UIE",
-    #     #"Exuv",
-    #     #"Euv"
-    # ],
-    #  "Excess_High_Inline" : [
-    #     "HasNoNonEMExitingTracks",
-    #     "NoCut",
-    #     "HasTracks",
-    #     "HasNoBackExitingTracks",
-    #     "Vertex_Z",
-    #     "Vertex_Apothem",
-    #     "EMLikeTrackScore",
-    #     "DSCalVisE",
-    #     "ODCalVisE",
-    #     "HasNoVertexMismatch",
-    #     "VertexTrackMultiplicity",
-    #     "Psi",         #differnt from signal
-    #     "NonMIPClusFrac",
-    #     "TransverseGapScore",
-    #     "DeadTime",
-    #     "Afterpulsing",
-    #     "Eavail",
-    #     "InverseMeanFrontdEdX",
-    #     "High UIE",
-    #     #"Exuv",
-    #     #"Euv"
-    # ],
+    "Excess_Low_Inline" : [
+        #"HasNoNonEMExitingTracks",
+        "NoCut",
+        "HasTracks",
+        "HasNoBackExitingTracks",
+        "Vertex_Z",
+        "Vertex_Apothem",
+        "EMLikeTrackScore",
+        "DSCalVisE",
+        "ODCalVisE",
+        "HasNoVertexMismatch",
+        "VertexTrackMultiplicity",
+        "StartPointVertexMultiplicity",
+        #"Psi",         #differnt from signal
+        "NonMIPClusFrac",
+        "TransverseGapScore",
+        "DeadTime",
+        "Afterpulsing",
+        "Eavail",
+        "InverseMeanFrontdEdX",
+        "Low UIE",
+        #"Exuv",
+        #"Euv"
+    ],
+     "Excess_High_Inline" : [
+        #"HasNoNonEMExitingTracks",
+        "NoCut",
+        "HasTracks",
+        "HasNoBackExitingTracks",
+        "Vertex_Z",
+        "Vertex_Apothem",
+        "EMLikeTrackScore",
+        "DSCalVisE",
+        "ODCalVisE",
+        "HasNoVertexMismatch",
+        "VertexTrackMultiplicity",
+         "StartPointVertexMultiplicity",
+        #"Psi",         #differnt from signal
+        "NonMIPClusFrac",
+        "TransverseGapScore",
+        "DeadTime",
+        "Afterpulsing",
+        "Eavail",
+        "InverseMeanFrontdEdX",
+        "High UIE",
+        #"Exuv",
+        #"Euv"
+    ],
     # "Pi0" : [
-    #     "HasNoNonEMExitingTracks",
+    #     #"HasNoNonEMExitingTracks",
     #     "NoCut",
     #     "Vertex_Z",
     #     "Vertex_Apothem",
@@ -188,8 +190,8 @@ SAMPLE_CUTS = {
     #     #"Exuv",
     #     #"Euv"
     # ],
-    "Signal" : [
-        "InverseHasNoBackExitingTracks",
+    "Muon" : [
+        "HasMINOSMatch",
         "Vertex_Z",
         "Vertex_Apothem",
         "Neutrino Helicity",
@@ -198,7 +200,7 @@ SAMPLE_CUTS = {
 
 KINEMATICS_CUTS = [
     "LeptonEnergy",
-    "LeptonAngle",
+    "ElectronAngle",
     #"NeutrinoEnergy",
     #"Q3"
 ]
