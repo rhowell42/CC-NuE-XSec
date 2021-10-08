@@ -119,7 +119,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
             return self.weight
 
         if self.nsigma is None:
-            self.weight = 1.0
+            self.weight = MyWeighter.GetWeight(self)
         else:
             #self.weight = self.GetPCWeight() if self.is_pc else self.GetStandardWeight()
             self.weight = self.GetModelWeight() if self.is_pc else self.GetStandardWeight()

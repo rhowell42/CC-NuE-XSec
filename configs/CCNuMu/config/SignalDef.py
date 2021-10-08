@@ -65,7 +65,7 @@ SIGNAL_DEFINATION = [
     "CCQE",
     "CCDelta",
     "CC2p2h",
-    "CCEDIS",
+    "CCDIS",
     "CCOther"
 ]
 

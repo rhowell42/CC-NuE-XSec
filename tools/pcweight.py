@@ -154,39 +154,57 @@ class MyWeighterBase(object):
         v = self.fvalue(universe)
         if v is None:
             return 1
-        if universe.ShortName() != "cv":
+        if hist.HasVertErrorBand(universe.ShortName()):
             errorhist = hist.GetVertErrorBand(universe.ShortName()).GetHist(universe.ithInWrapper)
         else:
             errorhist = hist
         return errorhist.GetBinContent(hist.FindBin(v))
 
     def GetWeight(self,universe):
+        if universe.nsigma is None:
+            return 1
         if universe.classifier.truth_class in self.cate_map:
             return self.cate_map[universe.classifier.truth_class](universe)
         else:
             return 1
 
-class FileBasedWeighter(MyWeighterBase):
-    def __init__(self,file_path,fvalue=None):
-        super(FileBasedWeighter,self).__init__(fvalue)
-        self.f = ROOT.TFile.Open(file_path)
+class DataWeight(MyWeighterBase):
+    def __init__(self,fvalue=None):
+        super(DataWeight,self).__init__(fvalue)
+        self.weighter = lambda v :1
 
-class EelTuningWeight(FileBasedWeighter):
+    def GetWeight(self,universe):
+        return self.weighter(universe)
+
+class EelTuningWeight(MyWeighterBase):
     def __init__(self):
-        super(EelTuningWeight,self).__init__("{}/background_fit/bkgfit_scale.root".format(os.environ["CCNUEROOT"]), lambda universe:universe.kin_cal.reco_E_lep)
-        self.cate_map["NCDIS"] = partial(self.fileBasedWeight,hist=self.f.Get("DIS"))
-        self.cate_map["CCDIS"] = partial(self.fileBasedWeight,hist=self.f.Get("DIS"))
-        self.cate_map["ExcessModel"] = partial(self.fileBasedWeight,hist=self.f.Get("Excess"))
-        self.cate_map["NCCOH"] = partial(self.fileBasedWeight,hist=self.f.Get("NCCoh"))
-        self.cate_map["CCNuEQE"] = partial(self.fileBasedWeight,hist=self.f.Get("Signal"))
-        self.cate_map["CCNuEDelta"] = partial(self.fileBasedWeight,hist=self.f.Get("Signal"))
-        self.cate_map["CCNuE2p2h"] = partial(self.fileBasedWeight,hist=self.f.Get("Signal"))
-        self.cate_map["CCNuEDIS"] = partial(self.fileBasedWeight,hist=self.f.Get("Signal"))
-        self.cate_map["CCNuE"] = partial(self.fileBasedWeight,hist=self.f.Get("Signal"))
+        super(EelTuningWeight,self).__init__( lambda universe:universe.kin_cal.reco_E_lep)
+        self.f = ROOT.TFile.Open("{}/background_fit/bkgfit_scale.root".format(os.environ["CCNUEROOT"]))
+        self.hist_dict = {i:self.f.Get(i) for i in ["DIS","Excess","NCCoh","Signal"]}
+
+        self.cate_map["NCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["DIS"])
+        self.cate_map["CCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["DIS"])
+        self.cate_map["ExcessModel"] = partial(self.fileBasedWeight,hist=self.hist_dict["Excess"])
+        self.cate_map["NCCOH"] = partial(self.fileBasedWeight,hist=self.hist_dict["NCCoh"])
+        self.cate_map["CCNuEQE"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+        self.cate_map["CCNuEDelta"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+        self.cate_map["CCNuE2p2h"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+        self.cate_map["CCNuEDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+        self.cate_map["CCNuE"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+
+class EnuElectronMuonWeight(DataWeight):
+    def __init__(self):
+        super(EnuElectronMuonWeight,self).__init__(lambda universe:universe.kin_cal.reco_E_nu_cal)
+        self.f = ROOT.TFile.Open("{}/studies/emu_scale.root".format(os.environ["CCNUEROOT"]))
+        self.h = self.f.Get("signal_ratio")
+        self.h.ClearAllErrorBands()
+        self.weighter = partial(self.fileBasedWeight,hist=self.h)
 
 if AnalysisConfig.extra_weighter is None:
     MyWeighter = MyWeighterBase()
 elif AnalysisConfig.extra_weighter =="Eel_tune":
     MyWeighter = EelTuningWeight()
+elif AnalysisConfig.extra_weighter =="emu_weight":
+    MyWeighter = EnuElectronMuonWeight()
 else:
     raise ValueError("Unknown extra weighter")

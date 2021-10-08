@@ -33,12 +33,13 @@ def createTarball(outDir):
 Iterations = "1,2,3,4,5,6,7,8,9,10,15"
 #Iterations= "1"
 NUniverses =100
-MaxChi2 =10000
-stepChi2 = 50
+MaxChi2 =600
+stepChi2 = MaxChi2//200
 remove=""#"163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180"
 NUniverses_per_job = 100
 K=0
 Sys_on_Data=True
+Additional_uncertainties = [0,1,2,3,4,5,6,7,8,9,10]
 
 def unpackTarball( mywrapper):
   # Add lines to wrapper that wil unpack tarball; add additional setup steps here if necessary  
@@ -83,7 +84,7 @@ def submitJob( tupleName,tag):
 
   my_wrapper.write("readlink -f `which TransWarpExtraction` &> $CONDOR_DIR_OUTPUT/log_{tag}_$PROCESS\n".format(tag=tag)) 
   pot_scale=1
-  my_wrapper.write("TransWarpExtraction -o $CONDOR_DIR_OUTPUT/transWrap_{tag}_$PROCESS.root -d data -D $CONDOR_DIR_INPUT/{iput} -i data_truth -I $CONDOR_DIR_INPUT/{iput} -m migration -M $CONDOR_DIR_INPUT/{iput} -r reco -R $CONDOR_DIR_INPUT/{iput} -t reco_truth -T $CONDOR_DIR_INPUT/{iput} -n {Iter} -z {dimension} -u {NUniverse} -c {max_chi2} -C {step_chi2} -b -L -f 4.0 &>> $CONDOR_DIR_OUTPUT/log_{tag}_$PROCESS\n".format(tag=tag,iput=ifile,Iter=Iterations,dimension=dimension,NUniverse=NUniverses_per_job,max_chi2=MaxChi2,step_chi2=stepChi2))
+  my_wrapper.write("TransWarpExtraction -o $CONDOR_DIR_OUTPUT/transWrap_{tag}_$PROCESS.root -d data -D $CONDOR_DIR_INPUT/{iput} -i data_truth -I $CONDOR_DIR_INPUT/{iput} -m migration -M $CONDOR_DIR_INPUT/{iput} -r reco -R $CONDOR_DIR_INPUT/{iput} -t reco_truth -T $CONDOR_DIR_INPUT/{iput} -n {Iter} -z {dimension} -u {NUniverse} -c {max_chi2} -C {step_chi2} -b -L -f $PROCESS &>> $CONDOR_DIR_OUTPUT/log_{tag}_$PROCESS\n".format(tag=tag,iput=ifile,Iter=Iterations,dimension=dimension,NUniverse=NUniverses_per_job,max_chi2=MaxChi2,step_chi2=stepChi2))
 
   my_wrapper.write("exit $?\n")
   #my_wrapper.write( "python eventSelection.py -p %s --grid --%s-only --ntuple_tag %s --count %d %d  --output $CONDOR_DIR_HISTS %s \n" % (playlist, dataSwitch, gridargs.ntuple_tag, start, count, argstring) )
@@ -116,17 +117,24 @@ def submitJob( tupleName,tag):
 
 
 def ConsolidateInputs(Temp_path,mig,reco,reco_truth,data,data_truth):
-  f = ROOT.TFile(Temp_path,"RECREATE")
-  #DoFancyTuneToMigration(mig,reco,reco_truth,data_truth,K)
-  for name,h in [("data",data),("data_truth",data_truth)]:
-    h = h.Clone("{}_dataclone".format(name))
+  def scale(hi):
+    h = hi.Clone("{}_clone".format(name))
     h.Scale(1e21/mc_pot)
     for i in range(h.GetSize()):
       h.SetBinError(i,math.sqrt(h.GetBinContent(i)))
-    h.Write(name)
-  mig.Write("migration")
-  reco_truth.Write("reco_truth")
-  reco.Write("reco")
+    return h
+  scale_dict = {
+    "data","data_truth",
+    "reco","reco_truth","migration"
+  }
+  f = ROOT.TFile(Temp_path,"RECREATE")
+  #DoFancyTuneToMigration(mig,reco,reco_truth,data_truth,K)
+  for name,h in [("data",data),("data_truth",data_truth),("migration",mig),("reco_truth",reco_truth),("reco",reco)]:
+    if name in scale_dict:
+      tmp = scale(h)
+      tmp.Write(name)
+    else:
+      h.Write(name)
   f.Close()
 
 
@@ -218,31 +226,31 @@ def ConsolidateInputs(Temp_path,mig,reco,reco_truth,data,data_truth):
 #   ifile.Close()
 
 def RunTransWrapper(ifile,ofile):
-  cmd = "TransWarpExtraction -o {output} -d data -D {iput} -i data_truth -I {iput} -m migration -M {iput} -r reco -R {iput} -t reco_truth -T {iput} -n {Iter} -z {dimension} -u {NUniverse} -c {max_chi2} -C {step_chi2} {remove} -b -L -f 4.0".format(output=ofile,iput=ifile,Iter=Iterations,dimension=dimension,NUniverse=NUniverses,max_chi2=MaxChi2,step_chi2=stepChi2,remove="-x {}".format(remove) if remove else "")
+  cmd = "TransWarpExtraction -o {output} -d data -D {iput} -i data_truth -I {iput} -m migration -M {iput} -r reco -R {iput} -t reco_truth -T {iput} -n {Iter} -z {dimension} -u {NUniverse} -c {max_chi2} -C {step_chi2} {remove} -b -L ".format(output=ofile,iput=ifile,Iter=Iterations,dimension=dimension,NUniverse=NUniverses,max_chi2=MaxChi2,step_chi2=stepChi2,remove="-x {}".format(remove) if remove else "")
   print(cmd)
   os.system(cmd)
 
 
 AlternativeModels = {
-  #"CV":None,
-  "LowQ2Pi0": ("LowQ2Pi",0),
-  "LowQ2Pi1": ("LowQ2Pi",1),
-  "LowQ2Pi2": ("LowQ2Pi",2),
-  "LowQ2Pi3": ("LowQ2Pi",3),
-  "2p2h0": ("Low_Recoil_2p2h_Tune",0),
-  "2p2h1": ("Low_Recoil_2p2h_Tune",1),
-  "2p2h2": ("Low_Recoil_2p2h_Tune",2),
-  "RPA_highq20" :("RPA_HighQ2",0),
-  "RPA_highq21" :("RPA_HighQ2",1),
-  "RPA_lowq20" :("RPA_LowQ2",0),
-  "RPA_lowq21" :("RPA_LowQ2",1),
+  "CV":None,
+  # "LowQ2Pi0": ("LowQ2Pi",0),
+  # "LowQ2Pi1": ("LowQ2Pi",1),
+  # "LowQ2Pi2": ("LowQ2Pi",2),
+  # "LowQ2Pi3": ("LowQ2Pi",3),
+  # "2p2h0": ("Low_Recoil_2p2h_Tune",0),
+  # "2p2h1": ("Low_Recoil_2p2h_Tune",1),
+  # "2p2h2": ("Low_Recoil_2p2h_Tune",2),
+  # "RPA_highq20" :("RPA_HighQ2",0),
+  # "RPA_highq21" :("RPA_HighQ2",1),
+  # "RPA_lowq20" :("RPA_LowQ2",0),
+  # "RPA_lowq21" :("RPA_LowQ2",1),
   "MK_Model":("MK_model",0),
-  "FSI_Weight0":("fsi_weight",0),
-  "FSI_Weight1":("fsi_weight",1),
-  "FSI_Weight2":("fsi_weight",2),
-  "SuSA2p2h":("SuSA_Valencia_Weight",0),
-  "GenieMaCCQE_UP":("GENIE_MaCCQE",1),
-  "GenieMaCCQE_DOWN":("GENIE_MaCCQE",0),
+  # "FSI_Weight0":("fsi_weight",0),
+  # "FSI_Weight1":("fsi_weight",1),
+  # "FSI_Weight2":("fsi_weight",2),
+  # "SuSA2p2h":("SuSA_Valencia_Weight",0),
+  # "GenieMaCCQE_UP":("GENIE_MaCCQE",1),
+  # "GenieMaCCQE_DOWN":("GENIE_MaCCQE",0),
 }
 
 Measurables = [
@@ -324,14 +332,8 @@ if __name__ == '__main__':
           print(e)
           continue
 
-      #ConsolidateInputs(ifile,model_migration,model_signal,model_truth,data_signal,data_truth)
-      #ConsolidateInputs(ifile,model_migration,data_reco,data_truth,model_reco,model_truth)
-      ConsolidateInputs(ifile,model_migration,model_reco,model_truth,data_reco,data_truth)
-      #ConsolidateInputs(ifile,model_migration,model_signal,model_truth,data_signal,model_truth)
-      #ConsolidateInputs(ifile,model_migration,model_reco,model_truth,data_reco,model_truth)
-      #ConsolidateInputs(ifile,model_migration,model_signal,model_truth,model_signal,data_truth)
-      
-      njobs = int(math.ceil(1.0*NUniverses/NUniverses_per_job))
+      ConsolidateInputs(ifile,model_migration,model_signal,model_truth,data_signal,data_truth)
+      njobs = 11#int(math.ceil(1.0*NUniverses/NUniverses_per_job))
       cmdString = "CCNuE-%s-%s" % (playlist,"mc")
       #wrapper.setup(migration,cv_reco,cv_bkg)
       #MyUnfoldWrapper(ifile)
