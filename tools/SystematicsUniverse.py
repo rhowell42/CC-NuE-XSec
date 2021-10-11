@@ -95,7 +95,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         super(CVUniverse,self).SetEntry(n_entry)
 
     def SetLeptonType(self):
-        if self.HasNoBackExitingTracks:
+        if self.GetAnaToolName() != "MasterAnaDev" or self.HasNoBackExitingTracks:
             self.LeptonTheta = self.ElectronTheta
             self.LeptonEnergy = self.ElectronEnergy
             self.LeptonP3D = self.ElectronP3D
@@ -215,7 +215,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         return (self.blob_nuefuzz_E_tracker+self.blob_nuefuzz_E_ecal) * SystematicsConfig.AVAILABLE_E_CORRECTION
 
     def GetLeakageCorrection(self):
-        return SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw()) - (10 if self.nsigma is not None else 0)
+        return max(0,SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw()) - (10 if self.nsigma is not None else 0),0)
 
     def Pi0_Additional_Leakage(self):
         return random.uniform(0,20) if self.mc and (self.mc_intType == 4 or (self.mc_current==2 and self.mc_intType==10)) else 0
@@ -629,7 +629,8 @@ class LeakageUniverse(CVUniverse,object):
         super(LeakageUniverse,self).__init__(chain,nsigma)
 
     def GetLeakageCorrection(self):
-        return super(LeakageUniverse,self).GetLeakageCorrection() * (1+self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS)
+        #return super(LeakageUniverse,self).GetLeakageCorrection() * (1+self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS)
+        return super(LeakageUniverse,self).GetLeakageCorrection() + self.nsigma*10
 
     def ShortName(self):
         return "Leakage_Uncertainty"
@@ -695,7 +696,6 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             # universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
             # #beam angle shift universe
             universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
-
             #particle response shift universe
             universes.extend(ResponseUniverse.GetSystematicsUniverses(chain ))
 
@@ -713,7 +713,6 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             # #RPA universe:
             universes.extend(RPAUniverse.GetSystematicsUniverses(chain ))
 
-            # #Non resonant pion universe
 
             # # #LowQ2PionUniverse
             universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
@@ -734,7 +733,7 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
 
             #leakage universe
-            #universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
 
 
     # Group universes in dict.

@@ -4,17 +4,20 @@ import datetime as dt
 import PlotUtils
 import UnfoldUtils
 from multiprocessing import Process
+from tools import PlotTools,Utilities
 
 ROOT.TH1.AddDirectory(False)
 numufile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1A_nx_muon_incmuon.root"
 nuefile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1A_nx_electron_incmuon.root"
-
-hist_name = "Enu"
+numuweightedfile =  {
+    "mc":"/minerva/data/users/hsu/nu_e/kin_dist_mcme1A_nx_muon_weighted_incmuon.root",
+    "data":"/minerva/data/users/hsu/nu_e/kin_dist_datame1A_nx_muon_weighted_incmuon.root"
+}
 
 MU_SIGNALS = ["CCQE","CCDelta","CC2p2h","CCDIS","CCOther"]
 E_SIGNALS = ["CCNuEQE","CCNuEDelta","CCNuE2p2h","CCNuEDIS","CCNuE"]
 
-def GetSignalHist(f,signals):
+def GetSignalHist(f,signals,hist_name):
     h = f.Get(hist_name).Clone()
     h.Reset()
     for i in signals:
@@ -24,17 +27,50 @@ def GetSignalHist(f,signals):
         h.Add(t)
     return h
 
-if __name__ == "__main__":
+def MakeScaleFile():
+    hist_name = "Enu"
     Fout = ROOT.TFile.Open("emu_scale.root","RECREATE")
     fe = ROOT.TFile.Open(nuefile)
+    ePOT = Utilities.getPOTFromFile(nuefile)
     fmu = ROOT.TFile.Open(numufile)
-    he = GetSignalHist(fe,E_SIGNALS)
-    hmu = GetSignalHist(fmu,MU_SIGNALS)
+    muPOT = Utilities.getPOTFromFile(nuefile)
+    he = GetSignalHist(fe,E_SIGNALS,hist_name)
+    hmu = GetSignalHist(fmu,MU_SIGNALS,hist_name)
     he.AddMissingErrorBandsAndFillWithCV(hmu)
     hmu.AddMissingErrorBandsAndFillWithCV(he)
+    hmu.Scale(ePOT/muPOT)
     Fout.cd()
     he.Divide(he,hmu)
     he.Write("signal_ratio")
     fe.Close()
     fmu.Close()
     Fout.Close()
+
+def MakeCompPlot():
+    def getFileAndPOT(filename):
+        POT = Utilities.getPOTFromFile(filename)
+        f = ROOT.TFile.Open(filename)
+        return f,POT
+    def Draw(mnvplotter,data_hist,mc_hist1,mc_hist2):
+        data_hist.Draw("E1 X0")
+        mc_hist1.SetLineColor(ROOT.kRed)
+        mc_hist1.Draw("HIST SAME")
+        mc_hist2.SetLineColor(ROOT.kGreen)
+        mc_hist2.Draw("HIST SAME")
+
+    nueMCfile,nueMCPOT = getFileAndPOT(nuefile)
+    numuMCfile,numuMCPOT = getFileAndPOT(numuweightedfile["mc"])
+    numuDatafile,numuDataPOT = getFileAndPOT(numuweightedfile["data"])
+    print (nueMCPOT,numuDataPOT,numuMCPOT)
+    hist_name = "Eavail_q3"
+    he = GetSignalHist(nueMCfile,E_SIGNALS,hist_name)
+    hmu = GetSignalHist(numuMCfile,MU_SIGNALS,hist_name)
+    hmu.Scale(numuDataPOT/numuMCPOT)
+    he.Scale(numuDataPOT/nueMCPOT)
+    hmudata = numuDatafile.Get(hist_name)
+    PlotTools.MakeGridPlot(PlotTools.Make2DSlice,Draw,[hmudata,he,hmu])
+    PlotTools.Print("test")
+
+if __name__ == "__main__":
+    #MakeCompPlot()
+    MakeScaleFile()

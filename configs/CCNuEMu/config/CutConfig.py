@@ -200,7 +200,7 @@ SAMPLE_CUTS = {
 
 KINEMATICS_CUTS = [
     "LeptonEnergy",
-    "ElectronAngle",
+    "LeptonAngle",
     #"NeutrinoEnergy",
     #"Q3"
 ]
