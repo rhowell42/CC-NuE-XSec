@@ -16,7 +16,7 @@ DefaultSlicer = PlotTools.PrepareSlicer
 COLORS=ROOT.MnvColors.GetColors()
 Categories = OrderedDict()
 Categories["ExcessModel"] = {
-    "title":"Ad hoc excess model",
+    "title":"NC DFR",
     "color" : COLORS[2]
 }
 Categories["CCNuE"]={
@@ -173,16 +173,11 @@ PLOTS_TO_MAKE = [
      "sideband_group": ("Excess",("Excess_High_Inline","Excess_Low_Inline")),
      },
     {"variables":["PsiEe","Lepton Energy"],
-     "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
-     "sideband_group": ("Excess",("Excess_High_Inline","Excess_Low_Inline")),
-     },
-     {"variables":["PsiEe","Lepton Energy"],
-     "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
-     },
-     {"name":"Lepton Theta",
-     "sideband_group": ("Excess",("Excess_High_Inline","Excess_Low_Inline")),
-     },
-    
+     "slicer": PlotTools.ProjectionY},
+     # {"variables":["PsiEe","Lepton Energy"],
+     # "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
+     # },
+     {"name":"Lepton Theta"},
     # {"name":"Q0",
     #  "plot_type" : "err",},
     # {"name":"Q3",

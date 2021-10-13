@@ -7,8 +7,8 @@ from multiprocessing import Process
 from tools import PlotTools,Utilities
 
 ROOT.TH1.AddDirectory(False)
-numufile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1A_nx_muon_incmuon.root"
-nuefile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1A_nx_electron_incmuon.root"
+numufile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme_t_muon_incmuon.root"
+nuefile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme_t_electron_incmuon.root"
 numuweightedfile =  {
     "mc":"/minerva/data/users/hsu/nu_e/kin_dist_mcme1A_nx_muon_weighted_incmuon.root",
     "data":"/minerva/data/users/hsu/nu_e/kin_dist_datame1A_nx_muon_weighted_incmuon.root"
@@ -34,6 +34,7 @@ def MakeScaleFile():
     ePOT = Utilities.getPOTFromFile(nuefile)
     fmu = ROOT.TFile.Open(numufile)
     muPOT = Utilities.getPOTFromFile(nuefile)
+    print(ePOT,muPOT)
     he = GetSignalHist(fe,E_SIGNALS,hist_name)
     hmu = GetSignalHist(fmu,MU_SIGNALS,hist_name)
     he.AddMissingErrorBandsAndFillWithCV(hmu)
@@ -54,7 +55,7 @@ def MakeCompPlot():
     def Draw(mnvplotter,data_hist,mc_hist1,mc_hist2):
         data_hist.Draw("E1 X0")
         mc_hist1.SetLineColor(ROOT.kRed)
-        mc_hist1.Draw("HIST SAME")
+        mc_hist1.Draw("HIST E1 SAME")
         mc_hist2.SetLineColor(ROOT.kGreen)
         mc_hist2.Draw("HIST SAME")
 
@@ -62,15 +63,16 @@ def MakeCompPlot():
     numuMCfile,numuMCPOT = getFileAndPOT(numuweightedfile["mc"])
     numuDatafile,numuDataPOT = getFileAndPOT(numuweightedfile["data"])
     print (nueMCPOT,numuDataPOT,numuMCPOT)
-    hist_name = "Eavail_q3"
-    he = GetSignalHist(nueMCfile,E_SIGNALS,hist_name)
-    hmu = GetSignalHist(numuMCfile,MU_SIGNALS,hist_name)
-    hmu.Scale(numuDataPOT/numuMCPOT)
-    he.Scale(numuDataPOT/nueMCPOT)
-    hmudata = numuDatafile.Get(hist_name)
-    PlotTools.MakeGridPlot(PlotTools.Make2DSlice,Draw,[hmudata,he,hmu])
-    PlotTools.Print("test")
+    for hist_name in [ "Eavail_q3", "Enu" ,"Eavail_Lepton_Pt"]:
+        he = GetSignalHist(nueMCfile,E_SIGNALS,hist_name)
+        hmu = GetSignalHist(numuMCfile,MU_SIGNALS,hist_name)
+        hmu.Scale(numuDataPOT/numuMCPOT)
+        he.Scale(numuDataPOT/nueMCPOT)
+        hmudata = numuDatafile.Get(hist_name)
+        Slicer = PlotTools.Make2DSlice if he.GetDimension()==2 else (lambda hist : [hist])
+        PlotTools.MakeGridPlot(Slicer,Draw,[hmudata,he,hmu])
+        PlotTools.Print("{}".format(hist_name))
 
 if __name__ == "__main__":
-    #MakeCompPlot()
-    MakeScaleFile()
+    MakeCompPlot()
+    #MakeScaleFile()

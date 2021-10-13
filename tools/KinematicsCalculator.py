@@ -160,6 +160,7 @@ class KinematicsCalculator(object):
         self.Ev = (viewE[2])/sum(viewE)
         self.Exuv = self.Ex-self.Eu-self.Ev
         self.Euv = self.Eu-self.Ev
+        #print (self.reco_visE,self.reco_q3)
             #self.LLR = self.event.GetLLR()
         # except RuntimeError:
             #this ntuple does not have these variables

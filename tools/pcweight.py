@@ -200,11 +200,24 @@ class EnuElectronMuonWeight(DataWeight):
         self.h.ClearAllErrorBands()
         self.weighter = partial(self.fileBasedWeight,hist=self.h)
 
+class SarahMagicWeight(MyWeighterBase):
+    def __init__(self):
+        super(SarahMagicWeight,self).__init__(lambda universe:universe.kin_cal.reco_E_lep)
+        RHC_Factors = {
+            "Range":[2.5,4,6,9,12,15,20],
+            "COH": [1,1.88,1.94,2.44,3.41,3.69,3.36,1],
+            "DFR": [1,3.56,5.91,6.25,8.68,4.41,0.004,1],
+        }
+        self.cate_map["ExcessModel"]=partial(self.rangeBasedWeight,ran=RHC_Factors["Range"],weight=RHC_Factors["DFR"])
+        self.cate_map["NCCOH"]=partial(self.rangeBasedWeight,ran=RHC_Factors["Range"],weight=RHC_Factors["COH"])
+
 if AnalysisConfig.extra_weighter is None:
     MyWeighter = MyWeighterBase()
 elif AnalysisConfig.extra_weighter =="Eel_tune":
     MyWeighter = EelTuningWeight()
 elif AnalysisConfig.extra_weighter =="emu_weight":
     MyWeighter = EnuElectronMuonWeight()
+elif AnalysisConfig.extra_weighter =="rhc_weight":
+    MyWeighter = SarahMagicWeight()
 else:
     raise ValueError("Unknown extra weighter")

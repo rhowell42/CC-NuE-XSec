@@ -36,7 +36,7 @@ NUniverses =100
 MaxChi2 =600
 stepChi2 = MaxChi2//200
 remove=""#"163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180"
-NUniverses_per_job = 100
+NUniverses_per_job = NUniverses
 K=0
 Sys_on_Data=True
 Additional_uncertainties = [0,1,2,3,4,5,6,7,8,9,10]
@@ -119,13 +119,13 @@ def submitJob( tupleName,tag):
 def ConsolidateInputs(Temp_path,mig,reco,reco_truth,data,data_truth):
   def scale(hi):
     h = hi.Clone("{}_clone".format(name))
-    h.Scale(1e21/mc_pot)
+    h.Scale(1e23/mc_pot)
     for i in range(h.GetSize()):
       h.SetBinError(i,math.sqrt(h.GetBinContent(i)))
     return h
   scale_dict = {
     "data","data_truth",
-    "reco","reco_truth","migration"
+   # "reco","reco_truth","migration"
   }
   f = ROOT.TFile(Temp_path,"RECREATE")
   #DoFancyTuneToMigration(mig,reco,reco_truth,data_truth,K)
@@ -244,7 +244,7 @@ AlternativeModels = {
   # "RPA_highq21" :("RPA_HighQ2",1),
   # "RPA_lowq20" :("RPA_LowQ2",0),
   # "RPA_lowq21" :("RPA_LowQ2",1),
-  "MK_Model":("MK_model",0),
+  #"MK_Model":("MK_model",0),
   # "FSI_Weight0":("fsi_weight",0),
   # "FSI_Weight1":("fsi_weight",1),
   # "FSI_Weight2":("fsi_weight",2),
@@ -277,7 +277,7 @@ if __name__ == '__main__':
   os.system( "mkdir -p grid_wrappers/%s" % processingID )
   outdir_tarball="/pnfs/minerva/resilient/tarballs/hsu-%s.tar.gz" % (processingID)
   createTarball(outdir_tarball)
-  memory =2000
+  memory =4000
   for prefix in Measurables:
     MnvMigration = Utilities.GetHistogram(mc_file, prefix+ "_migration")
     MnvMCreco = Utilities.GetHistogram(mc_file, prefix)
@@ -332,7 +332,7 @@ if __name__ == '__main__':
           print(e)
           continue
 
-      ConsolidateInputs(ifile,model_migration,model_reco,model_truth,data_reco,data_truth)
+      ConsolidateInputs(ifile,model_migration,model_signal,model_truth,data_signal,data_truth)
       njobs = 11#int(math.ceil(1.0*NUniverses/NUniverses_per_job))
       cmdString = "CCNuE-%s-%s" % (playlist,"mc")
       #wrapper.setup(migration,cv_reco,cv_bkg)

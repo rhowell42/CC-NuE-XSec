@@ -629,8 +629,8 @@ class LeakageUniverse(CVUniverse,object):
         super(LeakageUniverse,self).__init__(chain,nsigma)
 
     def GetLeakageCorrection(self):
-        #return super(LeakageUniverse,self).GetLeakageCorrection() * (1+self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS)
-        return super(LeakageUniverse,self).GetLeakageCorrection() + self.nsigma*10
+        return super(LeakageUniverse,self).GetLeakageCorrection() * (1+self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS)
+        #return super(LeakageUniverse,self).GetLeakageCorrection() + self.nsigma*10
 
     def ShortName(self):
         return "Leakage_Uncertainty"
@@ -683,7 +683,7 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
         if exclude is None or "all" not in exclude:
             # Vertical shift first to skip some cut calculation
 
-            # #Electron momentum universe
+            #Electron momentum universe
             if abs(SystematicsConfig.AnaNuPDG)==12:
                 universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
             elif abs(SystematicsConfig.AnaNuPDG)==14:
