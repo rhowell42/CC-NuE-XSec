@@ -7,11 +7,11 @@ from multiprocessing import Process
 from tools import PlotTools,Utilities
 
 ROOT.TH1.AddDirectory(False)
-numufile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme_t_muon_incmuon.root"
-nuefile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme_t_electron_incmuon.root"
+numufile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1A_nx_muon_incmuon.root"
+nuefile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1A_nx_electron_incmuon.root"
 numuweightedfile =  {
-    "mc":"/minerva/data/users/hsu/nu_e/kin_dist_mcme1A_nx_muon_weighted_incmuon.root",
-    "data":"/minerva/data/users/hsu/nu_e/kin_dist_datame1A_nx_muon_weighted_incmuon.root"
+    "mc":"/minerva/data/users/hsu/nu_e/kin_dist_mcme1A_nx_weighted_muon_incmuon.root",
+    "data":"/minerva/data/users/hsu/nu_e/kin_dist_datame1A_nx_weighted_muon_incmuon.root"
 }
 
 MU_SIGNALS = ["CCQE","CCDelta","CC2p2h","CCDIS","CCOther"]

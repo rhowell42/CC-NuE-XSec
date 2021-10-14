@@ -139,6 +139,7 @@ class KinematicsCalculator(object):
         self.reco_P_lep = math.sqrt(max(0,self.reco_E_lep**2-self.M_lep_sqr))
         self.reco_cos_theta_lep = math.cos(self.reco_theta_lep_rad)
         self.reco_theta_lep = math.degrees(self.reco_theta_lep_rad)
+        self.reco_Pt_lep = self.reco_P_lep*math.sin(self.reco_theta_lep_rad)
 
         #now hadronic calorimetry
         self.reco_q0 = self.spliner.get_q0(self.event.RecoilEnergy()/1e3)
