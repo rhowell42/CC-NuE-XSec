@@ -1,18 +1,17 @@
 import ROOT,PlotUtils
-import os
-
-def updatehist(h1,h2):
-    h1.Multiply(h2)
-    
+import sys
 
 def updatefile(f1,f2):
     keylist = f1.GetListOfKeys()
+    f1.cd()
     for key in keylist:
-        h1=f1.Get(key.GetName())
-        h2=f2.Get(key.GetName())
-        h1.Multiply(h2)
-        f1.cd()
+        print(key)
+        h2 = f2.Get(key.GetName())
+        h1 = f1.Get(key.GetName())
+        # h1.Multiply(h1,h2)
+        # f1.cd()
         h1.Write("",ROOT.TObject.kOverwrite)
+    f1.Write()
 
 if __name__=="__main__":
     f1,f2 = sys.argv[1:3]
