@@ -54,7 +54,7 @@ FIDUCIAL_APOTHEM = 850
 FIDUCIAL_Z_RANGE = [5980,8422]
 
 # Kinematics cutoffs
-ELECTRON_ENERGY_RANGE = [2.5, 20] # in GeV
+ELECTRON_ENERGY_RANGE = [2.5, float('inf')] # in GeV
 NEUTRINO_ENERGY_RANGE = [0, 100] # in GeV.
 ELECTRON_ANGLE_RANGE = [0, 30] # in deg
 RECO_Q3_RANGE = [0,4]
@@ -141,6 +141,7 @@ SAMPLE_CUTS = {
         "Eavail",
         "InverseMeanFrontdEdX",
         "Low UIE",
+        #"LowPsiEe"
         #"Exuv",
         #"Euv"
     ],
@@ -165,31 +166,32 @@ SAMPLE_CUTS = {
         "Eavail",
         "InverseMeanFrontdEdX",
         "High UIE",
+        #"LowPsiEe"
         #"Exuv",
         #"Euv"
     ],
-    # "Pi0" : [
-    #     #"HasNoNonEMExitingTracks",
-    #     "NoCut",
-    #     "Vertex_Z",
-    #     "Vertex_Apothem",
-    #     "HasTracks",
-    #     "HasNoBackExitingTracks",
-    #     "EMLikeTrackScore",
-    #     "DSCalVisE",
-    #     "ODCalVisE",
-    #     "HasNoVertexMismatch",
-    #     "VertexTrackMultiplicity",
-    #     "NonMIPClusFrac",
-    #     "TransverseGapScore",
-    #     "DeadTime",
-    #     "Afterpulsing",
-    #     "Eavail",
-    #     "InverseMeanFrontdEdX",
-    #     "InversePsi"
-    #     #"Exuv",
-    #     #"Euv"
-    # ],
+    "Pi0" : [
+        #"HasNoNonEMExitingTracks",
+        "NoCut",
+        "Vertex_Z",
+        "Vertex_Apothem",
+        "HasTracks",
+        "HasNoBackExitingTracks",
+        "EMLikeTrackScore",
+        "DSCalVisE",
+        "ODCalVisE",
+        "HasNoVertexMismatch",
+        "VertexTrackMultiplicity",
+        "NonMIPClusFrac",
+        "TransverseGapScore",
+        "DeadTime",
+        "Afterpulsing",
+        "Eavail",
+        "InverseMeanFrontdEdX",
+        "InverseLowPsiEe"
+        #"Exuv",
+        #"Euv"
+    ],
     "Muon" : [
         "HasMINOSMatch",
         "Vertex_Z",

@@ -262,51 +262,6 @@ HISTS_TO_MAKE = [
     {"variables":["Neutrino Energy QE"],
      "tags":{"truth_class"}},
 
-    #  {"variables":["Epi(1-cos(pi))"],
-    #  "tags":{"sideband","truth_class"},
-    #  },
-    # {"variables":["Delta"],
-    #  "tags":{"sideband","truth_class"},
-    #  },
-     # {"variables":["Shower Width"],
-     # "tags":{"sideband","truth_class"},
-     # },
-
-     # {"variables":["Visible Zoomin","Lepton Energy"],
-     # "tags": {"truth_class","sideband"},
-     # "cuts":[lambda event: event.kin_cal.reco_q2_cal<0.02, lambda event: event.kin_cal.reco_Etheta2<0.0032]
-     # },
-
-     # {"variables":["Front dEdX", "Visible Energy"],
-     # "tags": {"sideband","truth_class"}
-     # },
-    # {"variables":["Front dEdX", "Q3"],
-    #  "tags": {"sideband","truth_class"}
-    #  },
-    # {"variables":["Front dEdX", "Lepton Pt"],
-    #  "tags": {"sideband","truth_class"}
-    #  },
-    # {"variables":["Front dEdX", "Sum Visible Energy"],
-    #  "tags": {"sideband","truth_class"}
-    #  },
-    #  {"variables":["Vertex Apothem","Visible Energy"],
-    #  "tags": {"sideband","truth_class"}
-    #  },
-    #  {"variables":["Vertex Y","Visible Energy"],
-    #  "tags": {"sideband","truth_class"}
-    #  },
-    #  {"variables":["Vertex Z","Visible Energy"],
-    #  "tags": {"sideband","truth_class"}
-     # },
-    #"Visible Energy Migration",
-    # "Q0 Migration",
-    # {"variables":["Q0","True Visible Energy"],
-    #  "tags": {"mc_only","signal_only"}
-    #  },
-    # {"variables":["Visible Energy","True Q0"],
-    #  "tags": {"mc_only","signal_only"}
-    #  },
-
     "Visible Energy vs q3",
     "Visible Energy vs q3 Migration",
     #"True Signal Visible Energy vs q3",
@@ -316,6 +271,8 @@ HISTS_TO_MAKE = [
     # "Q3 Migration",
     # "Lepton Pt Migration",
 
+    {"variables": [ "Lepton Energy", "Lepton Theta"],
+     "tags":{"truth_class","sideband"}},
     "Lepton Energy",
     "Lepton Theta",
 

@@ -5,6 +5,7 @@ import heapq
 from array import array
 from collections import Iterable #for checking whether iterable.
 from functools import partial
+import ctypes
 
 
 from config.AnalysisConfig import AnalysisConfig
@@ -186,7 +187,7 @@ def PrepareDiff(data_hists,mc_hists):
     hists = [data_hists.GetHist(),mc_hists.GetHist()]
     def plotDifference(mnvplotter,data_hist,mc_hist):
         #print data_hist
-        ndf = ROOT.Long()
+        ndf = ctypes.c_int()
         chi2mnv=mnvplotter.Chi2DataMC(data_hist,mc_hist,ndf)
         print(chi2mnv,ndf,data_hist.Integral("width"),mc_hist.Integral("width"))
         chi2,ndf=CalChi2(data_hist,mc_hist)
@@ -195,11 +196,11 @@ def PrepareDiff(data_hists,mc_hists):
         #print(data_hist.GetName(),tmp.Integral(0,-1,"width"))
         tmp.Draw("E1")
         size = 0.035
-        align = ROOT.Long()
-        xLabel = ROOT.Double()
-        yLabel = ROOT.Double()
+        align = ctypes.c_int()
+        xLabel = ctypes.c_double()
+        yLabel = ctypes.c_double()
         mnvplotter.DecodePosition("TR", size, align, xLabel, yLabel )
-        mnvplotter.AddPlotLabel("chi2/ndf: {:.4f}/{:d}".format(chi2,ndf),xLabel, yLabel, size, 4, 112, align)
+        mnvplotter.AddPlotLabel("chi2/ndf: {:.4f}/{:d}".format(chi2,ndf),xLabel.value, yLabel.value, size, 4, 112, align.value)
         print(("chi2/ndf: {:.4f}/{:d}".format(chi2,ndf)))
 
     return plotDifference,hists

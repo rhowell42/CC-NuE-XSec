@@ -199,6 +199,8 @@ def MakePlotProcessors(**kwargs):
     plots = []
     tags = settings["tags"]
     settings.pop("tags")
+    if "suffix" in kwargs["key"]:
+        settings["name"]+=kwargs["key"]["suffix"]
 
     if "mc_only" in tags and not kwargs["mc"]:
         return plots

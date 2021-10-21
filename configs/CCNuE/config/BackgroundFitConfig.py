@@ -64,8 +64,8 @@ PT_TUNE = {
     "Yaxis":True,
     "SCALE_FACTORS" :OrderedDict(),
     "CATEGORY_FACTORS" : {
-        # "NCDIS":"Pi0",
-        # "CCDIS":"Pi0",
+        "NCDIS":"Pi0",
+        "CCDIS":"Pi0",
         # "NCCOH":"NCCoh",
         "ExcessModel":"Excess",
         # "CCNuE":"Signal",
@@ -78,7 +78,7 @@ PT_TUNE = {
 
 PT_TUNE["SCALE_FACTORS"]["Excess"]=[0,0.2,0.4,0.6,0.8,1.0,1.2,1.6]
 # PT_TUNE["SCALE_FACTORS"]["NCCoh"]=[0,1.6]
-# PT_TUNE["SCALE_FACTORS"]["Pi0"]=[0,1.6]
+PT_TUNE["SCALE_FACTORS"]["Pi0"]=[0,0.2,0.4,0.6,0.8,1.0,1.2,1.6]
 # PT_TUNE["SCALE_FACTORS"]["Signal"]=[0,1.6]
 
 PI0PT_TUNE = {
@@ -89,6 +89,7 @@ PI0PT_TUNE = {
     "SCALE_FACTORS" :OrderedDict(),
     "CATEGORY_FACTORS" : {
         "NCDIS":"Pi0",
+        "CCDIS":"Pi0",
     }
 }
 
@@ -175,14 +176,13 @@ EEL_TUNE ={
         "CCNuE2p2h":"Signal",
         "CCNuE":"Signal",
         "NCDIS":"Pi0",
-        "NCCOH":"NCCoh",
-        "ExcessModel":"Excess"
+        "CCDIS":"Pi0",
+        #"NCCOH":"NCCoh",
+        #"ExcessModel":"Excess"
     }
 }
-EEL_TUNE["SCALE_FACTORS"]["Pi0"]=[0,2.5,4,6,9,12,15,20]
-EEL_TUNE["SCALE_FACTORS"]["Signal"]=[0,2.5,4,6,9,12,15,20]
-EEL_TUNE["SCALE_FACTORS"]["NCCoh"]=[0,2.5,4,6,9,12,15,20]
-EEL_TUNE["SCALE_FACTORS"]["Excess"]=[0,2.5,4,6,9,12,15,20]
+EEL_TUNE["SCALE_FACTORS"]["Pi0"]=[0,20]
+EEL_TUNE["SCALE_FACTORS"]["Signal"]=[0,20]
 
 Tune_Strategy_map = {
     "pt_tune":PT_TUNE,

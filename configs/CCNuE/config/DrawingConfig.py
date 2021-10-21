@@ -178,6 +178,8 @@ PLOTS_TO_MAKE = [
      "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
      },
      {"name":"Lepton Theta"},
+      {"name":"Lepton Theta",
+       "plot_type":"diff"},
     # {"name":"Q0",
     #  "plot_type" : "err",},
     # {"name":"Q3",

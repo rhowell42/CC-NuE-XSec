@@ -650,7 +650,7 @@ PLOT_SETTINGS= {
         "title" : "True Neutrino Energy; E_{#nu} (GeV); NEvents/GeV",
         "binning" : [PlotConfig.NEUTRINO_ENERGY_BINNING],
         "value_getter" : [lambda event:event.kin_cal.true_enu_genie],
-        "tags": reco_tags
+        "tags": truth_tags
     },
 
     "True Lepton Energy":
@@ -659,7 +659,7 @@ PLOT_SETTINGS= {
         "title" : "True Lepton Energy; True Lepton E (GeV); NEvents",
         "binning" : [PlotConfig.ELECTRON_ENERGY_BINNING],
         "value_getter" : [lambda event: event.kin_cal.true_E_lep], 
-        "tags": reco_tags
+        "tags": truth_tags
     },
 
     "GENIE Event Information":

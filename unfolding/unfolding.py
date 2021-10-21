@@ -28,8 +28,6 @@ def SubtractPoissonHistograms(h,h1):
 
     return h
 
-def MyMigrationError(response,h_effect,h_true):
-    
 
 def MakePlot(data_hists,mc_hists,config):
     #scale

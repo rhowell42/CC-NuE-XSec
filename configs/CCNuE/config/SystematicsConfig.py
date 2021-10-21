@@ -102,8 +102,8 @@ RPA_UNIVERSES = {
 }
 
 NonResPi=True
-LowQ2PiWeightChannel = "NUPI0"
-LowQ2PiWeightSysChannel = ["JOINT"]
+LowQ2PiWeightChannel = None
+LowQ2PiWeightSysChannel = ["JOINT","NUPI0"]
 NumZExpansionUniverses = 0 #Means Don't use Zexpansion. 100 is default Z expansion
 
 RESPONSE_BRANCHES = [

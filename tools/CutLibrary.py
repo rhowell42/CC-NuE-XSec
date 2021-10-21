@@ -182,6 +182,12 @@ CUT_CONFIGS = {
         "variable_range": [0.1* i for i in range(0,11)]
     },
 
+     "LowPsiEe": {
+        "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep*event.Psi,
+        "cut_fn": lambda vals: vals < CutConfig.PsiEe_CUT,
+        "variable_range": [0.2* i for i in range(0,21)]
+    },
+
     "Wexp": {
         "value_getter": lambda event, nprong: event.kin_cal.reco_W,
         "cut_fn": lambda vals: vals>0 and vals <= CutConfig.WEXP_CUT,
