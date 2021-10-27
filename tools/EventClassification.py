@@ -43,7 +43,8 @@ class EventClassifier(object):
 
         self.used_cuts = set().union(*[v for k,v in SAMPLE_CUTS.items() if k in self.samples])
         #remove inverse cuts, we use not in the future
-        
+        self.IncludeMuon = "InverseHasNoBackExitingTracks" in self.used_cuts
+        print(self.IncludeMuon)
 
         if self.use_kin_cuts:
             self.used_cuts.update(["Reco{}".format(cut_name) for cut_name in KINEMATICS_CUTS])

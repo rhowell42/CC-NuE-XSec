@@ -211,8 +211,12 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
             return self.recoile_passive_tracker+self.recoile_passive_ecal
 
     def GetNuEFuzz(self):
+        try:
+            fuzz = self.blob_nuefuzz_E_tracker+self.blob_nuefuzz_E_ecal
+        except:
+            fuzz = 0
         #return 0
-        return (self.blob_nuefuzz_E_tracker+self.blob_nuefuzz_E_ecal) * SystematicsConfig.AVAILABLE_E_CORRECTION
+        return max(0,fuzz) * SystematicsConfig.AVAILABLE_E_CORRECTION
 
     def GetLeakageCorrection(self):
         return max(0,SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw()) - (10 if self.nsigma is not None else 0),0)

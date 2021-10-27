@@ -476,6 +476,13 @@ VARIABLE_DICT = {
         "value_getter" : lambda event: event.prong_axis_vertex[0][2]-event.vtx[2],
         "dec":["high","low"]
     },
+    "Vertex Difference" : {
+        "name" : "RecoTruth_vtx_z",
+        "title": "Vtx Diff ; Reco - True Vtx; NEvents",
+        "binning" : PlotConfig.VERTEX_DIFF_BINNING,
+        "value_getter" : lambda event: TruthTools.vtxdiff(event),
+        "dec":["high","low"]
+    },
     "Vertex Z" : {
         "name" : "vtx_z",
         "title": "Vertex Z",
@@ -512,7 +519,29 @@ VARIABLE_DICT = {
         "binning" : PlotConfig.LOW_RECOIL_BIN_Q0,
         "value_getter" : lambda event: event.kin_cal.true_q0,
     },
-
+     "UIE Mean Pos" :
+    {
+        "name" : "UIE_Mean_Pos",
+        "title": "Mean UIE Position (mm)",
+        "binning" : [10*i for i in range(21)],
+        "value_getter" : lambda event: event.UpstreamInlineEnergyWgtdPosMean,
+        "dec":["high"],
+    },
+    "UIE Pos RMS" :
+    {
+        "name" : "UIE_Pos_RMS",
+        "title": "UIE Position RMS (mm)",
+        "binning" : [20*i for i in range(21)],
+        "value_getter" : lambda event: event.UpstreamInlineEnergyWgtdPosRMS,
+        "dec":["high"],
+    },
+     "Rock Muon Removed" :
+    {
+        "name" : "rockmu_rmed",
+        "title": "Rock Muon Removed",
+        "binning" : [0,1,2],
+        "value_getter" : lambda event: int(event.rock_muons_removed),
+    },
     
 }
 

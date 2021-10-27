@@ -12,6 +12,10 @@
             "fspline": {
                 "used_POT": 1.6112077650422966e+20,
                 "playlist_location": "file_option/playlist_ccqenue_datame1M_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_datame1M_nx_MAD.txt"
             }
         },
         "mc": {
@@ -26,6 +30,10 @@
             "fspline": {
                 "used_POT": 4.044114584919733e+20,
                 "playlist_location": "file_option/playlist_ccqenue_mcme1M_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_mcme1M_nx_MAD.txt"
             }
         }
     },
@@ -43,6 +51,10 @@
                 "total_POT": 1.465901185576134e+20,
                 "used_POT": 1.4551402475340312e+20,
                 "playlist_location": "file_option/playlist_ccqenue_datame1G_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_datame1G_nx_MAD.txt"
             }
         },
         "mc": {
@@ -58,6 +70,10 @@
                 "total_POT": 4.035980470053553e+20,
                 "used_POT": 4.035980470053553e+20,
                 "playlist_location": "file_option/playlist_ccqenue_mcme1G_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_mcme1G_nx_MAD.txt"
             }
         }
     },
@@ -80,6 +96,10 @@
                 "total_POT": 1.4505964683789525e+20,
                 "used_POT": 1.4479302542237557e+20,
                 "playlist_location": "file_option/playlist_ccqenue_datame1D_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_datame1D_nx_MAD.txt"
             }
         },
         "mc": {
@@ -100,6 +120,10 @@
                 "total_POT": 5.500418589291063e+20,
                 "used_POT": 5.500418589291063e+20,
                 "playlist_location": "file_option/playlist_ccqenue_mcme1D_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_mcme1D_nx_MAD.txt"
             }
         }
     },
@@ -116,6 +140,10 @@
             "fspline": {
                 "used_POT": 4.410025440364703e+19,
                 "playlist_location": "file_option/playlist_ccqenue_datame1P_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_datame1P_nx_MAD.txt"
             }
         },
         "mc": {
@@ -130,6 +158,10 @@
             "fspline": {
                 "used_POT": 1.0073906624794421e+20,
                 "playlist_location": "file_option/playlist_ccqenue_mcme1P_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_mcme1P_nx_MAD.txt"
             }
         }
     },
@@ -140,6 +172,10 @@
             },
             "Had": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1B_NCDIF_Had.txt"
+            },
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1B_NCDIF_MAD.txt",
+                "tree": "MasterAnaDev"
             }
         }
     },
@@ -157,6 +193,10 @@
                 "total_POT": 1.323510635735893e+19,
                 "used_POT": 1.3234934971009118e+19,
                 "playlist_location": "file_option/playlist_ccqenue_datame1L_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_datame1L_nx_MAD.txt"
             }
         },
         "mc": {
@@ -172,6 +212,10 @@
                 "total_POT": 5.5206883953874805e+19,
                 "used_POT": 5.5206883953874805e+19,
                 "playlist_location": "file_option/playlist_ccqenue_mcme1L_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_mcme1L_nx_MAD.txt"
             }
         }
     },
@@ -194,6 +238,10 @@
                 "total_POT": 4.949033705603423e+19,
                 "used_POT": 4.728526181546073e+19,
                 "playlist_location": "file_option/playlist_ccqenue_datame1C_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_datame1C_nx_MAD.txt"
             }
         },
         "mc": {
@@ -214,6 +262,10 @@
                 "total_POT": 1.659419314808672e+20,
                 "used_POT": 1.659419314808672e+20,
                 "playlist_location": "file_option/playlist_ccqenue_mcme1C_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_mcme1C_nx_MAD.txt"
             }
         }
     },
@@ -224,6 +276,10 @@
             },
             "Had": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1D_NCDIF_Had.txt"
+            },
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1D_NCDIF_MAD.txt",
+                "tree": "MasterAnaDev"
             }
         }
     },
@@ -240,6 +296,10 @@
             "fspline": {
                 "used_POT": 2.797078721485632e+19,
                 "playlist_location": "file_option/playlist_ccqenue_datame1O_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_datame1O_nx_MAD.txt"
             }
         },
         "mc": {
@@ -254,6 +314,10 @@
             "fspline": {
                 "used_POT": 7.334936567759708e+19,
                 "playlist_location": "file_option/playlist_ccqenue_mcme1O_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_mcme1O_nx_MAD.txt"
             }
         }
     },
@@ -271,6 +335,10 @@
                 "total_POT": 1.7231481076043786e+20,
                 "used_POT": 1.7148250779058785e+20,
                 "playlist_location": "file_option/playlist_ccqenue_datame1F_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_datame1F_nx_MAD.txt"
             }
         },
         "mc": {
@@ -286,6 +354,10 @@
                 "total_POT": 6.811676219316474e+20,
                 "used_POT": 6.811676219316474e+20,
                 "playlist_location": "file_option/playlist_ccqenue_mcme1F_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_mcme1F_nx_MAD.txt"
             }
         }
     },
@@ -340,6 +412,10 @@
             "fspline": {
                 "used_POT": 1.0789150523173495e+20,
                 "playlist_location": "file_option/playlist_ccqenue_datame1N_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_datame1N_nx_MAD.txt"
             }
         },
         "mc": {
@@ -354,6 +430,10 @@
             "fspline": {
                 "used_POT": 2.4742293831801625e+20,
                 "playlist_location": "file_option/playlist_ccqenue_mcme1N_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_mcme1N_nx_MAD.txt"
             }
         }
     },
@@ -409,6 +489,10 @@
                 "total_POT": 2.846947839567869e+21,
                 "used_POT": 3.648740489e+20,
                 "playlist_location": "file_option/playlist_ccqenue_mcme1A_NCDiff_fspline.txt"
+            },
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1A_NCDIF_MAD.txt",
+                "tree": "MasterAnaDev"
             }
         }
     },
@@ -446,8 +530,11 @@
                 "playlist_location": "file_option/playlist_ccqenue_datame1A_nx_Had.txt"
             },
             "incmuon": {
-                "tree":"MasterAnaDev",
                 "playlist_location": "file_option/playlist_ccqenue_datame1A_nx_incmuon.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_datame1A_nx_MAD.txt"
             }
         },
         "mc": {
@@ -464,7 +551,7 @@
                 "playlist_location": "file_option/playlist_ccqenue_mcme1A_nx_Had.txt"
             },
             "incmuon": {
-                "tree":"MasterAnaDev",
+                "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_ccqenue_mcme1A_nx_incmuon.txt"
             },
             "MAD": {
@@ -497,6 +584,10 @@
                 "total_POT": 1.0471358891130441e+20,
                 "used_POT": 1.0462578241665738e+20,
                 "playlist_location": "file_option/playlist_ccqenue_datame1E_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_datame1E_nx_MAD.txt"
             }
         },
         "mc": {
@@ -512,6 +603,10 @@
                 "total_POT": 4.909868813013809e+20,
                 "used_POT": 4.909868813013809e+20,
                 "playlist_location": "file_option/playlist_ccqenue_mcme1E_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_mcme1E_nx_MAD.txt"
             }
         }
     },
@@ -522,6 +617,10 @@
             },
             "Had": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1C_NCDIF_Had.txt"
+            },
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1C_NCDIF_MAD.txt",
+                "tree": "MasterAnaDev"
             }
         }
     },
@@ -544,6 +643,10 @@
                 "total_POT": 1.879426509759505e+19,
                 "used_POT": 1.8739000223169774e+19,
                 "playlist_location": "file_option/playlist_ccqenue_datame1B_nx_fspline.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_datame1B_nx_MAD.txt"
             }
         },
         "mc": {
@@ -560,6 +663,10 @@
             },
             "Sarah-xtalk": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1B_nx_xtalk.txt"
+            },
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_mcme1B_nx_MAD.txt"
             }
         }
     },
@@ -605,6 +712,77 @@
         "mc": {
             "Sarah": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1A_extend2p2h_Sarah.txt"
+            }
+        }
+    },
+    "NCDIF": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcNCDIF_MAD.txt"
+            }
+        }
+    },
+    "me1E_NCDIF": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1E_NCDIF_MAD.txt",
+                "tree": "MasterAnaDev"
+            }
+        }
+    },
+    "me1F_NCDIF": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1F_NCDIF_MAD.txt",
+                "tree": "MasterAnaDev"
+            }
+        }
+    },
+    "me1G_NCDIF": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1G_NCDIF_MAD.txt",
+                "tree": "MasterAnaDev"
+            }
+        }
+    },
+    "me1L_NCDIF": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1L_NCDIF_MAD.txt",
+                "tree": "MasterAnaDev"
+            }
+        }
+    },
+    "me1M_NCDIF": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1M_NCDIF_MAD.txt",
+                "tree": "MasterAnaDev"
+            }
+        }
+    },
+    "me1N_NCDIF": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1N_NCDIF_MAD.txt",
+                "tree": "MasterAnaDev"
+            }
+        }
+    },
+    "me1O_NCDIF": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1O_NCDIF_MAD.txt",
+                "tree": "MasterAnaDev"
+            }
+        }
+    },
+    "me1P_NCDIF": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1P_NCDIF_MAD.txt",
+                "tree": "MasterAnaDev"
             }
         }
     }

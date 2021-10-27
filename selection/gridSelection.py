@@ -135,7 +135,7 @@ if __name__ == '__main__':
         continue
 
       if gridargs.memory is None:
-        memory = 1000 if dataSwitch == "data" else 5000
+        memory = 2000 if dataSwitch == "data" else 5000
       else:
         memory = gridargs.memory
     

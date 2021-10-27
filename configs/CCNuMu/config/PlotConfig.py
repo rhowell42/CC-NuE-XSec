@@ -340,7 +340,7 @@ HISTS_TO_MAKE = [
      "tags":{"truth_class"}},
     {"variables":["Neutrino Energy QE"],
      "tags":{"truth_class"}},
-    "True Neutrino Energy"
+    "True Neutrino Energy",
     "Lepton Energy",
     #"Lepton Energy High Inline",
     # {"variables":["W"],

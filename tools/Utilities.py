@@ -45,6 +45,7 @@ def composeTChain(input_txt,tree, start=None, count=None):
 def findPlaylistFile(playlist,st,nickname):
     data = loadJSON(POT_FILE)
     tree = "NuECCQE"
+    #tree= "MasterAnaDev"
     try:
         input_txt= data[playlist][st][nickname]["playlist_location"]
         if "tree" in data[playlist][st][nickname]:
@@ -53,7 +54,7 @@ def findPlaylistFile(playlist,st,nickname):
         print(("Requested ntuple not found: ",playlist, st, nickname))
         guessing = guessPlaylistName(playlist,st,nickname)
         data.setdefault(playlist,{}).setdefault(st,{})[nickname]={
-            "playlist_location" : guessing
+            "playlist_location" : guessing,
         }
         if os.path.isfile(MACRO_ROOT+guessing):
             print(("I guess the playlist file located at {}".format(guessing)))

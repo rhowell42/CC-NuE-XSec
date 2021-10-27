@@ -26,6 +26,14 @@ PLAYLISTS = {
         "me1B_NCDIF",
         "me1C_NCDIF",
         "me1D_NCDIF",
+        "me1E_NCDIF",
+        "me1F_NCDIF",
+        "me1G_NCDIF",
+        "me1L_NCDIF",
+        "me1M_NCDIF",
+        "me1N_NCDIF",
+        "me1O_NCDIF",
+        "me1P_NCDIF",
     ],
     "FHC_Extended_2p2h":[
         "me1A_ext_2p2h"

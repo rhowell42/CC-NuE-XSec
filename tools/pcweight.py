@@ -239,10 +239,28 @@ class PtTuningWeight(MyWeighterBase):
         self.cate_map["NCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["Pi0"])
         self.cate_map["CCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["Pi0"])
 
+class RHCPtTuningWeight(MyWeighterBase):
+    def __init__(self):
+        super(RHCPtTuningWeight,self).__init__( lambda universe:universe.kin_cal.reco_Pt_lep)
+        self.f = ROOT.TFile.Open("{}/background_fit/bkgfit_ptrhc.root".format(os.environ["CCNUEROOT"]))
+        self.hist_dict = {i:self.f.Get(i) for i in ["Pi0"]}
+
+        #self.cate_map["ExcessModel"] = partial(self.fileBasedWeight,hist=self.hist_dict["Excess"])
+        self.cate_map["NCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["Pi0"])
+        self.cate_map["CCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["Pi0"])
+
 class EelPtTuningWeight():
     def __init__(self):
         self.EelWeight = EelTuningWeight()
         self.PtWeight = PtTuningWeight()
+
+    def GetWeight(self,universe):
+        return self.EelWeight.GetWeight(universe)*self.PtWeight.GetWeight(universe)
+
+class RHCEelPtTuningWeight():
+    def __init__(self):
+        self.EelWeight = RHCNewWeight()
+        self.PtWeight = RHCPtTuningWeight()
 
     def GetWeight(self,universe):
         return self.EelWeight.GetWeight(universe)*self.PtWeight.GetWeight(universe)
@@ -258,5 +276,7 @@ elif AnalysisConfig.extra_weighter =="rhc_weight":
     MyWeighter = RHCNewWeight()
 elif AnalysisConfig.extra_weighter =="EelPt_tune":
     MyWeighter = EelPtTuningWeight()
+elif AnalysisConfig.extra_weighter =="RHCEelPt_tune":
+    MyWeighter = RHCEelPtTuningWeight()
 else:
     raise ValueError("Unknown extra weighter")

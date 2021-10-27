@@ -130,6 +130,8 @@ class KinematicsCalculator(object):
             nParticles = self.event.GetVecInt("prong_nParticles")
             if len(nParticles) < 1 or nParticles[0] < 1:
                 return False
+        elif not self.event.classifier.IncludeMuon:
+            return False
         event = self.event
 
         #decide if whether it is muon or electron event, and get lepton kinematics
