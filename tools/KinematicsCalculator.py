@@ -120,6 +120,9 @@ class KinematicsCalculator(object):
                 sc = _() and sc
             except Exception as e:
                 print(e)
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
                 #raise(e)
                 sc = False
         return sc
@@ -156,13 +159,12 @@ class KinematicsCalculator(object):
         self.reco_W2 = (M_n/1e3)**2+2*M_n/1e3*self.reco_q0-self.reco_q2_cal
         self.reco_W = math.sqrt(self.reco_W2) if self.reco_W2>=0 else -1
         self.reco_Etheta2 = self.reco_E_lep * self.reco_theta_lep_rad**2
-        #print(self.event.GetLowRecoilQ3(),self.reco_q3)
-        viewE = (self.event.prong_XViewE[0], self.event.prong_VViewE[0],self.event.prong_UViewE[0])
-        self.Ex = (viewE[0])/sum(viewE)
-        self.Eu = (viewE[1])/sum(viewE)
-        self.Ev = (viewE[2])/sum(viewE)
-        self.Exuv = self.Ex-self.Eu-self.Ev
-        self.Euv = self.Eu-self.Ev
+        # viewE = (self.event.prong_XViewE[0], self.event.prong_VViewE[0],self.event.prong_UViewE[0])
+        # self.Ex = (viewE[0])/sum(viewE)
+        # self.Eu = (viewE[1])/sum(viewE)
+        # self.Ev = (viewE[2])/sum(viewE)
+        # self.Exuv = self.Ex-self.Eu-self.Ev
+        # self.Euv = self.Eu-self.Ev
         #print (self.reco_visE,self.reco_q3)
             #self.LLR = self.event.GetLLR()
         # except RuntimeError:

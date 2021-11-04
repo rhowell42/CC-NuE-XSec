@@ -195,10 +195,10 @@ class RHCNewWeight(MyWeighterBase):
     def __init__(self):
         super(RHCNewWeight,self).__init__( lambda universe:universe.kin_cal.reco_E_lep)
         self.f = ROOT.TFile.Open("{}/background_fit/bkgfit_scale_rhc.root".format(os.environ["CCNUEROOT"]))
-        self.fFHC = ROOT.TFile.Open("{}/background_fit/bkgfit_pi0Nrhc.root".format(os.environ["CCNUEROOT"]))
-        self.hist_dict = {i:self.f.Get(i) for i in ["Excess","NCCoh"]}
-        self.hist_dict["Signal"] = self.fFHC.Get("Signal")
-        self.hist_dict["DIS"] = self.fFHC.Get("Pi0")
+        # self.fFHC = ROOT.TFile.Open("{}/background_fit/bkgfit_pi0Nrhc.root".format(os.environ["CCNUEROOT"]))
+        # self.hist_dict = {i:self.f.Get(i) for i in ["Excess","NCCoh"]}
+        # self.hist_dict["Signal"] = self.fFHC.Get("Signal")
+        # self.hist_dict["DIS"] = self.fFHC.Get("Pi0")
 
         self.cate_map["NCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["DIS"])
         self.cate_map["CCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["DIS"])
@@ -214,7 +214,7 @@ class EnuElectronMuonWeight(DataWeight):
     def __init__(self):
         super(EnuElectronMuonWeight,self).__init__(lambda universe:universe.kin_cal.reco_E_nu_cal)
         self.f = ROOT.TFile.Open("{}/studies/emu_scale.root".format(os.environ["CCNUEROOT"]))
-        self.h = self.f.Get("signal_ratio")
+        self.h = self.f.Get("Enu")
         self.h.ClearAllErrorBands()
         self.weighter = partial(self.fileBasedWeight,hist=self.h)
 

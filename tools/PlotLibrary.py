@@ -522,16 +522,16 @@ VARIABLE_DICT = {
      "UIE Mean Pos" :
     {
         "name" : "UIE_Mean_Pos",
-        "title": "Mean UIE Position (mm)",
-        "binning" : [10*i for i in range(21)],
+        "title": "Mean UIE Position (rad. length)",
+        "binning" : [0.1*i for i in range(21)],
         "value_getter" : lambda event: event.UpstreamInlineEnergyWgtdPosMean,
         "dec":["high"],
     },
     "UIE Pos RMS" :
     {
         "name" : "UIE_Pos_RMS",
-        "title": "UIE Position RMS (mm)",
-        "binning" : [20*i for i in range(21)],
+        "title": "UIE Position RMS (rad. length)",
+        "binning" : [0.1*i for i in range(21)],
         "value_getter" : lambda event: event.UpstreamInlineEnergyWgtdPosRMS,
         "dec":["high"],
     },
@@ -542,6 +542,13 @@ VARIABLE_DICT = {
         "binning" : [0,1,2],
         "value_getter" : lambda event: int(event.rock_muons_removed),
     },
+    "Vertex Energy":
+    {
+        "name":"vertex_blob_E_50mm",
+        "title":"Vertex Energy in 50mm ",
+        "binning": [20* i for i in range(26)],
+        "value_getter": lambda event: event.recoil_energy_nonmuon_vtx50mm,
+    }
     
 }
 

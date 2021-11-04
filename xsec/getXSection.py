@@ -15,7 +15,7 @@ ROOT.TH1.AddDirectory(False)
 
 XSEC_TO_MAKE = [
     #"q0 vs q3",
-    #"Visible Energy vs q3",
+    "Visible Energy vs q3",
     "Visible Energy vs Lepton Pt"
 ]
 
@@ -23,7 +23,7 @@ TARGET_UTILS = PlotUtils.TargetUtils.Get()
 
 def GetXSectionHistogram(unfolded,efficiency,is_mc):
     #divide by efficiency
-    #unfolded.Divide(unfolded,efficiency)
+    unfolded.Divide(unfolded,efficiency)
     #divide by flux
     DivideFlux(unfolded,is_mc)
     #divide by N nucleaon

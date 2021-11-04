@@ -493,6 +493,10 @@
             "MAD": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1A_NCDIF_MAD.txt",
                 "tree": "MasterAnaDev"
+            },
+            "incmuon": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_mcme1A_NCDIF_incmuon.txt"
             }
         }
     },
@@ -530,6 +534,7 @@
                 "playlist_location": "file_option/playlist_ccqenue_datame1A_nx_Had.txt"
             },
             "incmuon": {
+                "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_ccqenue_datame1A_nx_incmuon.txt"
             },
             "MAD": {
@@ -727,6 +732,9 @@
             "MAD": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1E_NCDIF_MAD.txt",
                 "tree": "MasterAnaDev"
+            },
+            "Had": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1E_NCDIF_Had.txt"
             }
         }
     },
@@ -735,6 +743,9 @@
             "MAD": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1F_NCDIF_MAD.txt",
                 "tree": "MasterAnaDev"
+            },
+            "Had": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1F_NCDIF_Had.txt"
             }
         }
     },
@@ -743,6 +754,9 @@
             "MAD": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1G_NCDIF_MAD.txt",
                 "tree": "MasterAnaDev"
+            },
+            "Had": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1G_NCDIF_Had.txt"
             }
         }
     },
@@ -751,6 +765,9 @@
             "MAD": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1L_NCDIF_MAD.txt",
                 "tree": "MasterAnaDev"
+            },
+            "Had": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1L_NCDIF_Had.txt"
             }
         }
     },
@@ -759,6 +776,9 @@
             "MAD": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1M_NCDIF_MAD.txt",
                 "tree": "MasterAnaDev"
+            },
+            "Had": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1M_NCDIF_Had.txt"
             }
         }
     },
@@ -767,6 +787,9 @@
             "MAD": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1N_NCDIF_MAD.txt",
                 "tree": "MasterAnaDev"
+            },
+            "Had": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1N_NCDIF_Had.txt"
             }
         }
     },
@@ -775,6 +798,9 @@
             "MAD": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1O_NCDIF_MAD.txt",
                 "tree": "MasterAnaDev"
+            },
+            "Had": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1O_NCDIF_Had.txt"
             }
         }
     },
@@ -783,6 +809,16 @@
             "MAD": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1P_NCDIF_MAD.txt",
                 "tree": "MasterAnaDev"
+            },
+            "Had": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1P_NCDIF_Had.txt"
+            }
+        }
+    },
+    "meRHC_NCDIF": {
+        "mc": {
+            "Had": {
+                "playlist_location": "file_option/playlist_ccqenue_mcmeRHC_NCDIF_Had.txt"
             }
         }
     }

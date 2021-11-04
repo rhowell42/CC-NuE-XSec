@@ -8,13 +8,6 @@ PLAYLISTS = {
         "me1C_nx",
         "me1D_nx",
         "me1E_nx",
-        "me1F_nx",
-        "me1G_nx",
-        "me1L_nx",
-        "me1M_nx",
-        "me1N_nx",
-        "me1O_nx",
-        "me1P_nx",
     ],
 
     "RHC": [
@@ -27,13 +20,6 @@ PLAYLISTS = {
         "me1C_NCDIF",
         "me1D_NCDIF",
         "me1E_NCDIF",
-        "me1F_NCDIF",
-        "me1G_NCDIF",
-        "me1L_NCDIF",
-        "me1M_NCDIF",
-        "me1N_NCDIF",
-        "me1O_NCDIF",
-        "me1P_NCDIF",
     ],
     "FHC_Extended_2p2h":[
         "me1A_ext_2p2h"

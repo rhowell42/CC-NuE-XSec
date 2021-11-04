@@ -29,9 +29,11 @@ M_p_sqr = M_p**2
 NQ3 = 8
 NQ0 = 19
 LOW_RECOIL_BIN_Q3 = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2]
-LOW_RECOIL_BIN_Q3_Truth = [0.0, 0.2, 0.3, 0.4, 0.6, 0.9, 1.2]
-LOW_RECOIL_BIN_Q0_Truth = [0.0, 0.04, 0.08,0.12,0.16,0.24,
-                           0.32,0.4,0.6,1.0,1.2]
+LOW_RECOIL_BIN_Q3_Truth = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
+LOW_RECOIL_BIN_Q0_Truth = [0.0, 0.04, 0.08,
+		             0.12, 0.16, 0.2,
+		             0.25, 0.30, 0.35, 0.40,
+		             0.50, 0.60, 0.80, 1.00, 1.2]
 BACKGROUND_FIT_Q3_BIN = [0.0, 0.6, 0.8, 1.0, 1.2, 1.6, 2]
 LOW_RECOIL_BIN_Q0 = [0.0, 0.04, 0.08,
 		             0.12, 0.16, 0.2,
@@ -101,7 +103,7 @@ LOW_RECOIL_BIN_LOW_Q0 = [0.0, 0.02, 0.04, 0.06, 0.08, 0.1,
                      0.12, 0.14, 0.16, 0.2]
 PROTON_ANGLE_BINNING = [2*i for i in range(51)]
 
-ELECTRON_ENERGY_BINNING = [0.5 * i for i in range(31)]+[20]
+ELECTRON_ENERGY_BINNING = [2.5 * i for i in range(1,7)]+[20]
 SUM_VISIBLE_ENERGY_BINNING = [1 * i for i in range(1,11)]
 VISIBLE_ENERGY_RESIDUAL_BINNING = [-1+0.04* i for i in range(0,51)]
 ELECTRON_ENERGY_RESIDUAL_BINNING = [-1+0.05* i for i in range(0,41)]
@@ -179,7 +181,7 @@ PROTON_KE_BINNING = [0.05 * i for i in range(21)]
 VERTEX_DIFF_BINNING = [20*i for i in range(-3,31)]
 VERTEX_Z_BINNING = [5000+ 200*i for i in range(21)]
 PT_BINNING = [0.2 * i for i in range(9)]
-PT_BINNING_Truth = [0.2 * i for i in range(6)]
+PT_BINNING_Truth = [0.2 * i for i in range(9)]
 PI0_ENERGY_BINNING = [0.5 * i for i in range(21)]
 #EXTRA_ENERGY_BINNING = [0.05*i for i in range(41)]
 EXTRA_ENERGY_BINNING = [0.05*i for i in range(15)]
@@ -283,13 +285,13 @@ HISTS_TO_MAKE = [
      "tags":{"truth_class","sideband"}},
     {"variables": ["Vertex Difference","Lepton Energy"],
      "tags":{"truth_class","sideband","mc_only"}},
-     {"variables": ["UIE Mean Pos","Lepton Energy"],
+    {"variables": ["UIE Mean Pos","Lepton Energy"],
      "tags":{"truth_class","sideband"}},
-     {"variables": ["UIE Pos RMS","Lepton Energy"],
+    {"variables": ["UIE Pos RMS","Lepton Energy"],
      "tags":{"truth_class","sideband"}},
-     {"variables": ["Rock Muon Removed","Lepton Energy"],
-      "tags":{"truth_class","sideband"}},
-
+    # {"variables": ["Vertex Energy","Lepton Energy"],
+    #  "tags":{"truth_class","sideband"}},
+    "True Neutrino Energy",
     # {"variables": ["Euv"],
     #  "tags":{"truth_class","sideband"}},
     # {"variables": ["Exuv"],

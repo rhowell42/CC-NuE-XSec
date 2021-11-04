@@ -187,12 +187,11 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         localVec = list(self.GetVecDouble("ExtraEnergy"))
         e = sum(localVec)
 	#print e, 'out'
-        return e 
+        return e
 
     @staticmethod
     def Scale4VectorMomentum(vet,scale):
         return vet
-
 
     def PrimaryProtonScore(self):
         score = self.MasterAnaDev_proton_score 
@@ -202,6 +201,13 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         theta = self.MasterAnaDev_proton_theta
         return math.degrees(theta) if theta>=0 else -1
 
+    @property
+    def UpstreamInlineEnergy(self):
+        uie = self.GetDouble("UpstreamInlineEnergy")
+        vtx = 0
+        #vtx = sum(self.GetVecElem("Bined_UIE",i) for i in range(2))
+        #vtx = self.GetDouble("recoil_energy_nonmuon_vtx50mm")
+        return max(0,uie-vtx)
 
     # =============== collcetion of all recoil energy stuff.========
     def GetEAvail(self):
@@ -219,7 +225,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         return max(0,fuzz) * SystematicsConfig.AVAILABLE_E_CORRECTION
 
     def GetLeakageCorrection(self):
-        return max(0,SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw()) - (10 if self.nsigma is not None else 0),0)
+        return max(0,SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw()) - (10 if self.nsigma is not None else 0))
 
     def Pi0_Additional_Leakage(self):
         return random.uniform(0,20) if self.mc and (self.mc_intType == 4 or (self.mc_current==2 and self.mc_intType==10)) else 0

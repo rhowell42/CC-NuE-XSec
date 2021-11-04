@@ -71,6 +71,7 @@ def MergeTuples(tuple1,tuple2,pot1=None,pot2=None):
     pot1 = pot1 or Utilities.getPOTFromFile(tuple1)
     pot2 = pot2 or Utilities.getPOTFromFile(tuple2)
     AddOneFile(tuple2,tuple1,pot1/pot2)
+    os.remove(tuple2)
 
 def AddRegexMatchedFiles(dir_path,f = None):
     if f is None:

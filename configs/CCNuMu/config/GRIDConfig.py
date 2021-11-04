@@ -8,13 +8,6 @@ PLAYLISTS = {
         "me1C_nx",
         "me1D_nx",
         "me1E_nx",
-        "me1F_nx",
-        "me1G_nx",
-        "me1L_nx",
-        "me1M_nx",
-        "me1N_nx",
-        "me1O_nx",
-        "me1P_nx",
     ],
 
     "RHC": [

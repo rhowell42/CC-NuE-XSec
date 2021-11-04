@@ -48,13 +48,14 @@ Categories["NCDIS"]= {
     "color" : COLORS[6]
 }
 
-# Categories["NuEElastic"] = {
-#     "title":"#nu + e elastic",
-#     "color" : COLORS[6]
-# }
+Categories["CCNuEAntiNu"] = {
+    "title":"Wrong Sign",
+    "color" : COLORS[1]
+}
+
 Categories["Other"] = {
     "title":"Others",
-    "cate" : {"Other","NonFiducial","NonPhaseSpace","NuEElastic","CCNuEAntiNu","NCOther","CCOther"},
+    "cate" : {"Other","NCOther","CCOther","NuEElastic","NonPhaseSpace","NonFiducial"},
     "color" : COLORS[7]
 }
 
@@ -79,7 +80,7 @@ SignalDecomposition = {
     },
     "Background" : {
         "title" : "Backgrounds",
-        "cate": {"ExcessModel","NonFiducial","CCDIS","CCOther","NCCOH","NCRES","NCDIS","NCOther","NuEElastic","Other","CCNuEAntiNu"},
+        "cate": {"ExcessModel","NonFiducial","CCDIS","CCOther","NCCOH","NCRES","NCDIS","NCOther","NuEElastic","Other","CCNuEAntiNu","NonPhaseSpace"},
         "color": COLORS[4]
     }
     # "CCNuEAntiNu" : {
@@ -99,7 +100,7 @@ SignalBackground = {
     },
     "Background" : {
         "title" : "Backgrounds",
-        "cate": {"ExcessModel","NonFiducial","CCDIS","CCOther","NCCOH","NCRES","NCDIS","NCOther","NuEElastic","Other","CCNuEAntiNu"},
+        "cate": {"ExcessModel","NonFiducial","CCDIS","CCOther","NCCOH","NCRES","NCDIS","NCOther","NuEElastic","Other","CCNuEAntiNu","NonPhaseSpace"},
         "color": COLORS[4]
     }
 }
@@ -128,7 +129,7 @@ NuEElasticCategory = {
     },
     "Other":{
         "title" : "Others",
-        "cate": {"ExcessModel","NonFiducial","CCDIS","CCOther","NCRES","NCDIS","NCOther","Other","CCNuEAntiNu"},
+        "cate": {"ExcessModel","NonFiducial","CCDIS","CCOther","NCRES","NCDIS","NCOther","Other","CCNuEAntiNu","NonPhaseSpace"},
         "color": COLORS[4]
     }
 }
@@ -180,27 +181,30 @@ PLOTS_TO_MAKE = [
      {"variables":["PsiEe","Lepton Energy"],
      "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
      },
+     {"variables":["Visible Energy","Lepton Energy"],
+     "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
+     },
     {"variables": ["Inline Upstream Energy","Lepton Energy"],
      "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
-     "sideband_group": ("Excess",("Excess_High_Inline","Excess_Low_Inline")),
      },
      {"name":"Lepton Theta"},
       {"name":"Lepton Theta",
        "plot_type":"diff"},
-    {"variables": ["Inline Upstream Energy","Lepton Energy"],
-     "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
-     },
     {"variables": ["Vertex Difference","Lepton Energy"],
      "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
      },
     {"variables": ["UIE Mean Pos","Lepton Energy"],
      "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
-     "canvasconfig":PlotTools.Logy
      },
     {"variables": ["UIE Pos RMS","Lepton Energy"],
      "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
-     "canvasconfig":PlotTools.Logy
      },
+     # {"variables": ["Rock Muon Removed","Lepton Energy"],
+     #  "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
+     #  },
+       {"variables": ["Vertex Energy","Lepton Energy"],
+      "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
+      },
     # {"name":"Q0",
     #  "plot_type" : "err",},
     # {"name":"Q3",
