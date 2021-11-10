@@ -13,7 +13,7 @@ def createTarball(outDir):
   print("I'm inside createTarball()")
   found = os.path.isfile(outDir)
   if(not found):
-    cmd = "tar -czf %s -C %s %s"%(outDir, baseDir+"../", "{} {}".format(MacroName,MAT))# remove /Ana/CCNuE from baseDir bc want to tar the release.
+    cmd = "tar --exclude='.nfs*' -czf %s -C %s %s "%(outDir, baseDir+"../", "{} {}".format(MacroName,MAT))# remove /Ana/CCNuE from baseDir bc want to tar the release.
     print(cmd)
     os.system(cmd)
 
@@ -21,10 +21,10 @@ def createTarball(outDir):
 
 def unpackTarball( mywrapper):
   # Add lines to wrapper that wil unpack tarball; add additional setup steps here if necessary  
-  mywrapper.write("cd $CONDOR_DIR_INPUT\n")
+  mywrapper.write("cd $INPUT_TAR_FILE\n")
   mywrapper.write("source /cvmfs/larsoft.opensciencegrid.org/products/setup\n")
   mywrapper.write("setup root v6_22_06a -q e19:p383b:prof\n")
-  mywrapper.write("tar -xvzf {}\n".format(outdir_tarball.split("/")[-1]))
+  #mywrapper.write("tar -xvzf {}\n".format(outdir_tarball.split("/")[-1]))
   mywrapper.write("export MINERVA_PREFIX=`pwd`/{}\n".format(MAT))
   # Set up test release
   #mywrapper.write("pushd Tools/ProductionScriptsLite/cmt/\n")#assuming only one test release
@@ -93,7 +93,7 @@ def submitJob( tupleName):
   os.system( "chmod 777 %s" % wrapper_name )
   
   #cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s/testRelease.tar.gz -d HISTS %s -d LOGS %s -r %s -N %d --expected-lifetime=%dh --cmtconfig=%s -i /cvmfs/minerva.opensciencegrid.org/minerva/software_releases/%s/ file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , os.environ["MINERVA_RELEASE"], njobs, 12, os.environ["CMTCONFIG"],os.environ["MINERVA_RELEASE"], os.environ["PWD"] , wrapper_name )
-  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 12, os.environ["PWD"] , wrapper_name )
+  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB --tar_file_name dropbox://%s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 12, os.environ["PWD"] , wrapper_name )
   # Copy local files to PNFS, they aren't there already
   #copyLocalFilesToPNFS(tupleName,outdir_logs) 
  

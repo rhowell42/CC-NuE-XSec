@@ -21,7 +21,7 @@ from tools import TruthTools,Utilities
 #tags for histograms that will be used to produce cross section.
 reco_tags={"sideband","truth_class"}
 migration_tags={"mc_only","signal_only"} 
-truth_signal_tags={"mc_only","signal_only","ignore_selection"}
+truth_signal_tags={"mc_only","signal_only","ignore_selection","truth_class"}
 
 #tags for histograms for various study
 resolution_tags={"sideband","mc_only"}
@@ -1774,6 +1774,7 @@ class HistHolder:
                 _mc_ints.append(hist)
                 _titles.append(config["title"])
                 _colors.append(config["color"])
+                print (hist.GetTitle(),hist.Integral(0,-1,0,-1))
         return _mc_ints,_colors,_titles
 
     def GetHist(self):

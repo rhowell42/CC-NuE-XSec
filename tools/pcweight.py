@@ -193,22 +193,22 @@ class EelTuningWeight(MyWeighterBase):
 
 class RHCNewWeight(MyWeighterBase):
     def __init__(self):
-        super(RHCNewWeight,self).__init__( lambda universe:universe.kin_cal.reco_E_lep)
+        super(RHCNewWeight,self).__init__( lambda universe:universe.kin_cal.reco_Pt_lep)
         self.f = ROOT.TFile.Open("{}/background_fit/bkgfit_scale_rhc.root".format(os.environ["CCNUEROOT"]))
         # self.fFHC = ROOT.TFile.Open("{}/background_fit/bkgfit_pi0Nrhc.root".format(os.environ["CCNUEROOT"]))
-        # self.hist_dict = {i:self.f.Get(i) for i in ["Excess","NCCoh"]}
+        self.hist_dict = {i:self.f.Get(i) for i in ["Excess","NCCoh"]}
         # self.hist_dict["Signal"] = self.fFHC.Get("Signal")
         # self.hist_dict["DIS"] = self.fFHC.Get("Pi0")
 
-        self.cate_map["NCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["DIS"])
-        self.cate_map["CCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["DIS"])
+        # self.cate_map["NCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["DIS"])
+        # self.cate_map["CCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["DIS"])
         self.cate_map["ExcessModel"] = partial(self.fileBasedWeight,hist=self.hist_dict["Excess"])
         self.cate_map["NCCOH"] = partial(self.fileBasedWeight,hist=self.hist_dict["NCCoh"])
-        self.cate_map["CCNuEQE"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
-        self.cate_map["CCNuEDelta"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
-        self.cate_map["CCNuE2p2h"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
-        self.cate_map["CCNuEDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
-        self.cate_map["CCNuE"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+        # self.cate_map["CCNuEQE"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+        # self.cate_map["CCNuEDelta"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+        # self.cate_map["CCNuE2p2h"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+        # self.cate_map["CCNuEDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+        # self.cate_map["CCNuE"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
 
 class EnuElectronMuonWeight(DataWeight):
     def __init__(self):
@@ -243,11 +243,16 @@ class RHCPtTuningWeight(MyWeighterBase):
     def __init__(self):
         super(RHCPtTuningWeight,self).__init__( lambda universe:universe.kin_cal.reco_Pt_lep)
         self.f = ROOT.TFile.Open("{}/background_fit/bkgfit_ptrhc.root".format(os.environ["CCNUEROOT"]))
-        self.hist_dict = {i:self.f.Get(i) for i in ["Pi0"]}
+        self.hist_dict = {i:self.f.Get(i) for i in ["Pi0","Signal"]}
 
         #self.cate_map["ExcessModel"] = partial(self.fileBasedWeight,hist=self.hist_dict["Excess"])
         self.cate_map["NCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["Pi0"])
         self.cate_map["CCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["Pi0"])
+        self.cate_map["CCNuEQE"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+        self.cate_map["CCNuEDelta"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+        self.cate_map["CCNuE2p2h"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+        self.cate_map["CCNuEDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
+        self.cate_map["CCNuE"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
 
 class EelPtTuningWeight():
     def __init__(self):

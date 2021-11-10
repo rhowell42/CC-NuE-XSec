@@ -114,16 +114,18 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
     def nsigma(self):
         return self.GetSigma() if self.mc else None
 
-    def GetWeight(self):
-        if self.weight is not None:
-            return self.weight
-
-        if self.nsigma is None:
-            self.weight = MyWeighter.GetWeight(self)
+    def GetWeight(self,bkgtuning=True):
+        if self.weight is None:
+            if self.nsigma is None:
+                self.weight = 1
+            else:
+                self.weight = self.GetModelWeight() if self.is_pc else self.GetStandardWeight()
+            if not self.IsTruth():
+                self.tuning_weight = MyWeighter.GetWeight(self)
+        if bkgtuning or self.nsigma is None:
+            return self.weight *self.tuning_weight
         else:
-            #self.weight = self.GetPCWeight() if self.is_pc else self.GetStandardWeight()
-            self.weight = self.GetModelWeight() if self.is_pc else self.GetStandardWeight()
-        return self.weight
+            return self.weight
 
     def GetStandardWeight(self):
         weight = 1.0
@@ -133,7 +135,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         weight *=self.GetRPAWeight()
         weight *=self.GetMyLowQ2PiWeight()
         weight *= self.GetGeantHadronWeight()
-        weight *= MyWeighter.GetWeight(self)
+      
         # for _ in self.weighters:
         #     weight *= _()
         return weight
@@ -687,7 +689,7 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
         CVUniverse.SetZExpansionFaReweight(SystematicsConfig.NumZExpansionUniverses)
         CVUniverse.SetNFluxUniverses(SystematicsConfig.NUM_FLUX_UNIVERSE)
 
-        if chain.GetName() == "Truth":
+        if chain.GetTree().GetName() == "Truth":
             CVUniverse.SetTruth(True)
 
         if exclude is None or "all" not in exclude:
@@ -731,13 +733,13 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             # #universes.extend(BirksShiftUniverse.GetSystematicsUniverses(chain ))
 
             # MKModelUniverse
-            #universes.extend(MKModelUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(MKModelUniverse.GetSystematicsUniverses(chain ))
 
-            # #FSIWeighUniverse
-            #universes.extend(FSIWeightUniverse.GetSystematicsUniverses(chain ))
+            #FSIWeighUniverse
+            universes.extend(FSIWeightUniverse.GetSystematicsUniverses(chain ))
 
-            # #SuSAValenciaUniverse
-            #universes.extend(SusaValenciaUniverse.GetSystematicsUniverses(chain ))
+            #SuSAValenciaUniverse
+            universes.extend(SusaValenciaUniverse.GetSystematicsUniverses(chain ))
 
             #hadron reweight shifting universe
             universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
@@ -753,7 +755,8 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
 
     if exclude is not None and len(univ_dict)>1:
         for i in exclude:
-            del univ_dict[i]
+            if i in univ_dict:
+                del univ_dict[i]
 
     return univ_dict
 

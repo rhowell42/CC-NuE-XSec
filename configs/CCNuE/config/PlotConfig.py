@@ -269,9 +269,9 @@ HISTS_TO_MAKE = [
 
     "Visible Energy vs q3",
     "Visible Energy vs q3 Migration",
-    #"True Signal Visible Energy vs q3",
+    "True Signal Visible Energy vs q3",
     "Visible Energy vs Lepton Pt Migration",
-    #"True Signal Visible Energy vs Lepton Pt",
+    "True Signal Visible Energy vs Lepton Pt",
 
     # "Q3 Migration",
     # "Lepton Pt Migration",

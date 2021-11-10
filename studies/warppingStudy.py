@@ -24,7 +24,7 @@ def createTarball(outDir):
   print("I'm inside createTarball()")
   found = os.path.isfile(outDir)
   if(not found):
-    cmd = "tar -czf %s -C %s %s"%(outDir, baseDir+"../", "{} {}".format(MacroName,MAT))# remove /Ana/CCNuE from baseDir bc want to tar the release.
+    cmd = "tar --exclude='.nfs*' -czf %s -C %s %s"%(outDir, baseDir+"../", "{} {}".format(MacroName,MAT))# remove /Ana/CCNuE from baseDir bc want to tar the release.
     print(cmd)
     os.system(cmd)
 
@@ -32,21 +32,21 @@ def createTarball(outDir):
 
 Iterations = "1,2,3,4,5,6,7,8,9,10,15"
 #Iterations= "1"
-NUniverses =100
+NUniverses =300
 MaxChi2 =600
 stepChi2 = MaxChi2//200
 remove=""#"163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180"
 NUniverses_per_job = NUniverses
 K=0
 Sys_on_Data=True
-Additional_uncertainties = [0,1,2,3,4,5,6,7,8,9,10]
+#Additional_uncertainties = [0,1,2,3,4,5,6,7,8,9,10]
 
 def unpackTarball( mywrapper):
-  # Add lines to wrapper that wil unpack tarball; add additional setup steps here if necessary  
-  mywrapper.write("cd $CONDOR_DIR_INPUT\n")
+  # Add lines to wrapper that wil unpack tarball; add additional setup steps here if necessary
+  mywrapper.write("cd $INPUT_TAR_FILE\n")
   mywrapper.write("source /cvmfs/larsoft.opensciencegrid.org/products/setup\n")
   mywrapper.write("setup root v6_22_06a -q e19:p383b:prof\n")
-  mywrapper.write("tar -xvzf {}\n".format(outdir_tarball.split("/")[-1]))
+  #mywrapper.write("tar -xvzf {}\n".format(outdir_tarball.split("/")[-1]))
   mywrapper.write("export MINERVA_PREFIX=`pwd`/{}\n".format(MAT))
   # Set up test release
   #mywrapper.write("pushd Tools/ProductionScriptsLite/cmt/\n")#assuming only one test release
@@ -64,6 +64,7 @@ def unpackTarball( mywrapper):
   #mywrapper.write("make\n")
   
   mywrapper.write("popd\n")
+  mywrapper.write("cd $CONDOR_DIR_INPUT\n")
 
 def submitJob( tupleName,tag):
 
@@ -93,7 +94,7 @@ def submitJob( tupleName,tag):
   my_wrapper.close()
   
   os.system( "chmod 777 %s" % wrapper_name )
-  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --use-pnfs-dropbox --memory %dMB -f %s -d OUTPUT %s -N %d --expected-lifetime=%dh -f dropbox://%s/%s file://%s/%s" % ( memory , outdir_tarball , outdir_hists , njobs, 12,  os.environ["PWD"],ifile , os.environ["PWD"] , wrapper_name )
+  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --use-pnfs-dropbox --memory %dMB --tar_file_name dropbox://%s -d OUTPUT %s -N %d --expected-lifetime=%dh -f dropbox://%s/%s file://%s/%s" % ( memory , outdir_tarball , outdir_hists , njobs, 12,  os.environ["PWD"],ifile , os.environ["PWD"] , wrapper_name )
   print(cmd)
   os.system(cmd)
 
@@ -119,7 +120,7 @@ def submitJob( tupleName,tag):
 def ConsolidateInputs(Temp_path,mig,reco,reco_truth,data,data_truth):
   def scale(hi):
     h = hi.Clone("{}_clone".format(name))
-    h.Scale(1e23/mc_pot)
+    h.Scale(1e21/mc_pot)
     for i in range(h.GetSize()):
       h.SetBinError(i,math.sqrt(h.GetBinContent(i)))
     return h
@@ -233,24 +234,24 @@ def RunTransWrapper(ifile,ofile):
 
 AlternativeModels = {
   "CV":None,
-  # "LowQ2Pi0": ("LowQ2Pi",0),
-  # "LowQ2Pi1": ("LowQ2Pi",1),
-  # "LowQ2Pi2": ("LowQ2Pi",2),
-  # "LowQ2Pi3": ("LowQ2Pi",3),
-  # "2p2h0": ("Low_Recoil_2p2h_Tune",0),
-  # "2p2h1": ("Low_Recoil_2p2h_Tune",1),
-  # "2p2h2": ("Low_Recoil_2p2h_Tune",2),
-  # "RPA_highq20" :("RPA_HighQ2",0),
-  # "RPA_highq21" :("RPA_HighQ2",1),
-  # "RPA_lowq20" :("RPA_LowQ2",0),
-  # "RPA_lowq21" :("RPA_LowQ2",1),
-  #"MK_Model":("MK_model",0),
-  # "FSI_Weight0":("fsi_weight",0),
-  # "FSI_Weight1":("fsi_weight",1),
-  # "FSI_Weight2":("fsi_weight",2),
-  # "SuSA2p2h":("SuSA_Valencia_Weight",0),
-  # "GenieMaCCQE_UP":("GENIE_MaCCQE",1),
-  # "GenieMaCCQE_DOWN":("GENIE_MaCCQE",0),
+  "LowQ2Pi0": ("LowQ2Pi",0),
+  "LowQ2Pi1": ("LowQ2Pi",1),
+  "LowQ2Pi2": ("LowQ2Pi",2),
+  "LowQ2Pi3": ("LowQ2Pi",3),
+  "2p2h0": ("Low_Recoil_2p2h_Tune",0),
+  "2p2h1": ("Low_Recoil_2p2h_Tune",1),
+  "2p2h2": ("Low_Recoil_2p2h_Tune",2),
+  "RPA_highq20" :("RPA_HighQ2",0),
+  "RPA_highq21" :("RPA_HighQ2",1),
+  "RPA_lowq20" :("RPA_LowQ2",0),
+  "RPA_lowq21" :("RPA_LowQ2",1),
+  "MK_Model":("MK_model",0),
+  "FSI_Weight0":("fsi_weight",0),
+  "FSI_Weight1":("fsi_weight",1),
+  "FSI_Weight2":("fsi_weight",2),
+  "SuSA2p2h":("SuSA_Valencia_Weight",0),
+  "GenieMaCCQE_UP":("GENIE_MaCCQE",1),
+  "GenieMaCCQE_DOWN":("GENIE_MaCCQE",0),
 }
 
 Measurables = [

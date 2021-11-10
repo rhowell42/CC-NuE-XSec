@@ -63,7 +63,7 @@ TRUE_Q3_RANGE = [0,4]
 WEXP_CUT = 2
 Reco_visEcut = 2
 FRONT_DEDX_PI0_UPPERBOUND = 5
-PsiEe_CUT = 1
+PsiEe_CUT = 0.5
 
 
 ############################################################################
@@ -142,7 +142,7 @@ SAMPLE_CUTS = {
         "Eavail",
         "InverseMeanFrontdEdX",
         "Low UIE",
-        #"LowPsiEe"
+        "LowPsiEe"
         #"Exuv",
         #"Euv"
     ],
@@ -167,7 +167,7 @@ SAMPLE_CUTS = {
         "Eavail",
         "InverseMeanFrontdEdX",
         "High UIE",
-        #"LowPsiEe"
+        "LowPsiEe"
         #"Exuv",
         #"Euv"
     ],

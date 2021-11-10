@@ -1,7 +1,8 @@
 import ROOT
 import PlotUtils
 
-hists = ["CCNUE_Warping_2021-10-05-162442"]
+hists = ["CCNUE_Warping_2021-11-07-231918"]
+plotpathroot = "/minerva/data/users/hsu/nu_e/plot/warping/"
 target = ["Eavail_Lepton_Pt","Eavail_q3"]
 model = ["CV","MK_Model", "FSI_Weight0", "FSI_Weight1", "FSI_Weight2","SuSA2p2h", "LowQ2Pi0","LowQ2Pi2","LowQ2Pi1","LowQ2Pi3","2p2h0","2p2h1","2p2h2","RPA_highq20","RPA_lowq20","RPA_highq21","RPA_lowq21","GenieMaCCQE_UP","GenieMaCCQE_DOWN"]
 Iterations = [i for i in range(0,15)]
@@ -19,7 +20,7 @@ for i in hists:
                 continue
             h = d.Get("h_median_chi2_modelData_trueData_iter_chi2")
             h.Draw()
-            c1.Print("{}{}{}.png".format(i,j,k))
+            c1.Print("{}{}{}{}.png".format(plotpathroot,i,j,k))
 
 
 #path = "/pnfs/minerva/persistent/users/hsu/{}_hists/transWrap_{}{}_0.root".format("CCNUE_Waring5","FSI_Weight0","Eavail_Lepton_Pt")
