@@ -7,7 +7,7 @@ import inspect
 MACRO_ROOT = os.path.dirname(os.path.abspath(__file__))+"/../"
 POT_FILE = MACRO_ROOT+"configs/POT.json"
 #SCALE_FILE = MACRO_ROOT+"background_fit/scale.json"
-
+DEFAULT_TREE="MasterAnaDev"
 
 def loadJSON(path):
     with open(path,"r") as pl:
@@ -44,8 +44,7 @@ def composeTChain(input_txt,tree, start=None, count=None):
 
 def findPlaylistFile(playlist,st,nickname):
     data = loadJSON(POT_FILE)
-    tree = "NuECCQE"
-    #tree= "MasterAnaDev"
+    tree = DEFAULT_TREE
     try:
         input_txt= data[playlist][st][nickname]["playlist_location"]
         if "tree" in data[playlist][st][nickname]:
@@ -58,7 +57,10 @@ def findPlaylistFile(playlist,st,nickname):
         }
         if os.path.isfile(MACRO_ROOT+guessing):
             print(("I guess the playlist file located at {}".format(guessing)))
-            writeJSON(POT_FILE,data)
+            try:
+                writeJSON(POT_FILE,data)
+            except OSError:
+                pass
             return MACRO_ROOT+guessing,tree
         else:
             raise KeyError

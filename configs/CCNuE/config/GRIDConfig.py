@@ -8,6 +8,21 @@ PLAYLISTS = {
         "me1C_nx",
         "me1D_nx",
         "me1E_nx",
+        "me1F_nx",
+    ],
+    "FHC_BigNuE": [
+        "me1A_BigNuE",
+        "me1B_BigNuE",
+        "me1C_BigNuE",
+        "me1D_BigNuE",
+        "me1E_BigNuE",
+        "me1F_BigNuE",
+        # "me1G_BigNuE",
+        # "me1L_BigNuE",
+        # "me1M_BigNuE",
+        # "me1N_BigNuE",
+        # "me1O_BigNuE",
+        # "me1P_BigNuE",
     ],
 
     "RHC": [
@@ -20,6 +35,7 @@ PLAYLISTS = {
         "me1C_NCDIF",
         "me1D_NCDIF",
         "me1E_NCDIF",
+        "me1F_NCDIF",
     ],
     "FHC_Extended_2p2h":[
         "me1A_ext_2p2h"
@@ -61,6 +77,14 @@ parser.add_argument("--EXT_2P2H", "--ext_2p2h",
                     action="store_const",
                     const="_Extended_2p2h",
                     help="Use extended 2p2h special sample",
+                    default=""
+)
+
+parser.add_argument("--bignue", "--BIGNUE",
+                    dest="special_sample",
+                    action="store_const",
+                    const="_BigNuE",
+                    help="Use BigNuE special sample",
                     default=""
 )
 

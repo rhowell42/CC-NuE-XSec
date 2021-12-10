@@ -6,7 +6,7 @@ from array import array
 from collections import Iterable #for checking whether iterable.
 from functools import partial
 import ctypes
-
+import code
 
 from config.AnalysisConfig import AnalysisConfig
 
@@ -225,7 +225,7 @@ def TopNErrorBand(hist,topN):
     heap = []
     for errorband_name in hist.GetVertErrorBandNames():
         sum_error = hist.GetVertErrorBand(errorband_name).GetErrorBand(False,False).Integral()
-        print(errorband_name,hist.GetVertErrorBand(errorband_name).GetErrorBand(False,False).Integral())
+        #print(errorband_name,hist.GetVertErrorBand(errorband_name).GetErrorBand(False,False).Integral())
         if len(heap)<topN:
             heapq.heappush(heap, (sum_error,errorband_name))
         elif sum_error>heap[0][0]:
@@ -235,6 +235,7 @@ def TopNErrorBand(hist,topN):
     while heap:
         result.append(heapq.heappop(heap)[1])
     return result
+
 
 def AdaptivePlotterErrorGroup(hist,topN,mnvplotter=MNVPLOTTER):
     result = TopNErrorBand(hist,topN)
@@ -328,15 +329,18 @@ def MakeGridPlot(MakingSlice,MakingEachPlot,input_hists,CanvasConfig=lambda canv
     canvas.Divide(*CalMXN(N_plots+int(draw_seperate_legend)))
     for i in range(N_plots):
         canvas.cd(i+1)
-        if not CanvasConfig(canvas.GetPad(i+1)):
+        tcanvas = canvas.GetPad(i+1)
+        if not CanvasConfig(tcanvas):
             print("Warning: failed setting canvas.")
         if N_plots>1:
-            SetMargin(canvas.GetPad(i+1))
+            SetMargin(tcanvas)
         MakingEachPlot(mnvplotter,*slices[i])
         mnvplotter.AddHistoTitle(slices[i][0].GetTitle())
+        #code.interact(local=locals())
     if draw_seperate_legend:
+        Tleg = None
         for i in range(N_plots):
-            Tleg = GetTLegend(canvas.GetPad(i+1))
+            Tleg = GetTLegend(canvas.GetPad(i+1)) or Tleg
         if Tleg:
             canvas.cd(N_plots+1)
             Tleg.SetX1(0)
@@ -347,7 +351,7 @@ def MakeGridPlot(MakingSlice,MakingEachPlot,input_hists,CanvasConfig=lambda canv
             Tleg.Draw()
 
 def Print(outname,mnvplotter=MNVPLOTTER,canvas=CANVAS):
-    mnvplotter.MultiPrint(canvas,outname)
+    mnvplotter.MultiPrint(canvas,outname,"png")
 
 def SetMargin(pad):
     pad.SetRightMargin(0)

@@ -31,7 +31,7 @@ def countPDG(fsparticles,pdgs):
     return sum(map(lambda x:1 if x in pdgs else 0,fsparticles))
 
 IsNuE = lambda event: abs(event.mc_incoming) == 12
-IsNuMu = lambda event: abs(event.mc_incoming) == 12
+IsNuMu = lambda event: abs(event.mc_incoming) == 14
 IsAntiNu = lambda event: event.mc_incoming < 0 # assuming only neutrino incomes
 IsPi0InFinalState = lambda event: 111 in event.mc_FSPartPDG
 IsProtonInFinalState = lambda event: 2212 in event.mc_FSPartPDG
@@ -49,16 +49,16 @@ def IsInKinematicPhaseSpace(event):
 
 # In case a event satisfy multiple definations, the first takes priority.
 TRUTH_CATEGORIES = OrderedDict()
-TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNuE(event)
-TRUTH_CATEGORIES["CCAntiNuMu"] = lambda event: IsCC(event) and IsAntiNu(event)
-TRUTH_CATEGORIES["NonFiducial"] = lambda event: IsCC(event) and IsNuMu(event) and not IsFiducial(event)
-TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and IsNuMu(event) and not IsInKinematicPhaseSpace(event)
-TRUTH_CATEGORIES["CCQE"] = lambda event: IsCC(event) and IsQE(event)
-TRUTH_CATEGORIES["CCDelta"] = lambda event: IsCC(event) and IsDelta(event)
-TRUTH_CATEGORIES["CC2p2h"] = lambda event: IsCC(event) and Is2p2h(event)
-TRUTH_CATEGORIES["CCDIS"] = lambda event: IsCC(event) and IsDIS(event)
-TRUTH_CATEGORIES["CCOther"] = lambda event: IsCC(event)
 TRUTH_CATEGORIES["NC"] = lambda event: IsNC(event)
+TRUTH_CATEGORIES["CCNuE"] = lambda event: IsNuE(event)
+TRUTH_CATEGORIES["CCAntiNuMu"] = lambda event: IsAntiNu(event)
+TRUTH_CATEGORIES["NonFiducial"] = lambda event: not IsFiducial(event)
+TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: not IsInKinematicPhaseSpace(event)
+TRUTH_CATEGORIES["CCQE"] = lambda event: IsQE(event)
+TRUTH_CATEGORIES["CCDelta"] = lambda event: IsDelta(event)
+TRUTH_CATEGORIES["CC2p2h"] = lambda event: Is2p2h(event)
+TRUTH_CATEGORIES["CCDIS"] = lambda event: IsDIS(event)
+TRUTH_CATEGORIES["CCOther"] = lambda event: IsCC(event)
 
 # My signal is one or more of the listed categories.
 SIGNAL_DEFINATION = [

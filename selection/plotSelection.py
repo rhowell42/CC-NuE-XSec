@@ -26,7 +26,7 @@ def MakePlot(data_hists,mc_hists,config):
         Default_Scale(mc_hists)
     CanvasConfig = config.setdefault("canvasconfig",lambda x:True)
     PlotType = config.setdefault("plot_type",Default_Plot_Type)
-    slicer = config.setdefault("slicer", DefaultSlicer(data_hists))
+    slicer = config.setdefault("slicer", DefaultSlicer(data_hists)) if PlotType!="migration" else PlotTools.IdentitySlicer 
     draw_seperate_legend = config.setdefault("draw_seperate_legend",data_hists.dimension!=1 and PlotType != "migration")
     try:
         custom_tag = config["tag"]+PlotType if "tag" in config else PlotType

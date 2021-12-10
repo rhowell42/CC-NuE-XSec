@@ -821,5 +821,48 @@
                 "playlist_location": "file_option/playlist_ccqenue_mcmeRHC_NCDIF_Had.txt"
             }
         }
+    },
+    "me1A_BigNuE": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_ccqenue_mcme1A_BigNuE_MAD.txt"
+            }
+        }
+    },
+    "me1B_BigNuE": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1B_BigNuE_MAD.txt"
+            }
+        }
+    },
+    "me1C_BigNuE": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1C_BigNuE_MAD.txt"
+            }
+        }
+    },
+    "me1D_BigNuE": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1D_BigNuE_MAD.txt"
+            }
+        }
+    },
+    "me1E_BigNuE": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1E_BigNuE_MAD.txt"
+            }
+        }
+    },
+    "me1F_BigNuE": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1F_BigNuE_MAD.txt"
+            }
+        }
     }
 }

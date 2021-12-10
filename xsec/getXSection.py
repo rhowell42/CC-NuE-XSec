@@ -9,7 +9,9 @@ from config.AnalysisConfig import AnalysisConfig
 from tools import Utilities, PlotTools
 from tools.PlotLibrary import PLOT_SETTINGS
 from config.SystematicsConfig import USE_NUE_CONSTRAINT,CONSOLIDATED_ERROR_GROUPS,DETAILED_ERROR_GROUPS
+from config import DrawingConfig
 from config.CutConfig import NEUTRINO_ENERGY_RANGE,FIDUCIAL_Z_RANGE
+from functools import partial
 
 ROOT.TH1.AddDirectory(False)
 
@@ -40,6 +42,9 @@ def DivideFlux(unfolded,is_mc):
     unfolded.Divide(unfolded,flux)
 
 def GetEfficiency(ifile, ifile_truth, plot):
+    if ifile_truth:
+        print ("using separate efficiency file")
+        ifile = ifile_truth
     num = Utilities.GetHistogram(ifile,PLOT_SETTINGS[plot+" Migration"]["name"]+"_truth")
     den = Utilities.GetHistogram(ifile,PLOT_SETTINGS["True Signal "+plot]["name"])
     hist_out = num.Clone()
@@ -64,7 +69,17 @@ def GetMCXSectionHistogram(mc_file,plot):
     DivideFlux(unfolded,True)
     Nnucleon = TARGET_UTILS.GetTrackerNNucleons(FIDUCIAL_Z_RANGE[0],FIDUCIAL_Z_RANGE[1],True)
     unfolded.Scale(1.0/Nnucleon)
-    return unfolded
+    sig_dep = []
+    colors = []
+    titles = []
+    for chan in ["CCNuEQE","CCNuEDelta","CCNuEDIS","CCNuE2p2h","CCNuE"]:
+        tmp =Utilities.GetHistogram(mc_file,"{}_{}".format(PLOT_SETTINGS["True Signal "+plot]["name"],chan))
+        DivideFlux(tmp,True)
+        tmp.Scale(1.0/Nnucleon)
+        sig_dep.append(tmp)
+        colors.append(DrawingConfig.SignalDecomposition[chan]["color"])
+        titles.append(DrawingConfig.SignalDecomposition[chan]["title"])
+    return unfolded,sig_dep,colors,titles
 
 if __name__ == "__main__":
     playlist= AnalysisConfig.playlist
@@ -72,22 +87,23 @@ if __name__ == "__main__":
     data_file,mc_reco_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag,True)
     unfolded_file = ROOT.TFile.Open(AnalysisConfig.UnfoldedHistoPath(playlist,AnalysisConfig.bkgTune_tag,False))
     #mc_reco_file = ROOT.TFile.Open(AnalysisCmc_reco_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(playlist,False,False))
-    #mc_truth_file = ROOT.TFile.Open(AnalysisConfig.TruthHistoPath(playlist,False))
+    mc_truth_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(playlist+"-BigNuE",False))
     xsec_file = ROOT.TFile.Open(AnalysisConfig.XSecHistoPath(playlist),"RECREATE")
     for plot in XSEC_TO_MAKE:
         PlotTools.updatePlotterErrorGroup(CONSOLIDATED_ERROR_GROUPS)
         unfolded = Utilities.GetHistogram(unfolded_file,PLOT_SETTINGS[plot]["name"]+"_bkg_unfolding")
-        efficiency = GetEfficiency(mc_reco_file,mc_reco_file,plot)
+        efficiency = GetEfficiency(mc_reco_file,mc_truth_file,plot)
         xsec = GetXSectionHistogram(unfolded,efficiency,False)
-        mc_xsec = GetMCXSectionHistogram(mc_reco_file,plot)
+        mc_xsec,sig_dep,colors,titles = GetMCXSectionHistogram(mc_reco_file,plot)
         ylabel = xsec.GetZaxis().GetTitle().replace("NEvents","#sigma")
         #ylabel += "(cm^2/Gev^2/c^2/Nucleon)"
         xsec.GetZaxis().SetTitle(ylabel)
         mc_xsec.GetZaxis().SetTitle(ylabel)
         mc_xsec.GetXaxis().SetTitle("Eavail (GeV)") #hard coding for now
 
-        xsec.Scale(1.0,"width")
-        mc_xsec.Scale(1.0,"width")
+        for h in [xsec,mc_xsec,*sig_dep]:
+            h.Scale(1.0,"width")
+
         plotter = lambda mnvplotter,data_hist, mc_hist: mnvplotter.DrawDataMCWithErrorBand(data_hist.GetCVHistoWithError(),mc_hist.GetCVHistoWithStatError(),1.0,"TR")
         PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec,mc_xsec],draw_seperate_legend=True)
         PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec"))
@@ -100,6 +116,10 @@ if __name__ == "__main__":
         PlotTools.AdaptivePlotterErrorGroup(xsec,18)
         PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec],draw_seperate_legend=True)
         PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_err_top7"))
+
+        plotter = lambda mnvplotter,data_hist, mc_hist, *mc_ints : partial(PlotTools.MakeSignalDecomposePlot,color=colors,title=titles)(data_hist,mc_hist,mc_ints)
+        PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec,mc_xsec,*sig_dep],draw_seperate_legend=True)
+        PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_sigdep"))
         xsec_file.cd()
         xsec.Write(PLOT_SETTINGS[plot]["name"]+"_dataxsec")
         mc_xsec.Write(PLOT_SETTINGS[plot]["name"]+"_mcxsec")

@@ -38,24 +38,21 @@ Categories["NCCOH"]= {
     "title": "NC coh",
     "color" : COLORS[4]
 }
-Categories["NCRES"]= {
-    "title": "NC Res",
-    "color" : COLORS[5]
-}
 
 Categories["NCDIS"]= {
     "title": "NC DIS",
     "color" : COLORS[6]
 }
 
-Categories["CCNuEAntiNu"] = {
-    "title":"Wrong Sign",
-    "color" : COLORS[1]
+Categories["irreducible"] = {
+    "cate":{"NuEElastic","CCNuEAntiNu"},
+    "title":"Wrong Sign and nu+e",
+    "color" : COLORS[5]
 }
 
 Categories["Other"] = {
     "title":"Others",
-    "cate" : {"Other","NCOther","CCOther","NuEElastic","NonPhaseSpace","NonFiducial"},
+    "cate" : {"Other","NCOther","CCOther","NonPhaseSpace","NonFiducial"},
     "color" : COLORS[7]
 }
 
@@ -77,6 +74,10 @@ SignalDecomposition = {
     "CCNuE2p2h" : {
         "title" : "CC #nu_{e}-2p2h",
         "color": COLORS[3]
+    },
+    "CCNuE": {
+        "title" : "CC #nu_{e}-Other",
+        "color": COLORS[5]
     },
     "Background" : {
         "title" : "Backgrounds",
@@ -145,7 +146,8 @@ DefaultPlotters={
     "diff":{"func":PlotTools.PrepareDiff},
     "migration":{"func":PlotTools.PrepareMigration},
     "sigdep":{"func":PlotTools.PrepareSignalDecompose,
-              "args": (SignalDecomposition,True,False)}
+              "args": (SignalDecomposition,True,False)},
+    "errband":{"func":PlotTools.PrepareErrorBand},
 
 }
 
@@ -179,13 +181,10 @@ PLOTS_TO_MAKE = [
     # {"variables":["PsiEe","Lepton Energy"],
     #  "slicer": PlotTools.ProjectionY},
      {"variables":["PsiEe","Lepton Energy"],
-     
      },
      {"variables":["Visible Energy","Lepton Energy"],
-     
      },
     {"variables": ["Inline Upstream Energy","Lepton Energy"],
-     
      },
      {"name":"Lepton Theta"},
       {"name":"Lepton Theta",
@@ -193,6 +192,8 @@ PLOTS_TO_MAKE = [
     {"variables": ["Vertex Difference","Lepton Energy"],
      },
     {"variables": ["UIE Mean Pos","Lepton Energy"],
+     },
+    {"variables": ["Shower Width","Lepton Energy"],
      },
     {"variables": ["UIE Pos RMS","Lepton Energy"],
      },
@@ -206,15 +207,16 @@ PLOTS_TO_MAKE = [
     #  "plot_type" : "err",},
     # {"name":"Q3",
     #  "plot_type" : "err",},
-    # {"name":"Q3 Migration",
-    #   "plot_type":"migration",
-    #  "slicer": lambda x: [x.Clone()]},
-    # {"name":"Q0 Migration",
-    #  "plot_type":"migration",
-    #  "slicer": lambda x: [x.Clone()]},
-     # {"name":"Visible Energy Migration",
-     #  "plot_type":"migration",
-     #  "slicer": lambda x: [x.Clone()]},
+    {"name":"Q3 Migration",
+     "plot_type":"migration"},
+    {"name":"Lepton Pt Migration",
+     "plot_type":"migration"},
+     {"name":"Visible Energy Migration",
+      "plot_type":"migration"},
+    {"name":"Visible Energy vs q3 Migration",
+     "plot_type":"migration"},
+    {"name":"Visible Energy vs Lepton Pt Migration",
+     "plot_type":"migration"},
     {"name":"Visible Energy vs q3"},
     {"name":"Visible Energy vs q3",
      "plot_type":"comp"},
@@ -226,30 +228,8 @@ PLOTS_TO_MAKE = [
      "plot_type":"comp",
      "args":(True,False,True),
      },
-     {"name":"Visible Energy Migration",
-      "slicer":lambda hist: PlotTools.Make2DSlice(hist,True),
-      "scale":lambda hist:hist.AreaScale(True),
-      "args":(True,False,True),
-      "plot_type":"comp",
-      },
-     {"name":"Q0 Migration",
-      "slicer":lambda hist: PlotTools.Make2DSlice(hist,True),
-      "scale":lambda hist:hist.AreaScale(True),
-      "args":(True,False,True),
-      "plot_type":"comp",
-      },
-    {"variables":["Visible Energy","True Q0"],
-     "scale":lambda hist:hist.AreaScale(True),
-     "slicer":lambda hist: PlotTools.Make2DSlice(hist,True),
-     "args":(True,False,True),
-     "plot_type":"comp",
-     },
-    # {"name":"Visible Energy Migration",
-    #  "plot_type":"comp",
-    #  "slicer":lambda hist: PlotTools.Make2DSlice(hist,True)},
-    #  {"name":"Q0 Migration",
-    #  "plot_type":"comp",
-    #  "slicer":lambda hist: PlotTools.Make2DSlice(hist,True)},
+
+
     # {"name":"True Signal Visible Energy vs q3"
     #  "plot_type":"err"},
     # {"name":"Visible Energy vs q3",
@@ -279,6 +259,10 @@ PLOTS_TO_MAKE = [
      "plot_type":"comp"},
      {"variables":["Visible Energy","Lepton Pt"],
      "plot_type":"err"},
+     {"variables":["Visible Energy","Lepton Pt"],
+      "plot_type":"errband",
+      "args":("Leakage_Uncertainty",),
+      },
     # {"variables":["Visible Energy","Lepton Pt"],
     #  "slicer": PlotTools.IdentitySlicer,
     #  "scale":lambda histHolder:histHolder.POTScale(False),
@@ -329,6 +313,7 @@ PLOTS_TO_MAKE = [
     # },
     #{"variables":["Sum Visible Energy"],
     # },
+
     {"variables":["Exuv"]},
     {"variables":["Euv"]},
     # {"name":"True Signal Visible Energy vs q3",

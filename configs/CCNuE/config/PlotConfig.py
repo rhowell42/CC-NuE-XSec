@@ -28,17 +28,13 @@ M_p_sqr = M_p**2
 
 NQ3 = 8
 NQ0 = 19
-LOW_RECOIL_BIN_Q3 = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2]
-LOW_RECOIL_BIN_Q3_Truth = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
-LOW_RECOIL_BIN_Q0_Truth = [0.0, 0.04, 0.08,
-		             0.12, 0.16, 0.2,
-		             0.25, 0.30, 0.35, 0.40,
-		             0.50, 0.60, 0.80, 1.00, 1.2]
-BACKGROUND_FIT_Q3_BIN = [0.0, 0.6, 0.8, 1.0, 1.2, 1.6, 2]
-LOW_RECOIL_BIN_Q0 = [0.0, 0.04, 0.08,
-		             0.12, 0.16, 0.2,
-		             0.25, 0.30, 0.35, 0.40,
-		             0.50, 0.60, 0.80, 1.00, 1.2, 1.6, 2.0]
+
+BACKGROUND_FIT_Q3_BIN =[0.0, 0.6, 0.8, 1.0, 1.2, 1.6, 2]
+LOW_RECOIL_BIN_Q3_Truth = [0.0, 0.3, 0.6, 0.9, 1.2]
+LOW_RECOIL_BIN_Q0_Truth = [0.0, 0.15, 0.3, 0.45, 0.6, 0.9, 1.2]
+LOW_RECOIL_BIN_Q3 =  LOW_RECOIL_BIN_Q3_Truth 
+
+LOW_RECOIL_BIN_Q0 = LOW_RECOIL_BIN_Q0_Truth #[0.0, 0.1, 0.2, 0.30, 0.40, 0.50, 0.60, 0.80, 1.00, 1.2]
 
 
 RESOLUTION_BINNING = [-1.0+0.1*i for i in range(41)]
@@ -180,8 +176,8 @@ PROTON_KE_BINNING = [0.05 * i for i in range(21)]
 #VERTEX_DIFF_BINNING = range(-20,40)
 VERTEX_DIFF_BINNING = [20*i for i in range(-3,31)]
 VERTEX_Z_BINNING = [5000+ 200*i for i in range(21)]
-PT_BINNING = [0.2 * i for i in range(9)]
-PT_BINNING_Truth = [0.2 * i for i in range(9)]
+PT_BINNING = [0.4 * i for i in range(5)]
+PT_BINNING_Truth = PT_BINNING
 PI0_ENERGY_BINNING = [0.5 * i for i in range(21)]
 #EXTRA_ENERGY_BINNING = [0.05*i for i in range(41)]
 EXTRA_ENERGY_BINNING = [0.05*i for i in range(15)]
@@ -256,16 +252,16 @@ HISTS_TO_MAKE = [
     # {"variables":["PsiEe","Lepton Theta"],
     #  "tags":{"sideband","truth_class","mc_only"},
     #  },
-    {"variables":["PsiEe","Lepton Energy"],
-     "tags":{"sideband","truth_class"},
-     },
+    # {"variables":["PsiEe","Lepton Energy"],
+    #  "tags":{"sideband","truth_class"},
+    #  },
     {"variables":["Visible Energy","Lepton Energy"],
      "tags":{"sideband","truth_class"},
      },
-    {"variables":["Neutrino Energy"],
-     "tags":{"truth_class","sideband"}},
-    {"variables":["Neutrino Energy QE"],
-     "tags":{"truth_class","sideband"}},
+    # {"variables":["Neutrino Energy"],
+    #  "tags":{"truth_class","sideband"}},
+    # {"variables":["Neutrino Energy QE"],
+    #  "tags":{"truth_class","sideband"}},
 
     "Visible Energy vs q3",
     "Visible Energy vs q3 Migration",
@@ -273,8 +269,9 @@ HISTS_TO_MAKE = [
     "Visible Energy vs Lepton Pt Migration",
     "True Signal Visible Energy vs Lepton Pt",
 
-    # "Q3 Migration",
-    # "Lepton Pt Migration",
+    "Q3 Migration",
+    "Lepton Pt Migration",
+    "Visible Energy Migration",
 
     # {"variables": [ "Lepton Energy", "Lepton Theta"],
     #  "tags":{"truth_class","sideband"}},
@@ -287,7 +284,9 @@ HISTS_TO_MAKE = [
      "tags":{"truth_class","sideband","mc_only"}},
     {"variables": ["UIE Mean Pos","Lepton Energy"],
      "tags":{"truth_class","sideband"}},
-    {"variables": ["UIE Pos RMS","Lepton Energy"],
+    {"variables": ["Shower Width","Lepton Energy"],
+     "tags":{"truth_class","sideband"}},
+     {"variables": ["UIE Pos RMS","Lepton Energy"],
      "tags":{"truth_class","sideband"}},
     # {"variables": ["Vertex Energy","Lepton Energy"],
     #  "tags":{"truth_class","sideband"}},

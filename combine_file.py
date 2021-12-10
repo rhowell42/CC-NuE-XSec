@@ -47,6 +47,7 @@ def MaddWrapper(output_playlist,input_files,is_data):
     #os.system(cmd)
     print(args)
     subprocess.run(args,stdout=subprocess.DEVNULL)
+    print (Utilities.getPOTFromFile(AnalysisConfig.SelectionHistoPath(output_playlist,is_data)))
     print ("done")
 
 def MergeHistograms():

@@ -441,9 +441,15 @@ VARIABLE_DICT = {
     {
         "name" : "Enu",
         "title" : "E_{#nu} (GeV)",
-
         "binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
         "value_getter" : lambda event: event.kin_cal.reco_E_nu_cal,
+    },
+     "True Neutrino Energy":
+    {
+        "name" : "tEnu",
+        "title" : "E_{#nu} (GeV)",
+        "binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
+        "value_getter" : lambda event: event.kin_cal.true_enu_genie,
     },
      "Neutrino Energy QE":
     {
@@ -457,7 +463,6 @@ VARIABLE_DICT = {
     {
         "name" : "Mul_start",
         "title" : "Startpoint Multiplicity",
-
         "binning" : [i for i in range(11)],
         "value_getter" : lambda event: event.StartPointVertexMultiplicity,
     },
@@ -523,7 +528,7 @@ VARIABLE_DICT = {
     {
         "name" : "UIE_Mean_Pos",
         "title": "Mean UIE Position (rad. length)",
-        "binning" : [0.1*i for i in range(21)],
+        "binning" : [0.2*i for i in range(21)],
         "value_getter" : lambda event: event.UpstreamInlineEnergyWgtdPosMean,
         "dec":["high"],
     },
@@ -763,7 +768,7 @@ PLOT_SETTINGS= {
         "title" : "Available Energy; E_{avail} (GeV); dNEvents/dE_{avail}",
         "binning" : [PlotConfig.LOW_RECOIL_BIN_Q0],
         "value_getter" : [lambda event: event.kin_cal.true_visE],
-        "tags": truth_signal_tags
+        "tags": truth_tags
     },
 
     "Qsquare":
@@ -848,7 +853,6 @@ PLOT_SETTINGS= {
         "binning" : [PlotConfig.LOW_RECOIL_BIN_Q0],
         "value_getter" : [lambda event: event.kin_cal.true_q0],
         "tags": truth_tags,
-        "tags": reco_tags
     },
     "True q3" :
     {
@@ -866,14 +870,14 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: TruthTools.EnergyofParticle(event, 111)],
         "tags": reco_tags
     },
-    "True Lepton Pt" :
-    {   
-        "name" : "tEePt",
-        "title": "ETruePt ; True_E_Pt (GeV); NEvents/GeV",
-        "binning" : [PlotConfig.PT_BINNING],
-        "value_getter" : [lambda event: TruthTools.TransverseMomentum(event, 11)],
-        "tags": reco_tags
-    },
+    # "True Lepton Pt" :
+    # {   
+    #     "name" : "tEePt",
+    #     "title": "ETruePt ; True_E_Pt (GeV); NEvents/GeV",
+    #     "binning" : [PlotConfig.PT_BINNING],
+    #     "value_getter" : [lambda event: TruthTools.TransverseMomentum(event, 11)],
+    #     "tags": reco_tags
+    # },
 
     "True PDG" :
     {
@@ -1333,10 +1337,20 @@ PLOT_SETTINGS= {
     {
         "name" : "Eel_migration",
         "title" : "Lepton Energy Migration; Reco E (GeV); True E (GeV)",
-        "binning" : [PlotConfig.EXCESS_ENERGY_FIT,
-                     PlotConfig.EXCESS_ENERGY_FIT],
+        "binning" : [PlotConfig.ELECTRON_ENERGY_BINNING,
+                     PlotConfig.ELECTRON_ENERGY_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep,lambda event: event.kin_cal.true_E_lep],
-        "tags":reco_tags,
+        "tags":migration_tags,
+    },
+
+      "Neutrino Energy Migration":
+    {
+        "name" : "Enu_migration",
+        "title" : "Neutrino Energy Migration; Reco E (GeV); True E (GeV)",
+        "binning" : [PlotConfig.NEUTRINO_ENERGY_BINNING,
+                     PlotConfig.NEUTRINO_ENERGY_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.reco_E_nu_cal,lambda event: event.kin_cal.true_enu_genie],
+        "tags":migration_tags,
     },
 
      "Lepton Pt Migration":
@@ -1457,13 +1471,14 @@ PLOT_SETTINGS= {
         "tags": truth_signal_tags
     },
 
-    #  "True Lepton Pt":
-    # {
-    #     "name" : "tLepton_Pt",
-    #     "title" : "tPt_lepton",
-    #     "binning" : PlotConfig.PT_BINNING,
-    #     "value_getter" : lambda event: event.kin_cal.true_P_lep*math.sin(event.kin_cal.true_theta_lep_rad)
-    # },
+     "True Lepton Pt":
+    {
+        "name" : "tLepton_Pt",
+        "title" : "tPt_lepton",
+        "binning" : [PlotConfig.PT_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.true_P_lep*math.sin(event.kin_cal.true_theta_lep_rad)],
+        "tags":truth_tags
+    },
      "True Signal Visible Energy vs Lepton Pt":
     {
         "name" : "Eavail_Lepton_Pt_true_signal",
@@ -1572,13 +1587,6 @@ PLOT_SETTINGS= {
                           lambda event: event.kin_cal.true_theta_e,lambda event: event.kin_cal.true_q3],
         "tags":migration_tags,
     },
-     #  "True Lepton Pt":
-    # {
-    #     "name" : "tLepton_Pt",
-    #     "title" : "tPt_lepton",
-    #     "binning" : PlotConfig.PT_BINNING,
-    #     "value_getter" : lambda event: event.kin_cal.true_P_lep*math.sin(event.kin_cal.true_theta_lep_rad)
-    # },
 
     ################## 1D Resolution Plots: ############################
 
@@ -1615,9 +1623,9 @@ PLOT_SETTINGS= {
     "Lepton Energy Resolution":
     {
         "name" : "Eel_resolution",
-        "title" : "True Lepton Energy (GeV); Lepton Energy Resolution; Lepton Energy NEvents",
+        "title" : ";True Lepton Energy (GeV);Lepton Energy Resolution; Lepton Energy NEvents",
         "binning" : [PlotConfig.ELECTRON_ENERGY_BINNING,PlotConfig.RESOLUTION_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.true_E_e, lambda event: event.kin_cal.reco_E_e/ event.kin_cal.true_E_e -1],
+        "value_getter" : [lambda event: event.kin_cal.true_E_lep, lambda event: event.kin_cal.reco_E_lep/event.kin_cal.true_E_lep -1],
         "tags":migration_tags,
         "cuts":[skip_sys]
     },
@@ -1646,10 +1654,10 @@ PLOT_SETTINGS= {
     "Visible Energy Resolution":
     {
         "name" : "Eavail_resolution",
-        "title" : "Available Energy Resolution; Available Energy; Available Energy Resolution",
+        "title" : "; True Available Energy; Available Energy Resolution",
         "binning" : [PlotConfig.VISIBLE_ENERGY_BINNING,PlotConfig.RESOLUTION_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.true_visE,
-                          lambda event: PlotConfig.RESOLUTION_BINNING[-2] if event.kin_cal.true_visE<=0 else min((event.kin_cal.reco_visE-event.kin_cal.true_visE)/event.kin_cal.true_visE,PlotConfig.RESOLUTION_BINNING[-2])],
+        "value_getter" : [lambda event: event.kin_cal.true_q0,
+                          lambda event: PlotConfig.RESOLUTION_BINNING[-2] if event.kin_cal.true_visE<=0 else min((event.kin_cal.reco_visE-event.kin_cal.true_q0)/event.kin_cal.true_q0,PlotConfig.RESOLUTION_BINNING[-2])],
         "tags":migration_tags,
         "cuts":[skip_sys]
     },
@@ -1774,7 +1782,6 @@ class HistHolder:
                 _mc_ints.append(hist)
                 _titles.append(config["title"])
                 _colors.append(config["color"])
-                print (hist.GetTitle(),hist.Integral(0,-1,0,-1))
         return _mc_ints,_colors,_titles
 
     def GetHist(self):

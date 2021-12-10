@@ -39,6 +39,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
     def __init__(self, chain, nsigma = None): #nsigma is None for data because we don't shift data
         super(CVUniverse,self).__init__(chain,0 if nsigma is None else nsigma)
         self.weight = None
+        self.tuning_weight = None
         self.InitWithoutSuper(chain,nsigma)
 
     def InitWithoutSuper(self,chain,nsigma):
@@ -91,6 +92,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
     def SetEntry(self,n_entry):
         #go to another event, discard weight calculated.
         self.weight = None
+        self.tuning_weight = None
         CVUniverse.LLR = None
         super(CVUniverse,self).SetEntry(n_entry)
 
@@ -120,9 +122,9 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
                 self.weight = 1
             else:
                 self.weight = self.GetModelWeight() if self.is_pc else self.GetStandardWeight()
-            if not self.IsTruth():
-                self.tuning_weight = MyWeighter.GetWeight(self)
         if bkgtuning or self.nsigma is None:
+            if self.tuning_weight is None:
+                self.tuning_weight = MyWeighter.GetWeight(self)
             return self.weight *self.tuning_weight
         else:
             return self.weight
@@ -208,7 +210,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         uie = self.GetDouble("UpstreamInlineEnergy")
         vtx = 0
         #vtx = sum(self.GetVecElem("Bined_UIE",i) for i in range(2))
-        #vtx = self.GetDouble("recoil_energy_nonmuon_vtx50mm")
+        vtx = self.GetDouble("recoil_energy_nonmuon_vtx50mm")
         return max(0,uie-vtx)
 
     # =============== collcetion of all recoil energy stuff.========
@@ -227,7 +229,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         return max(0,fuzz) * SystematicsConfig.AVAILABLE_E_CORRECTION
 
     def GetLeakageCorrection(self):
-        return max(0,SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw()) - (10 if self.nsigma is not None else 0))
+        return SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw())
 
     def Pi0_Additional_Leakage(self):
         return random.uniform(0,20) if self.mc and (self.mc_intType == 4 or (self.mc_current==2 and self.mc_intType==10)) else 0
@@ -641,8 +643,9 @@ class LeakageUniverse(CVUniverse,object):
         super(LeakageUniverse,self).__init__(chain,nsigma)
 
     def GetLeakageCorrection(self):
-        return super(LeakageUniverse,self).GetLeakageCorrection() * (1+self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS)
-        #return super(LeakageUniverse,self).GetLeakageCorrection() + self.nsigma*10
+        #return super(LeakageUniverse,self).GetLeakageCorrection() * (1+self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS)
+
+        return super(LeakageUniverse,self).GetLeakageCorrection() + ( self.nsigma*10 if abs(self.mc_primaryLepton) ==11 else 0)
 
     def ShortName(self):
         return "Leakage_Uncertainty"
@@ -705,7 +708,7 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
                 raise ValueError ("AnaNuPDG should be \pm 12 or 14, but you set {}".format(SystematicsConfig.AnaNuPDG))
 
             # #Electron angle universe
-            # universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
             # #beam angle shift universe
             universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
             #particle response shift universe

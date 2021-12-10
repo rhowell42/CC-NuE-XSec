@@ -76,8 +76,8 @@ PT_TUNE = {
     }
 }
 
-#PT_TUNE["SCALE_FACTORS"]["Excess"]=[0,0.2,0.4,0.6,0.8,1.0,1.2,1.6]
-# PT_TUNE["SCALE_FACTORS"]["NCCoh"]=[0,1.6]
+PT_TUNE["SCALE_FACTORS"]["Excess"]=[0,0.2,0.4,0.6,0.8,1.0,1.2,1.6]
+#PT_TUNE["SCALE_FACTORS"]["NCCoh"]=[0,1.6]
 PT_TUNE["SCALE_FACTORS"]["Pi0"]=[0,0.2,0.4,0.6,0.8,1.0,1.2,1.6]
 PT_TUNE["SCALE_FACTORS"]["Signal"]=[0,1.6]
 
@@ -90,10 +90,16 @@ PI0PT_TUNE = {
     "CATEGORY_FACTORS" : {
         "NCDIS":"Pi0",
         "CCDIS":"Pi0",
+        "CCNuE":"Signal",
+        "CCNuEQE":"Signal",
+        "CCNuEDIS":"Signal",
+        "CCNuEDelta":"Signal",
+        "CCNuE2p2h":"Signal",
     }
 }
 
 PI0PT_TUNE["SCALE_FACTORS"]["Pi0"]=[0,0.2,0.4,0.6,0.8,1.0,1.2,1.6]
+PI0PT_TUNE["SCALE_FACTORS"]["Signal"]=[0,1.6]
 
 REGPT_TUNE = {
     "HIST_TO_FIT" : "Lepton Pt",
