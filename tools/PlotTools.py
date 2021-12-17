@@ -209,7 +209,7 @@ def PrepareMigration(data_hists,mc_hists):
     if not(mc_hists.valid):
         raise KeyError("No MC histogram to plot migration")
     hists = [mc_hists.GetHist()]
-    plotfunction = lambda mnvplotter,mc_hist: mnvplotter.DrawNormalizedMigrationHistogram(mc_hist,False,False,True,False)
+    plotfunction = lambda mnvplotter,mc_hist: mnvplotter.DrawNormalizedMigrationHistogram(mc_hist,False,False,True,True)
     return plotfunction,hists
 
 def updatePlotterErrorGroup(group,mnvplotter=MNVPLOTTER):
@@ -319,6 +319,7 @@ def MakeErrPlot(hist,mnvplotter=MNVPLOTTER,canvas=CANVAS):
 
 def MakeErrorBandPlot(hist,name,mnvplotter=MNVPLOTTER,canvas=CANVAS):
     errorband = hist.GetVertErrorBand(name)
+    errorband.DivideSingle(errorband,hist)
     errorband.DrawAll("",True)
 
 def MakeGridPlot(MakingSlice,MakingEachPlot,input_hists,CanvasConfig=lambda canvas:True, draw_seperate_legend = False, mnvplotter=MNVPLOTTER,canvas=CANVAS):

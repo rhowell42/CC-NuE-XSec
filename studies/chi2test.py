@@ -3,49 +3,44 @@ import os, time, sys, math
 import PlotUtils
 from array import array
 
-f1 = ROOT.TFile.Open("/minerva/data/users/hsu/nu_e/kin_dist_mcme1A-E_col12.1_MAD.root")
-f2 = ROOT.TFile.Open("/minerva/data/users/hsu/nu_e/kin_dist_mcme1A-E-BigNuE_col12.1_MAD.root")
+#f1 = ROOT.TFile.Open("/minerva/data/users/hsu/nu_e/kin_dist_mcme1A-E_col12.1_MAD.root")
+f2 = ROOT.TFile.Open("/minerva/data/users/hsu/nu_e/kin_dist_mcme1A-F-BigNuE_col12.2_MAD.root")
 
-hists = [#"Eavail_Lepton_Pt_migration",
+hists = ["Eavail_Lepton_Pt_migration",
 #          "Eavail_Lepton_Pt_migration_truth",
 #          "Eavail_Lepton_Pt_migration_reco",
-    "Eavail_q3_migration",
-    "Eavail_q3_migration_truth",
-    "Eavail_q3_migration_reco",
-    #"Eavail_migration",
-    #"q3_migration",
-    "Lepton_Pt_migration"]
+    "Eavail_q3_migration"]
+    #"Lepton_Pt_migration"]
+threshold = 10
+p_value = 0.1
 
-def linearize(h):
-    return h 
-    # hr = ROOT.TH1D(h.GetName(),h.GetTitle(),h.GetSize(),0,h.GetSize())
-    # for i in range(h.GetSize()):
-    #     hr.SetBinContent(i,h.GetBinContent(i))
-    # return hr
 
 def exclude(h1,h2):
+    if not threshold:
+        return False
     for i in range(h1.GetSize()):
-        if h1.GetBinContent(i)<0:
+        if h1.GetBinContent(i) + h2.GetBinContent(i)<threshold:
             h1.SetBinContent(i,0)
             h2.SetBinContent(i,0)
-    return h1,h2
+    return True
 
-
-
-for h in hists:
-    print (h,f1.Get(h),f2.Get(h))
-    h1= linearize(f1.Get(h).Clone("h1"))
-    h2= linearize(f2.Get(h).Clone("h2"))
-    h1,h2 = exclude(h1,h2)
-    #print(h1,h2)
-    #h1.Scale(h2.Integral()/h1.Integral())
-    
-    #arr = array("d",[0]*200)
-    chi2 = h2.Chi2Test(h1,"WW P")
-    #l = [(abs(arr[i]),h2.GetBinContent(i)) for i in range(len(arr))]
-    #l.sort()
-    #print (len(arr))
-    #print(l)
+for hname in hists:
+    h = f2.Get(hname)
+    n = h.GetNbinsX()+2
+    for i in range(n):
+        for j in [i-9,i+9]:
+            if not 0<j<n:
+                continue
+            print(i,j)
+            h1 = h.ProjectionX("_Px1",i,i)
+            h2 = h.ProjectionX("_Px2",j,j)
+            if h1.Integral(0,-1)==0 or h2.Integral(0,-1)==0:
+                continue
+            exclude(h1,h2)
+            
+            p = h1.Chi2Test(h2,"WW P")
+            if p>p_value:
+                print ("i and j are same distribution: {},{}. ".format(i,j))
 
 
 #likely rejects

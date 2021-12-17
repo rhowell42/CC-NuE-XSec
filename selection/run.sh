@@ -1,6 +1,6 @@
 #col12.1,.2 are binning tunes
 
-stag="col12.2"
+stag="col12.3"
 ntag="MAD"
 #tarball="/pnfs/minerva/resilient/tarballs/hsu-gridselection-macro$(date +%H%M%S).tar.gz"
 tarball="/minerva/data/users/hsu/tarballs/hsu-gridselection-macro$(date +%H%M%S).tar.gz"
@@ -10,7 +10,7 @@ fi
 
 common_flag="--selection_tag ${stag} --ntuple_tag ${ntag}  --use_sideband Excess_High_Inline Excess_Low_Inline Pi0 --extra_weighter RHCEelPt_tune --tarball ${tarball}"
 #common_flag+=" --exclude_universes SuSA_Valencia_Weight fsi_weight MK_model"
-common_flag+=" --exclude_universe all --scratch"
+#common_flag+=" --exclude_universe all --scratch"
 echo python gridSelection.py $common_flag
 python gridSelection.py $common_flag
 #diffractive pi0 sample

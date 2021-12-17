@@ -30,7 +30,7 @@ def createTarball(outDir):
 
   print("I'm done creating the tarballs")
 
-Iterations = "1,2,3,4,5,6,7,8,9,10,15"
+Iterations = "1,2,3,4,5,6,7,8,9,10,15,20,30,40,50"
 #Iterations= "1"
 NUniverses =100
 MaxChi2 =600
@@ -76,7 +76,7 @@ def unpackTarball( mywrapper):
   mywrapper.write("popd\n")
   mywrapper.write("cd $CONDOR_DIR_INPUT\n")
 
-def submitJob( tupleName,tag):
+def submitJob( tupleName,tag,njobs):
 
   # Create wrapper
   wrapper_name = "grid_wrappers/%s/%s_wrapper.sh" % ( processingID , tupleName ) 
@@ -95,7 +95,7 @@ def submitJob( tupleName,tag):
 
   my_wrapper.write("readlink -f `which TransWarpExtraction` &> $CONDOR_DIR_OUTPUT/log_{tag}_$PROCESS\n".format(tag=tag)) 
   pot_scale=1
-  my_wrapper.write("TransWarpExtraction -o $CONDOR_DIR_OUTPUT/transWrap_{tag}_$PROCESS.root -d data -D $CONDOR_DIR_INPUT/{iput} -i data_truth -I $CONDOR_DIR_INPUT/{iput} -m migration -M $CONDOR_DIR_INPUT/{iput} -r reco -R $CONDOR_DIR_INPUT/{iput} -t reco_truth -T $CONDOR_DIR_INPUT/{iput} -n {Iter} -z {dimension} -u {NUniverse} -c {max_chi2} -C {step_chi2} -f $PROCESS -L {remove} 2>/dev/null >> $CONDOR_DIR_OUTPUT/log_{tag}_$PROCESS\n".format(tag=tag,iput=ifile,Iter=Iterations,dimension=dimension,NUniverse=NUniverses_per_job,max_chi2=MaxChi2,step_chi2=stepChi2,remove="-x {}".format(remove) if remove else ""))
+  my_wrapper.write("TransWarpExtraction -o $CONDOR_DIR_OUTPUT/transWrap_{tag}_{PROCESS}.root -d data -D $CONDOR_DIR_INPUT/{iput} -i data_truth -I $CONDOR_DIR_INPUT/{iput} -m migration -M $CONDOR_DIR_INPUT/{iput} -r reco -R $CONDOR_DIR_INPUT/{iput} -t reco_truth -T $CONDOR_DIR_INPUT/{iput} -n {Iter} -z {dimension} -u {NUniverse} -c {max_chi2} -C {step_chi2} -b -V -f {PROCESS} -L {remove} 2>/dev/null >> $CONDOR_DIR_OUTPUT/log_{tag}_{PROCESS}\n".format(tag=tag,iput=ifile,Iter=Iterations,dimension=dimension,NUniverse=NUniverses_per_job,max_chi2=MaxChi2,step_chi2=stepChi2,remove="-x {}".format(remove) if remove else "", PROCESS="$PROCESS" if njobs>1 else "-1"))
 
   my_wrapper.write("exit $?\n")
   #my_wrapper.write( "python eventSelection.py -p %s --grid --%s-only --ntuple_tag %s --count %d %d  --output $CONDOR_DIR_HISTS %s \n" % (playlist, dataSwitch, gridargs.ntuple_tag, start, count, argstring) )
@@ -104,33 +104,22 @@ def submitJob( tupleName,tag):
   my_wrapper.close()
   
   os.system( "chmod 777 %s" % wrapper_name )
-  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --use-pnfs-dropbox --memory %dMB --tar_file_name dropbox://%s -d OUTPUT %s -N %d --expected-lifetime=%dh -f dropbox://%s/%s file://%s/%s" % ( memory , outdir_tarball , outdir_hists , njobs, 12,  os.environ["PWD"],ifile , os.environ["PWD"] , wrapper_name )
+  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --use-pnfs-dropbox --memory %dMB --tar_file_name dropbox://%s -d OUTPUT %s %s --expected-lifetime=%dh -f dropbox://%s/%s file://%s/%s" % ( memory , outdir_tarball , outdir_hists , "-N {}".format(njobs) if njobs>1 else "", 12,  os.environ["PWD"],ifile , os.environ["PWD"] , wrapper_name )
   print(cmd)
   os.system(cmd)
-
-# def DoFancyTuneToMigration(migration,reco,reco_truth,data_truth,k):
-#   try:
-#     scale = reco_truth.Integral(0,-1)/data_truth.Integral(0,-1)
-#   except:
-#     scale = reco_truth.Integral(0,-1,0,-1)/data_truth.Integral(0,-1,0,-1)
-#   for i in range(migration.GetNbinsX()+2):
-#     for j in range(migration.GetNbinsY()+2):
-#       reco.AddBinContent(i,-1.0*migration.GetBinContent(i,j))
-
-#   for j in range(migration.GetNbinsY()+2):
-#     target = data_truth.GetBinContent(j)*scale * k+reco_truth.GetBinContent(j)*(1-k)
-#     correction = target/reco_truth.GetBinContent(j) if reco_truth.GetBinContent(j)!=0 else 1
-#     reco_truth.SetBinContent(j,correction*reco_truth.GetBinContent(j))
-#     for i in range(migration.GetNbinsX()+2):
-#       migration.SetBinContent(i,j,migration.GetBinContent(i,j)*correction)
-#       migration.SetBinError(i,j,math.sqrt(migration.GetBinContent(i,j)))
-#       reco.AddBinContent(i,migration.GetBinContent(i,j))
 
 
 def ConsolidateInputs(Temp_path,mig,reco,reco_truth,data,data_truth):
   def scale(hi):
     h = hi.Clone("{}_clone".format(name))
-    h.Scale(1e21/mc_pot)
+    #h.Scale(1e21/mc_pot)
+    h.Scale(17379.009/h.Integral(0,-1,0,-1))
+    for i in range(h.GetSize()):
+      h.SetBinError(i,math.sqrt(h.GetBinContent(i)))
+    return h
+  def scale2(hi,hr_events):
+    h = hi.Clone("{}_clone".format(name))
+    h.Scale(hr_events/hi.Integral(0,-1,0,-1))
     for i in range(h.GetSize()):
       h.SetBinError(i,math.sqrt(h.GetBinContent(i)))
     return h
@@ -143,109 +132,15 @@ def ConsolidateInputs(Temp_path,mig,reco,reco_truth,data,data_truth):
   for name,h in [("data",data),("data_truth",data_truth),("migration",mig),("reco_truth",reco_truth),("reco",reco)]:
     if name in scale_dict:
       tmp = scale(h)
-      # if threshold is not None and name=="data":
-      #   #global remove
-      #   remove = findexcludebins(tmp,threshold)
-      #   print ("removing bins: {}".format(remove))
       tmp.Write(name)
     else:
       h.Write(name)
     
   f.Close()
 
-
-# def CalcChi2(h1,h2,cov):
-#   l1 = h1.GetSize()
-#   l2 = h2.GetSize()
-  
-#   # if not (l1 == l2 == cov.GetNcols() == cov.GetNrows()):
-#   #     print (l1,l2,cov.GetNcols(),cov.GetNrows())
-#   #     raise ValueError("cov matrix/histograms dont have same dimention to calculate correlation.")
-#   diff = [(i,h1.GetBinContent(i)-h2.GetBinContent(i)) for i in range(l1) if (h1.GetBinContent(i)-h2.GetBinContent(i))!=0]
-#   v1 = ROOT.TMatrixD(1,len(diff))
-#   v2 = ROOT.TMatrixD(len(diff),1)
-#   this_cov = ROOT.TMatrixD(len(diff),len(diff))
-#   for i,entry in enumerate(diff):
-#     v1[0][i]=entry[1]
-#     v2[i][0]=entry[1]
-#     for j,entry2 in enumerate(diff):
-#       this_cov[i][j] = cov[entry[0]][entry2[0]]
-
-#   SVD = ROOT.TDecompSVD(this_cov)
-#   #print [SVD.GetV()[i][i] for i in range(len(diff))]
-#   print(diff[0:10])
-#   tmp = SVD.Invert()
-#   print([tmp[i][i] for i in range(len(diff))])
-#   tmp = tmp*v2
-#   tmp = v1*tmp
-#   return tmp[0][0]
-
-# def SubtractPoissonHistograms(h,h1):
-#     h.AddMissingErrorBandsAndFillWithCV (h1)
-#     errors = []
-#     for i in range(h.GetSize()):
-#         errors.append(math.sqrt(h.GetBinError(i)**2 + h1.GetBinError(i)**2))
-#     h.Add(h1,-1)
-#     for i in range(h.GetSize()):
-#         h.SetBinError(i,errors[i])
-
-#     return h
-
-# def MyUnfoldWrapper(ifile_name):
-#   ifile = ROOT.TFile.Open(ifile_name)
-#   response=ifile.Get("migration")
-#   reco=ifile.Get("reco")
-#   truth=ifile.Get("reco_truth")
-#   hlin_measured = ifile.Get("data")
-#   unfold_old = ifile.Get("data_truth")
-#   miggg = ROOT.RooUnfoldResponse(reco,truth,response)
-#   miggg.UseOverflow(1)
-#   unfolder = ROOT.RooUnfold.New(ROOT.RooUnfold.kBayes,miggg,hlin_measured,2)
-#   unfolder.IncludeSystematics(0)
-#   h_unfolded = unfolder.Hreco()
-#   h_unfolded_cov = unfolder.Ereco()
-#   #print (h_unfolded_cov[21][21],h_unfolded_cov[21][22])
-#   #print unfold_old.GetBinContent(181)
-#   print(CalcChi2(unfold_old,h_unfolded,h_unfolded_cov))
-#   ifile.Close()
-
-# def MnvUnfoldWrapper(ifile_name):
-#   ifile = ROOT.TFile.Open(ifile_name)
-#   response=ifile.Get("migration")
-#   reco=ifile.Get("reco")
-#   truth=ifile.Get("reco_truth")
-#   hlin_measured = ifile.Get("data")
-#   unfold_old = ifile.Get("data_truth")
-#   mnvunfold=UnfoldUtils.MnvUnfold()
-#   h_unfolded =truth.Clone()
-#   covmx = ROOT.TMatrixD(500,500)
-#   mnvunfold.setUseBetterStatErrorCalc(True)
-#   mnvunfold.UnfoldHistoWithFakes(h_unfolded,covmx,response,response.ProjectionX("fuck",0,-1),ROOT.nullptr
-# ,ROOT.nullptr
-# ,ROOT.nullptr,1,False,False)
-#   for i in range(18):
-#     print ([covmx[i][j] for j in range(18)])
-#   print ("done")
- 
-#   # for i in range(h_unfolded.GetSize()):
-#   #   covmx[i][i]=0
-#   # covmx.ResizeTo(h_unfolded.GetSize(),h_unfolded.GetSize())
-#   # h_unfolded.PushCovMatrix("unfold",covmx)
-#   # matrix = h_unfolded.GetTotalErrorMatrix()
-#   # #print (h_unfolded.GetBinError(20)**2,matrix[20][20])
-#   # print CalcChi2(unfold_old,h_unfolded,matrix)
-#   # plotter=PlotUtils.MnvPlotter()
-#   # plotter.chi2_use_overflow_err=True
-#   # _ =ROOT.Long()
-#   # print plotter.Chi2DataMC(h_unfolded,unfold_old,_,1,True,False,False)
-#   # print plotter.Chi2DataMC(h_unfolded,unfold_old,1,True,False,False)
-#   ifile.Close()
-
-def RunTransWrapper(ifile,ofile):
-  cmd = "TransWarpExtraction -o {output} -d data -D {iput} -i data_truth -I {iput} -m migration -M {iput} -r reco -R {iput} -t reco_truth -T {iput} -n {Iter} -z {dimension} -u {NUniverse} -c {max_chi2} -C {step_chi2} {remove} -L ".format(output=ofile,iput=ifile,Iter=Iterations,dimension=dimension,NUniverse=NUniverses,max_chi2=MaxChi2,step_chi2=stepChi2,remove="-x {}".format(remove) if remove else "")
-  print(cmd)
-  os.system(cmd)
-
+def TransWrapperCommand(tag,ifile,Iteration,dimension,NUniverse_per_job,MaxChi2,stepChi2,remove,njob):
+  cmd = "TransWarpExtraction -o $CONDOR_DIR_OUTPUT/transWrap_{tag}_{PROCESS}.root -d data -D $CONDOR_DIR_INPUT/{iput} -i data_truth -I $CONDOR_DIR_INPUT/{iput} -m migration -M $CONDOR_DIR_INPUT/{iput} -r reco -R $CONDOR_DIR_INPUT/{iput} -t reco_truth -T $CONDOR_DIR_INPUT/{iput} -n {Iter} -z {dimension} -u {NUniverse} -c {max_chi2} -C {step_chi2} -b -V -f {PROCESS} -L {remove} 2>/dev/null >> $CONDOR_DIR_OUTPUT/log_{tag}_{PROCESS}\n".format(tag=tag,iput=ifile,Iter=Iterations,dimension=dimension,NUniverse=NUniverses_per_job,max_chi2=MaxChi2,step_chi2=stepChi2,remove="-x {}".format(remove) if remove else "", PROCESS="$PROCESS" if njobs>1 else "-1")
+  return cmd
 
 AlternativeModels = {
   "CV":None,
@@ -260,11 +155,11 @@ AlternativeModels = {
   # "RPA_highq21" :("RPA_HighQ2",1),
   # "RPA_lowq20" :("RPA_LowQ2",0),
   # "RPA_lowq21" :("RPA_LowQ2",1),
-  # "MK_Model":("MK_model",0),
-  # "FSI_Weight0":("fsi_weight",0),
-  # "FSI_Weight1":("fsi_weight",1),
-  # "FSI_Weight2":("fsi_weight",2),
-  # "SuSA2p2h":("SuSA_Valencia_Weight",0),
+  "MK_Model":("MK_model",0),
+  "FSI_Weight0":("fsi_weight",0),
+  "FSI_Weight1":("fsi_weight",1),
+  "FSI_Weight2":("fsi_weight",2),
+  "SuSA2p2h":("SuSA_Valencia_Weight",0),
   # "GenieMaCCQE_UP":("GENIE_MaCCQE",1),
   # "GenieMaCCQE_DOWN":("GENIE_MaCCQE",0),
 }
@@ -285,9 +180,9 @@ if __name__ == '__main__':
   ifile="fin.root"
 
   if signal_rich_file:
-    print ("Using signal rich sample")
-    data_file = mc_file
-    mc_file = signal_rich_file
+     print ("Using signal rich sample")
+     #data_file = mc_file
+     mc_file = signal_rich_file
   
   PNFS_switch = "scratch"
   # Automatically generate unique output directory
@@ -326,11 +221,15 @@ if __name__ == '__main__':
       if not MnvDataSignal:
         MnvDataSignal = MnvDataMigration.ProjectionX("_reco",0,-1)
 
+
     if dimension ==1:
       H2D = PlotUtils.MnvH1D
+      sumhist = lambda h:h.Integral(0,-1)
     else:
       H2D = PlotUtils.MnvH2D
+      sumhist = lambda h:h.Integral(0,-1,0,-1)
 
+    #MnvDatatruth = Utilities.GetHistogram(signal_rich_file, prefix+ "_migration_truth")
 
     for model,value in AlternativeModels.items():
       data_truth = H2D(MnvDatatruth.GetCVHistoWithStatError())
@@ -355,13 +254,16 @@ if __name__ == '__main__':
           print(e)
           continue
 
+      data_truth.Scale(sumhist(data_signal)/sumhist(data_truth))
+      data_signal.Scale(sumhist(data_signal)/sumhist(data_truth))
+
       ConsolidateInputs(ifile,model_migration,model_signal,model_truth,data_signal,data_truth)
-      njobs = 3#int(math.ceil(1.0*NUniverses/NUniverses_per_job))
       cmdString = "CCNuE-%s-%s" % (playlist,"mc")
       #wrapper.setup(migration,cv_reco,cv_bkg)
       #MyUnfoldWrapper(ifile)
       #MnvUnfoldWrapper(ifile)
-      submitJob(cmdString,model+prefix)
+      submitJob(cmdString,model+prefix,1)
+      #submitJob(cmdString,model+prefix,3)
       #RunTransWrapper(ifile,"transWrapT_{}.root".format(model+prefix))
       #break
       # mnvunfold=UnfoldUtils.MnvUnfold()
