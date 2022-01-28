@@ -241,7 +241,13 @@ DETECTOR_RESPONSE_ERROR_GROUPS = {
 MINERVA_TUNNING_ERROR_GROUPS = {
     "RPA" : ["RPA_"+i for i in RPA_UNIVERSES],
     "Low Recoil 2p2h Tune" : ["Low_Recoil_2p2h_Tune"],
-    #"Low Q2 Pion": ["LowQ2Pi"],
+    "Low Q2 Pion": ["LowQ2Pi"],
+}
+
+MINERVA_TUNNING_ERROR_GROUPS2 = {
+    "MK model" : ["MK_model"],
+    "FSI bugfix" : ["fsi_weight"],
+    "SuSA 2p2h" : ["SuSA_Valencia_Weight"],
 }
 
 GENIE_ERROR_GROUPS = {
@@ -262,6 +268,8 @@ CONSOLIDATED_ERROR_GROUPS_CONFIG = {
  	"Interaction model": [GENIE_ERROR_GROUPS],
     "FSI": [FSI_ERROR_GROUPS],
     "MnvTunes" :[MINERVA_TUNNING_ERROR_GROUPS],
+    "Alternative 2p2h models" : [MINERVA_TUNNING_ERROR_GROUPS2]
+   # "Others":[DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS,GENIE_ERROR_GROUPS,FSI_ERROR_GROUPS,MINERVA_TUNNING_ERROR_GROUPS],
 }
 
 

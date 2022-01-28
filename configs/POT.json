@@ -197,6 +197,9 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_ccqenue_datame1L_nx_MAD.txt"
+            },
+            "MAD_test": {
+                "playlist_location": "file_option/playlist_ccqenue_datame1L_nx_MAD_test.txt"
             }
         },
         "mc": {
@@ -216,6 +219,9 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_ccqenue_mcme1L_nx_MAD.txt"
+            },
+            "MAD_test": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1L_nx_MAD_test.txt"
             }
         }
     },
@@ -862,6 +868,48 @@
         "mc": {
             "MAD": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1F_BigNuE_MAD.txt"
+            }
+        }
+    },
+    "me1G_BigNuE": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1G_BigNuE_MAD.txt"
+            }
+        }
+    },
+    "me1L_BigNuE": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1L_BigNuE_MAD.txt"
+            }
+        }
+    },
+    "me1M_BigNuE": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1M_BigNuE_MAD.txt"
+            }
+        }
+    },
+    "me1N_BigNuE": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1N_BigNuE_MAD.txt"
+            }
+        }
+    },
+    "me1O_BigNuE": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1O_BigNuE_MAD.txt"
+            }
+        }
+    },
+    "me1P_BigNuE": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1P_BigNuE_MAD.txt"
             }
         }
     }

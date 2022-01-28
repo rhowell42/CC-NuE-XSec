@@ -97,7 +97,7 @@ SAMPLE_CUTS = {
         "VertexTrackMultiplicity",
         # Pi0 rejection
         "MeanFrontdEdX",
-        "Eavail"
+        #"Eavail"
         #"LLR",
         #"Psi",
     ],
@@ -138,7 +138,7 @@ SAMPLE_CUTS = {
         "TransverseGapScore",
         "DeadTime",
         "Afterpulsing",
-        "Eavail",
+        #"Eavail",
         "InverseMeanFrontdEdX",
         "Low UIE",
         #"Exuv",
@@ -162,7 +162,7 @@ SAMPLE_CUTS = {
         "TransverseGapScore",
         "DeadTime",
         "Afterpulsing",
-        "Eavail",
+        #"Eavail",
         "InverseMeanFrontdEdX",
         "High UIE",
         #"Exuv",

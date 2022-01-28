@@ -20,11 +20,13 @@ XSEC_TO_MAKE = [
     "Visible Energy vs q3",
     "Visible Energy vs Lepton Pt"
 ]
+threshold = 100
 
 TARGET_UTILS = PlotUtils.TargetUtils.Get()
 
 def GetXSectionHistogram(unfolded,efficiency,is_mc):
     #divide by efficiency
+    efficiency.AddMissingErrorBandsAndFillWithCV(unfolded)
     unfolded.Divide(unfolded,efficiency)
     #divide by flux
     DivideFlux(unfolded,is_mc)
@@ -41,14 +43,49 @@ def DivideFlux(unfolded,is_mc):
     flux.Scale(1e-4*(mc_pot if is_mc else data_pot)) #change unit to nu/cm^2
     unfolded.Divide(unfolded,flux)
 
+def ProjectUniverseContent(num, den, i, j,num_o,den_o):
+    l = 0
+    denNewContent = 0
+    numNewContent = 0
+    while i-l>=0:
+        denNewContent += den_o.GetBinContent(i-l,j)
+        numNewContent += num_o.GetBinContent(i-l,j)
+        l+=1
+        if denNewContent>threshold:
+            break
+
+    den.SetBinContent(i,j,denNewContent)
+    num.SetBinContent(i,j,numNewContent)
+    #need to do this for every universe
+    for bandname in den.GetVertErrorBandNames():
+        nHists = den.GetVertErrorBand(bandname).GetNHists()
+        for k in range(0,nHists):
+            denNewContent = sum (den_o.GetVertErrorBand(bandname).GetHist(k).GetBinContent(i-_,j) for _ in range(l))
+            numNewContent = sum (num_o.GetVertErrorBand(bandname).GetHist(k).GetBinContent(i-_,j) for _ in range(l))
+            den.GetVertErrorBand(bandname).GetHist(k).SetBinContent(i,j,denNewContent)
+            num.GetVertErrorBand(bandname).GetHist(k).SetBinContent(i,j,numNewContent)
+    return  i-l>=0
+
+def ProjectBinContent(num, den):
+    num_new = num.Clone("{}_smooth".format(num.GetName()))
+    den_new = den.Clone("{}_smooth".format(den.GetName()))
+    xNBins = num.GetNbinsX()
+    yNBins = num.GetNbinsY()
+    for j in range(0,yNBins+2):
+        for i in range(0,xNBins+2):
+            if 0 < den.GetBinContent(i,j) < threshold: #treshold
+                if not ProjectUniverseContent(num_new, den_new, i, j,num,den):
+                    print ("not enough events in {}-th y bin".format(j))
+    return num_new, den_new
+
 def GetEfficiency(ifile, ifile_truth, plot):
     if ifile_truth:
         print ("using separate efficiency file")
         ifile = ifile_truth
     num = Utilities.GetHistogram(ifile,PLOT_SETTINGS[plot+" Migration"]["name"]+"_truth")
     den = Utilities.GetHistogram(ifile,PLOT_SETTINGS["True Signal "+plot]["name"])
-    hist_out = num.Clone()
-    hist_out.Divide(num,den,1.0,1.0,"B")
+    hist_out,den_new = ProjectBinContent(num,den)
+    hist_out.Divide(hist_out,den_new,1.0,1.0,"B")
     #plot efficiency
     hist_out.GetYaxis().SetTitle(den.GetYaxis().GetTitle())
     hist_out.GetXaxis().SetTitle("Eavail (GeV)") #hard coding for now
@@ -111,13 +148,15 @@ if __name__ == "__main__":
         PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec,mc_xsec],draw_seperate_legend=True)
         PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_ratio"))
         plotter = lambda mnvplotter, hist: mnvplotter.DrawErrorSummary(hist)
+        PlotTools.MNVPLOTTER.axis_maximum = 0.6
         PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec],draw_seperate_legend=True)
         PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_err"))
         PlotTools.AdaptivePlotterErrorGroup(xsec,18)
         PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec],draw_seperate_legend=True)
         PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_err_top7"))
+        PlotTools.MNVPLOTTER.axis_maximum = -1111
 
-        plotter = lambda mnvplotter,data_hist, mc_hist, *mc_ints : partial(PlotTools.MakeSignalDecomposePlot,color=colors,title=titles)(data_hist,mc_hist,mc_ints)
+        plotter = lambda mnvplotter,data_hist, mc_hist, *mc_ints : partial(PlotTools.MakeSignalDecomposePlot,color=colors,title=titles)(data_hist.GetCVHistoWithError(),mc_hist.GetCVHistoWithStatError(),mc_ints)
         PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec,mc_xsec,*sig_dep],draw_seperate_legend=True)
         PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_sigdep"))
         xsec_file.cd()

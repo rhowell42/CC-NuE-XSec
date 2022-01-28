@@ -43,8 +43,6 @@ IsDeexcitationPhoton =  lambda event: event.mc_FSPartPDG[0] == 22 and event.mc_F
 IsPhoton = lambda event: 22 in event.mc_FSPartPDG and event.mc_FSPartPDG[0] != 22
 
 def IsInKinematicPhaseSpace(event):
-    if event.kin_cal.true_visE>event.kin_cal.true_q3:
-        return False
     return all(CUTS["True{}".format(cut)].DoesEventPass(event) for cut in KINEMATICS_CUTS)
 
 

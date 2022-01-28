@@ -248,7 +248,7 @@ PLOTS_TO_MAKE = [
     #  "plot_type" : "sigdep",},
     # {"name":"Visible Energy"},
     {"variables":["Visible Zoomin","Lepton Energy"],
-     "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),
+     "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=1),
      "args":(NuEElasticCategory,),
      "scale":lambda histHolder:histHolder.POTScale(False)},
     # {"name":"FrontdEdX_position" },

@@ -1520,6 +1520,15 @@ PLOT_SETTINGS= {
         "tags": truth_signal_tags
     },
 
+     "True Signal Neutrino Energy":
+    {
+        "name" : "tEnu_true_signal",
+        "title" : "True Neutrino Energy; E_{#nu} (GeV); NEvents/GeV",
+        "binning" : [PlotConfig.NEUTRINO_ENERGY_BINNING],
+        "value_getter" : [lambda event:event.kin_cal.true_enu_genie],
+        "tags": truth_signal_tags
+    },
+
 
     ################## 2D Migration Plots: ##################################
 

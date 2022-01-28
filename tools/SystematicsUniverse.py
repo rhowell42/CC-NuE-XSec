@@ -165,7 +165,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
 
     @Utilities.decorator_ReLU
     def ElectronEnergy(self):
-        return self.ElectronEnergyRaw() + self.GetEMEnergyShift()
+        return self.ElectronEnergyRaw() + self.GetEMEnergyShift() +self.GetLeakageCorrection()
 
     def ElectronP3D(self):
         allp = self.GetVecOfVecDouble("prong_part_E")
@@ -239,14 +239,16 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
     @Utilities.decorator_ReLU
     def AvailableEnergy(self):
         #return self.GetEAvail()* SystematicsConfig.AVAILABLE_E_CORRECTION
-        return self.GetEAvail()* SystematicsConfig.AVAILABLE_E_CORRECTION -self.GetCorrection()
+        return (self.GetEAvail() -self.GetCorrection()) * SystematicsConfig.AVAILABLE_E_CORRECTION
 
     @Utilities.decorator_ReLU
     def RecoilEnergy(self):
+        result = None
         if self.GetAnaToolName() == "MasterAnaDev":
-            return sum(self.__getattr__("blob_recoil_E_{}".format(i)) for i in ["tracker","ecal","hcal","od","nucl"])
+            result = sum(self.__getattr__("blob_recoil_E_{}".format(i)) for i in ["tracker","ecal","hcal","od","nucl"])
         else:
-            return sum(self.__getattr__("recoile_passive_{}".format(i)) for i in ["tracker","ecal","hcal","odclus","nucl"])
+            result = sum(self.__getattr__("recoile_passive_{}".format(i)) for i in ["tracker","ecal","hcal","odclus","nucl"])
+        return result - self.GetCorrection()
 
     def GetFuzzCorrection(self):
         return 0

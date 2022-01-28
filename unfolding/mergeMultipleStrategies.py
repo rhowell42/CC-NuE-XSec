@@ -6,8 +6,8 @@ import UnfoldUtils
 ROOT.TH1.AddDirectory(False)
 
 hist_names = {
-    #"Eavail_q3_bkgSubed",
-    "Eavail_Lepton_Pt_bkgSubed",
+    "Eavail_q3_bkgSubed",
+    "Eavail_Lepton_Pt_bkg_unfolding",
 }
 
 dir_path = "/minerva/data/users/hsu/nu_e/"

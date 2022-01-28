@@ -11,6 +11,8 @@ from config.SignalDef import TRUTH_CATEGORIES,EXTRA_OTHER
 from config.CutConfig import SAMPLE_CUTS,KINEMATICS_CUTS
 from tools.CutLibrary import CUTS
 
+TRUE_SIGNAL_WEIGHTED=False
+
 class HistWrapper1D(HistWrapper):
     def __init__(self,title,bins):
         # Note: bins is an array of lower edges of each bin
@@ -223,7 +225,7 @@ def MakePlotProcessors(**kwargs):
         if kwargs["mc"]:
             for plot in plots:
                 plot.AddCut(lambda universe: universe.classifier.is_true_signal)
-                plot.weight_function = lambda event:event.GetWeight(False)
+                plot.weight_function = lambda event:event.GetWeight(TRUE_SIGNAL_WEIGHTED)
         else:
             print("cant't make signal only plots for data")
             return plots

@@ -39,7 +39,11 @@ threshold = 10
 remove=""
 NUniverses_per_job = NUniverses
 K=0
-Sys_on_Data=True
+Sys_on_Data=False
+unfoldwithFakes = False
+use_siganl_rich_sample = True
+use_siganl_rich_sample_as_fake_data = True
+LOCAL=False
 #Additional_uncertainties = [0,1,2,3,4,5,6,7,8,9,10]
 
 def findexcludebins(h,threshold):
@@ -93,9 +97,9 @@ def submitJob( tupleName,tag,njobs):
   my_wrapper.write( "export USER=$(whoami)\n")
   #my_wrapper.write( "export XRD_LOGLEVEL=\"Debug\"\n")
 
-  my_wrapper.write("readlink -f `which TransWarpExtraction` &> $CONDOR_DIR_OUTPUT/log_{tag}_$PROCESS\n".format(tag=tag)) 
+  #my_wrapper.write("readlink -f `which TransWarpExtraction` &> $CONDOR_DIR_OUTPUT/log_{tag}_$PROCESS\n".format(tag=tag)) 
   pot_scale=1
-  my_wrapper.write("TransWarpExtraction -o $CONDOR_DIR_OUTPUT/transWrap_{tag}_{PROCESS}.root -d data -D $CONDOR_DIR_INPUT/{iput} -i data_truth -I $CONDOR_DIR_INPUT/{iput} -m migration -M $CONDOR_DIR_INPUT/{iput} -r reco -R $CONDOR_DIR_INPUT/{iput} -t reco_truth -T $CONDOR_DIR_INPUT/{iput} -n {Iter} -z {dimension} -u {NUniverse} -c {max_chi2} -C {step_chi2} -b -V -f {PROCESS} -L {remove} 2>/dev/null >> $CONDOR_DIR_OUTPUT/log_{tag}_{PROCESS}\n".format(tag=tag,iput=ifile,Iter=Iterations,dimension=dimension,NUniverse=NUniverses_per_job,max_chi2=MaxChi2,step_chi2=stepChi2,remove="-x {}".format(remove) if remove else "", PROCESS="$PROCESS" if njobs>1 else "-1"))
+  my_wrapper.write("TransWarpExtraction -o $CONDOR_DIR_OUTPUT/transWrap_{tag}_{PROCESS}.root -d data -D $CONDOR_DIR_INPUT/{iput} -i data_truth -I $CONDOR_DIR_INPUT/{iput} -m migration -M $CONDOR_DIR_INPUT/{iput} -r reco -R $CONDOR_DIR_INPUT/{iput} -t reco_truth -T $CONDOR_DIR_INPUT/{iput} -n {Iter} -z {dimension} -u {NUniverse} -c {max_chi2} -C {step_chi2} -b -V -f {PROCESS} -L {remove} >> $CONDOR_DIR_OUTPUT/log_{tag}_{PROCESS}\n".format(tag=tag,iput=ifile,Iter=Iterations,dimension=dimension,NUniverse=NUniverses_per_job,max_chi2=MaxChi2,step_chi2=stepChi2,remove="-x {}".format(remove) if remove else "", PROCESS="$PROCESS" if njobs>1 else "-1"))
 
   my_wrapper.write("exit $?\n")
   #my_wrapper.write( "python eventSelection.py -p %s --grid --%s-only --ntuple_tag %s --count %d %d  --output $CONDOR_DIR_HISTS %s \n" % (playlist, dataSwitch, gridargs.ntuple_tag, start, count, argstring) )
@@ -112,14 +116,10 @@ def submitJob( tupleName,tag,njobs):
 def ConsolidateInputs(Temp_path,mig,reco,reco_truth,data,data_truth):
   def scale(hi):
     h = hi.Clone("{}_clone".format(name))
-    #h.Scale(1e21/mc_pot)
-    h.Scale(17379.009/h.Integral(0,-1,0,-1))
-    for i in range(h.GetSize()):
-      h.SetBinError(i,math.sqrt(h.GetBinContent(i)))
-    return h
-  def scale2(hi,hr_events):
-    h = hi.Clone("{}_clone".format(name))
-    h.Scale(hr_events/hi.Integral(0,-1,0,-1))
+    if signal_rich_file == data_file:
+      h.Scale(17379.0/h.Integral(0,-1,0,-1))
+    else:
+      h.Scale(1e21/mc_pot)
     for i in range(h.GetSize()):
       h.SetBinError(i,math.sqrt(h.GetBinContent(i)))
     return h
@@ -138,30 +138,39 @@ def ConsolidateInputs(Temp_path,mig,reco,reco_truth,data,data_truth):
     
   f.Close()
 
-def TransWrapperCommand(tag,ifile,Iteration,dimension,NUniverse_per_job,MaxChi2,stepChi2,remove,njob):
-  cmd = "TransWarpExtraction -o $CONDOR_DIR_OUTPUT/transWrap_{tag}_{PROCESS}.root -d data -D $CONDOR_DIR_INPUT/{iput} -i data_truth -I $CONDOR_DIR_INPUT/{iput} -m migration -M $CONDOR_DIR_INPUT/{iput} -r reco -R $CONDOR_DIR_INPUT/{iput} -t reco_truth -T $CONDOR_DIR_INPUT/{iput} -n {Iter} -z {dimension} -u {NUniverse} -c {max_chi2} -C {step_chi2} -b -V -f {PROCESS} -L {remove} 2>/dev/null >> $CONDOR_DIR_OUTPUT/log_{tag}_{PROCESS}\n".format(tag=tag,iput=ifile,Iter=Iterations,dimension=dimension,NUniverse=NUniverses_per_job,max_chi2=MaxChi2,step_chi2=stepChi2,remove="-x {}".format(remove) if remove else "", PROCESS="$PROCESS" if njobs>1 else "-1")
+def TransWrapperCommand(tag,ifile,Iterations,dimension,NUniverses_per_job,MaxChi2,stepChi2,remove,njobs,grid):
+  di = "$CONDOR_DIR_INPUT" if grid else "."
+  do = "$CONDOR_DIR_OUTPUT" if grid else "."
+  cmd = "TransWarpExtraction -o {diro}/transWrap_{tag}_{PROCESS}.root -d data -D {diri}/{iput} -i data_truth -I {diri}/{iput} -m migration -M {diri}/{iput} -r reco -R {diri}/{iput} -t reco_truth -T {diri}/{iput} -n {Iter} -z {dimension} -u {NUniverse} -c {max_chi2} -C {step_chi2} -b -V -f {PROCESS} -L {remove} 2>/dev/null >> {diro}/log_{tag}_{PROCESS}\n".format(tag=tag,iput=ifile,Iter=Iterations,dimension=dimension,NUniverse=NUniverses_per_job,max_chi2=MaxChi2,step_chi2=stepChi2,remove="-x {}".format(remove) if remove else "", PROCESS="$PROCESS" if (grid and njobs>1) else str(njobs),diri=di,diro=do)
   return cmd
+
+def RunTransWrapper(tupleName,tag,njobs):
+  cmd = TransWrapperCommand(tag,ifile,Iterations,dimension,NUniverses_per_job,MaxChi2,stepChi2,remove,njobs,False)
+  print(cmd)
+  os.system(cmd)
 
 AlternativeModels = {
   "CV":None,
-  # "LowQ2Pi0": ("LowQ2Pi",0),
-  # "LowQ2Pi1": ("LowQ2Pi",1),
-  # "LowQ2Pi2": ("LowQ2Pi",2),
-  # "LowQ2Pi3": ("LowQ2Pi",3),
-  # "2p2h0": ("Low_Recoil_2p2h_Tune",0),
-  # "2p2h1": ("Low_Recoil_2p2h_Tune",1),
-  # "2p2h2": ("Low_Recoil_2p2h_Tune",2),
-  # "RPA_highq20" :("RPA_HighQ2",0),
-  # "RPA_highq21" :("RPA_HighQ2",1),
-  # "RPA_lowq20" :("RPA_LowQ2",0),
-  # "RPA_lowq21" :("RPA_LowQ2",1),
+  "LowQ2Pi0": ("LowQ2Pi",0),
+  "LowQ2Pi1": ("LowQ2Pi",1),
+  "LowQ2Pi2": ("LowQ2Pi",2),
+  "LowQ2Pi3": ("LowQ2Pi",3),
+  "2p2h0": ("Low_Recoil_2p2h_Tune",0),
+  "2p2h1": ("Low_Recoil_2p2h_Tune",1),
+  "2p2h2": ("Low_Recoil_2p2h_Tune",2),
+  "RPA_highq20" :("RPA_HighQ2",0),
+  "RPA_highq21" :("RPA_HighQ2",1),
+  "RPA_lowq20" :("RPA_LowQ2",0),
+  "RPA_lowq21" :("RPA_LowQ2",1),
   "MK_Model":("MK_model",0),
   "FSI_Weight0":("fsi_weight",0),
   "FSI_Weight1":("fsi_weight",1),
   "FSI_Weight2":("fsi_weight",2),
   "SuSA2p2h":("SuSA_Valencia_Weight",0),
-  # "GenieMaCCQE_UP":("GENIE_MaCCQE",1),
-  # "GenieMaCCQE_DOWN":("GENIE_MaCCQE",0),
+  "Leakage0":("Leakage_Uncertainty",0),
+  "Leakage1":("Leakage_Uncertainty",1),
+  "GenieMaCCQE_UP":("GENIE_MaCCQE",1),
+  "GenieMaCCQE_DOWN":("GENIE_MaCCQE",0),
 }
 
 Measurables = [
@@ -176,26 +185,33 @@ if __name__ == '__main__':
   playlist=AnalysisConfig.playlist
   type_path_map = { t:AnalysisConfig.SelectionHistoPath(playlist,t =="data",False) for t in AnalysisConfig.data_types}
   data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag,True)
-  signal_rich_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(playlist+"-BigNuE",False))
+  if use_siganl_rich_sample:
+    signal_rich_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(playlist+"-BigNuE",False))
+  else:
+    signal_rich_file = None
   ifile="fin.root"
 
-  if signal_rich_file:
+  if signal_rich_file :
      print ("Using signal rich sample")
-     #data_file = mc_file
+     if use_siganl_rich_sample_as_fake_data:
+       data_file = signal_rich_file
+     else:
+       data_file = mc_file
      mc_file = signal_rich_file
   
   PNFS_switch = "scratch"
   # Automatically generate unique output directory
   processingID = '%s_%s-%s' % ("CCNUE_Warping", dt.date.today() , dt.datetime.today().strftime("%H%M%S") )
-  
-  outdir_hists = "/pnfs/minerva/%s/users/%s/%s_hists" % (PNFS_switch,os.environ["USER"],processingID)
-  os.system( "mkdir %s" % outdir_hists )
-  outdir_logs = "/pnfs/minerva/%s/users/%s/%s_logs" % (PNFS_switch,os.environ["USER"],processingID)
-  os.system( "mkdir %s" % outdir_logs )
-  os.system( "mkdir -p grid_wrappers/%s" % processingID )
-  outdir_tarball="/pnfs/minerva/resilient/tarballs/hsu-%s.tar.gz" % (processingID)
-  createTarball(outdir_tarball)
-  memory =4000
+
+  if not LOCAL:
+    outdir_hists = "/pnfs/minerva/%s/users/%s/%s_hists" % (PNFS_switch,os.environ["USER"],processingID)
+    os.system( "mkdir %s" % outdir_hists )
+    # outdir_logs = "/pnfs/minerva/%s/users/%s/%s_logs" % (PNFS_switch,os.environ["USER"],processingID)
+    # os.system( "mkdir %s" % outdir_logs )
+    os.system( "mkdir -p grid_wrappers/%s" % processingID )
+    outdir_tarball="/minerva/data/users/hsu/tarballs/hsu-%s.tar.gz" % (processingID)
+    createTarball(outdir_tarball)
+    memory =4000
   for prefix in Measurables:
     MnvMigration = Utilities.GetHistogram(mc_file, prefix+ "_migration")
     MnvMCreco = Utilities.GetHistogram(mc_file, prefix)
@@ -221,6 +237,9 @@ if __name__ == '__main__':
       if not MnvDataSignal:
         MnvDataSignal = MnvDataMigration.ProjectionX("_reco",0,-1)
 
+    MnvDataBackground = MnvDatareco.Clone("{}_bkg".format(MnvDatareco.GetName()))
+    MnvDataBackground.Add(MnvDataSignal,-1)
+
 
     if dimension ==1:
       H2D = PlotUtils.MnvH1D
@@ -229,7 +248,14 @@ if __name__ == '__main__':
       H2D = PlotUtils.MnvH2D
       sumhist = lambda h:h.Integral(0,-1,0,-1)
 
-    #MnvDatatruth = Utilities.GetHistogram(signal_rich_file, prefix+ "_migration_truth")
+
+    if signal_rich_file and data_file!=signal_rich_file:
+      #means data truth is a not true, but a sample drawn
+      scale_to_signal_rich_sample = sumhist(MnvMCtruth)/sumhist(MnvDatatruth)
+      MnvDatatruth = Utilities.GetHistogram(signal_rich_file, prefix+ "_migration_truth")
+      MnvDataBackground.Scale(scale_to_signal_rich_sample)
+      MnvMCreco.Add(MnvDataBackground)
+      MnvDatatruth.Scale(1/scale_to_signal_rich_sample)
 
     for model,value in AlternativeModels.items():
       data_truth = H2D(MnvDatatruth.GetCVHistoWithStatError())
@@ -239,6 +265,7 @@ if __name__ == '__main__':
       model_truth=H2D(MnvMCtruth.GetCVHistoWithStatError())
       model_signal=H2D(MnvMCSignal.GetCVHistoWithStatError())
       model_reco=H2D(MnvMCreco.GetCVHistoWithStatError())
+
       if model!="CV":
         try:
           if Sys_on_Data:
@@ -254,17 +281,19 @@ if __name__ == '__main__':
           print(e)
           continue
 
-      data_truth.Scale(sumhist(data_signal)/sumhist(data_truth))
-      data_signal.Scale(sumhist(data_signal)/sumhist(data_truth))
-
-      ConsolidateInputs(ifile,model_migration,model_signal,model_truth,data_signal,data_truth)
+      if unfoldwithFakes:
+        ConsolidateInputs(ifile,model_migration,model_reco,model_truth,data_reco,data_truth)
+      else:
+        ConsolidateInputs(ifile,model_migration,model_signal,model_truth,data_signal,data_truth)
       cmdString = "CCNuE-%s-%s" % (playlist,"mc")
       #wrapper.setup(migration,cv_reco,cv_bkg)
       #MyUnfoldWrapper(ifile)
       #MnvUnfoldWrapper(ifile)
-      submitJob(cmdString,model+prefix,1)
-      #submitJob(cmdString,model+prefix,3)
-      #RunTransWrapper(ifile,"transWrapT_{}.root".format(model+prefix))
+      if not LOCAL:
+        submitJob(cmdString,model+prefix,1)
+        submitJob(cmdString,model+prefix,3)
+      else:
+        RunTransWrapper(ifile,model+prefix,0)
       #break
       # mnvunfold=UnfoldUtils.MnvUnfold()
       # h_test = MnvMCtruth.Clone()

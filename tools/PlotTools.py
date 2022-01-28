@@ -315,14 +315,16 @@ def MakeRatioPlot(data_hist,mc_hist,mnvplotter=MNVPLOTTER,canvas=CANVAS):
     mnvplotter.DrawDataMCRatio(data_hist, mc_hist, 1.0 ,True,True,0,2)
 
 def MakeErrPlot(hist,mnvplotter=MNVPLOTTER,canvas=CANVAS):
+    mnvplotter.axis_maximum = 0.3
     mnvplotter.DrawErrorSummary(hist)
+    mnvplotter.axis_maximum = -1111
 
 def MakeErrorBandPlot(hist,name,mnvplotter=MNVPLOTTER,canvas=CANVAS):
     errorband = hist.GetVertErrorBand(name)
     errorband.DivideSingle(errorband,hist)
     errorband.DrawAll("",True)
 
-def MakeGridPlot(MakingSlice,MakingEachPlot,input_hists,CanvasConfig=lambda canvas:True, draw_seperate_legend = False, mnvplotter=MNVPLOTTER,canvas=CANVAS):
+def MakeGridPlot(MakingSlice,MakingEachPlot,input_hists,CanvasConfig=lambda canvas:True, draw_seperate_legend = False, mnvplotter=MNVPLOTTER,canvas=CANVAS,outname=None):
     if canvas is CANVAS:
         canvas.Clear()
     slices = list(map(lambda *args: args, *list(map(MakingSlice,input_hists))))
@@ -350,6 +352,9 @@ def MakeGridPlot(MakingSlice,MakingEachPlot,input_hists,CanvasConfig=lambda canv
             Tleg.SetY2(1)
             Tleg.SetTextSize(2*MNVPLOTTER.legend_text_size);
             Tleg.Draw()
+    if outname:
+        
+        mnvplotter.MultiPrint(canvas,outname,"png")
 
 def Print(outname,mnvplotter=MNVPLOTTER,canvas=CANVAS):
     mnvplotter.MultiPrint(canvas,outname,"png")

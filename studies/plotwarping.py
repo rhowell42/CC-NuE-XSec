@@ -134,23 +134,25 @@ def draw3(fileName,univName):
         return False
     #h = f.Get(inputDir).Get("h_mc_truth_Linear")
     #h.SetTitle("nue sample scaled")
-    h = f.Get(unfoldedDataDir).Get("Stat_0_Iter_40_Linear")
+    h = f.Get(unfoldedDataDir).Get("Stat_0_Iter_10_Linear")
     h.SetLineColor(ROOT.kRed)
     hdata = f.Get(inputDir).Get("h_data_truth_Linear")
-    hdata.SetTitle("standard MC truth")
-    h.SetTitle("standard MC Unfolded")
+    hdata.SetTitle("Truth")
+    hdata.SetLineColor(ROOT.kBlack)
+    h.SetTitle("Unfolded")
     #h.Scale(hdata.Integral()/h.Integral())
     hheat = ROOT.TH2D("truthhists","truth histogram",h.GetNbinsX(),0,h.GetNbinsX(),100,0,h.GetMaximum()*1.1)
     for i in range(1,100):
-        hthis = f.Get(unfoldedDataDir).Get("Stat_{}_Iter_40_Linear".format(i))
+        hthis = f.Get(unfoldedDataDir).Get("Stat_{}_Iter_10_Linear".format(i))
         for j in range(0,hthis.GetSize()):
             hheat.Fill(j-0.1,hthis.GetBinContent(j))
     hheat.Draw("COLZ")
-    h.Draw("HIST SAME")
-    hdata.Draw("SAME")
-    leg = ROOT.TLegend(0.1, 0.8, 0.3, 0.9)
+    h.Draw("SAME")
+    hdata.Draw("HIST SAME")
+    leg = ROOT.TLegend(0.1, 0.6, 0.25, 0.9)
     leg.AddEntry(h)
     leg.AddEntry(hdata)
+    leg.AddEntry(hheat,"Ensemble")
     leg.Draw()
     can.Print("{}-Unfolded.png".format("".join(fileName.split("/")[-2:])))
     f.Close()
@@ -160,11 +162,11 @@ def draw4(fileName,univName):
     f = ROOT.TFile.Open(path)
     if not f:
         return False
-    h = f.Get(unfoldedDataDir).Get("Stat_0_Iter_1")
+    h = f.Get(unfoldedDataDir).Get("Stat_0_Iter_10")
     hrawchi2 = ROOT.TH1D("chi2contrib_0","chi2_contribution",h.GetSize(),0,h.GetSize())
     hheat = ROOT.TH2D("chi2contrib","chi2_contribution",h.GetSize(),0,h.GetSize(),100,-100,100)
     for i in range(0,100):
-        TMatrix = f.Get("Chi2Maps").Get("Chi2Map_Stat_{}_Iter_1".format(i))
+        TMatrix = f.Get("Chi2Maps").Get("Chi2Map_Stat_{}_Iter_10".format(i))
         projector = ROOT.TMatrixD(TMatrix.GetNrows(),1)
         for _ in range(TMatrix.GetNrows()):
             projector[_][0]=1
@@ -190,7 +192,7 @@ if __name__ =="__main__":
         print(sys.argv[1])
         hists = sys.argv[1:]
     else:
-        hists = ["CCNUE_Warping_2021-12-15-123747_hists"]
+        hists = ["CCNUE_Warping_2022-01-25-132428_hists","CCNUE_Warping_2022-01-25-214504_hists"]
     
     plotpathroot = "/minerva/data/users/hsu/nu_e/plot/warping/"
     target = ["Eavail_Lepton_Pt","Eavail_q3"]
@@ -203,8 +205,7 @@ if __name__ =="__main__":
     for i in hists:
         for j in target:
             for k in model:
-                path = "/pnfs/minerva/scratch/users/hsu/{}/transWrap_{}{}_-1.root".format(i,k,j)
-                draw(path,k)
-                # draw2(path,k)
-                # draw3(path,k)
-                # draw4(path,k)
+                for l in [-1,0,1]:
+                    path = "/pnfs/minerva/scratch/users/hsu/{}/transWrap_{}{}_{}.root".format(i,k,j,l)
+                    draw(path,k)
+                    draw3(path,k)

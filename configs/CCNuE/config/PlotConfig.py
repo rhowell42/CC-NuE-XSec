@@ -30,16 +30,18 @@ NQ3 = 8
 NQ0 = 19
 
 BACKGROUND_FIT_Q3_BIN =[0.0, 0.6, 0.8, 1.0, 1.2, 1.6, 2]
-LOW_RECOIL_BIN_Q3_Truth = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
-LOW_RECOIL_BIN_Q0_Truth = [0.0, 0.1, 0.2, 0.3, 0.40, 0.5, 0.60, 0.80, 1.00, 1.2]
-LOW_RECOIL_BIN_Q3 =  LOW_RECOIL_BIN_Q3_Truth 
+LOW_RECOIL_BIN_Q3_Truth = [0.0, 0.2, 0.4,0.6, 0.8, 1.0, 1.2]
+LOW_RECOIL_BIN_Q3 =  LOW_RECOIL_BIN_Q3_Truth
+LOW_RECOIL_BIN_Q0_Truth = [0.,0.05]+[ 0.1*i for i in range(1,7)]+[0.2*i for i in range(4,7)]
+LOW_RECOIL_BIN_Q0 = [0.0,0.04,0.08,0.12,0.16,0.24,0.32,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2]
+# LOW_RECOIL_BIN_Q0_Truth = [0.0, 0.08, 0.16,0.32,0.60, 1.00, 1.2]
+# LOW_RECOIL_BIN_Q0 = [0.0, 0.04, 0.08,0.12,0.16,0.24,0.32,0.4,0.6,0.8,1.0,1.2]
+#LOW_RECOIL_BIN_Q0 =  [0.04*i for i in range(31)]
 
-LOW_RECOIL_BIN_Q0 = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25,0.30, 0.35,0.40, 0.45, 0.50, 0.55,0.60, 0.7,0.80, 0.9, 1.00, 1.1, 1.2]
+
+
 PT_BINNING = [0.2*i for i in range(9)]
-
 RESOLUTION_BINNING = [-1.0+0.1*i for i in range(41)]
-
-
 
 
 MC_EM_ENERGY_SCALE = 1.05  # this from Trung: Doc 9370, slides 2-5, 15; Doc 9911; Doc 10102, slides 18-20
@@ -83,7 +85,7 @@ A_LABELS = {
 	35: "Cl",
 	48: "Ti",
 	56: "Fe",
-	207: "Pb", 
+	207: "Pb",
 }
 
 #ELECTRON_ANGLE_BINNING =  range(10) + [10, 12, 15, 20, 27, 35]
@@ -246,6 +248,11 @@ HISTS_TO_MAKE = [
     "Lepton Pt",
     {"variables":["Visible Energy","Lepton Pt"],
      "tags": {"sideband","truth_class"},
+     },
+
+    {"variables":["Visible Zoomin","Lepton Energy"],
+     "tags": {"truth_class","sideband"},
+      "cuts":[lambda event: event.kin_cal.reco_q2_cal<0.02, lambda event: event.kin_cal.reco_Etheta2<0.0032]
      },
 
     # {"variables":["PsiEe","Lepton Theta"],

@@ -8,7 +8,7 @@ USE_NLL = True
 HIST_TO_FIT= "Lepton Energy"
 HIST_OBSERVABLE= {"variables":["PsiEe","Lepton Energy"]}
 
-REGULATION_PARAMETER = 0.001
+REGULATION_PARAMETER = 0.01
 SCALE_FACTORS = OrderedDict()
 #SCALE_FACTORS["Signal"] =  [0,0.4,0.6,0.8,1.0,1.2]
 SCALE_FACTORS["DIS"] =  [0,20]
@@ -59,7 +59,7 @@ ThreeFactorsFit["SCALE_FACTORS"]["Excess"]=[0,2.0]
 
 PT_TUNE = {
     "HIST_TO_FIT" : "Lepton Pt",
-    "REGULATION_PARAMETER" : 0.001,
+    "REGULATION_PARAMETER" : 0.01,
     "HIST_OBSERVABLE": "Visible Energy vs Lepton Pt",
     "Yaxis":True,
     "SCALE_FACTORS" :OrderedDict(),
@@ -85,7 +85,7 @@ PI0PT_TUNE = {
     "HIST_TO_FIT" : "Lepton Pt",
     "HIST_OBSERVABLE": "Visible Energy vs Lepton Pt",
     "Yaxis":True,
-    "REGULATION_PARAMETER" : 0.001,
+    "REGULATION_PARAMETER" : 0.01,
     "SCALE_FACTORS" :OrderedDict(),
     "CATEGORY_FACTORS" : {
         "NCDIS":"Pi0",

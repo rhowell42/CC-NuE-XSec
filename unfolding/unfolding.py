@@ -3,6 +3,7 @@ import math
 from functools import partial
 import PlotUtils
 import UnfoldUtils
+import re
 
 from tools.PlotLibrary import PLOT_SETTINGS,HistHolder
 from config.AnalysisConfig import AnalysisConfig
@@ -24,6 +25,8 @@ def SubtractPoissonHistograms(h,h1):
         errors.append(math.sqrt(h.GetBinError(i)**2 + h1.GetBinError(i)**2))
     h.Add(h1,-1)
     for i in range(h.GetSize()):
+        if errors[i]==0:
+            continue
         h.SetBinError(i,errors[i])
     return h
 
@@ -128,6 +131,10 @@ if __name__ == "__main__":
     if not scale_file:
         scale_file = mc_file
         print ("Didn't find scale file. using mc file instead")
+    signal_rich_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(re.sub("-tune[0-9]","",playlist)+"-BigNuE",False))
+    if not signal_rich_file:
+        signal_rich_file = mc_file
+        print ("Didn't find signal rich file, using mc file instead")
     unfolded_file = ROOT.TFile.Open(AnalysisConfig.UnfoldedHistoPath(playlist,background_scale_tag),"RECREATE")
 
 
@@ -137,14 +144,25 @@ if __name__ == "__main__":
         mc_hists = HistHolder(plot,scale_file,"Signal",True,pot_scale)
 
         migration_name = plot + " Migration"
-        migration_hists = GetMigrationHistograms(mc_file,migration_name)
+        migration_hists = GetMigrationHistograms(signal_rich_file,migration_name)
         true_signal = HistHolder("True Signal "+plot,mc_file,"Signal",True,pot_scale)
         signal_background,_,titles = mc_hists.GetCateList(DrawingConfig.SignalBackground)
-        Nevent1 = migration_hists[1].Integral(0,-1,0,-1)
-        Nevent2 = signal_background[1].Integral(0,-1,0,-1)
-        print("Nevent",Nevent1,Nevent2)
-        migration_hists[1].Add(signal_background[0],Nevent1/Nevent2)
-        unfolded = unfolding(data_hists.GetHist(),migration_hists[0],migration_hists[1],true_signal.GetHist(),migration_hists[2])
+
+        # at this point, three different normalization histogram could exist:
+        # 1. data normalization, 2. standard MC (4x data) normalization, 3. signal rich normalization (back ground prediction is wrong)
+        # if background including in unfolding: scale signal rich normaliztion to standard MC POT
+        # if background excluded in unfolding: scale standard MC to data.
+
+
+
+        #Nevent1 = migration_hists[1].Integral(0,-1,0,-1)
+        #Nevent2 = signal_background[1].Integral(0,-1,0,-1)
+        #print("Nevent",Nevent1,Nevent2)
+        #migration_hists[1].Add(signal_background[0],Nevent1/Nevent2)
+        signal_background[0].Scale(pot_scale)
+        data = data_hists.GetHist()
+        SubtractPoissonHistograms(data, signal_background[0])
+        unfolded = unfolding(data,migration_hists[0],migration_hists[1],true_signal.GetHist(),migration_hists[2])
         #unfolded = unfold(plot,data)
         unfolded_file.cd()
         unfolded.Write(data_hists.plot_name+"_bkg_unfolding")

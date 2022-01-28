@@ -231,17 +231,21 @@ def RunUniverseMinimizer(minimizer, fitter, data_histholders, mc_histholders, er
         fitter.AddSideband(data_input,mc_input)
     minimizer.Minimize()
     result = minimizer.X()
+    errors = minimizer.Errors()
     scale ={}
+    scale_error = {}
     j = 0
     # fill what the scale factor will be for each bin of scale factor histogram.
     # adjust for overflow bins
     for cate in BackgroundFitConfig.SCALE_FACTORS:
         scale[cate]=[]
+        scale_error[cate]=[]
         offset = len(BackgroundFitConfig.SCALE_FACTORS[cate])+1
         for k in range(j,j+offset):
             scale[cate].append(result[k])
+            scale_error[cate].append(errors[k])
         j += offset
-    return scale
+    return scale,scale_error
 
 def RunMinimizer(data_histholders, mc_histholders,scale_hists):
     minimizer = ROOT.Math.Factory.CreateMinimizer("Minuit2")
@@ -256,13 +260,13 @@ def RunMinimizer(data_histholders, mc_histholders,scale_hists):
     for i in range(fitter.NDim()):
         minimizer.SetVariable(i,str(i),start,step)
         minimizer.SetVariableLowerLimit(i,0.0)
-    scale = RunUniverseMinimizer(minimizer,fitter,data_histholders,mc_histholders)
-    WriteScaleToMnvH1D(scale_hists,scale)
+    scale,scale_err = RunUniverseMinimizer(minimizer,fitter,data_histholders,mc_histholders)
+    WriteScaleToMnvH1D(scale_hists,scale,scale_err)
 
     #then errorbands:
     for error_band in (mc_histholders[0].GetHist().GetErrorBandNames()):
         for i in range(mc_histholders[0].GetHist().GetVertErrorBand(error_band).GetNHists()):
-            scale = RunUniverseMinimizer(minimizer,fitter,data_histholders,mc_histholders,error_band,i)
+            scale,_ = RunUniverseMinimizer(minimizer,fitter,data_histholders,mc_histholders,error_band,i)
             WriteScaleToMnvH1D(scale_hists,scale,None,error_band,i)
 
 def TuneMC(hist_holder, scale_hists, x_axis=False, y_axis=False):
@@ -462,4 +466,3 @@ if __name__ == "__main__":
     datafile.Close()
     mcfile.Close()
     scalefile.Close()
- 

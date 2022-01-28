@@ -330,9 +330,9 @@ HISTS_TO_MAKE = [
 
     "Visible Energy vs q3",
     #"Visible Energy vs q3 Migration",
-    #"True Signal Visible Energy vs q3",
+    "True Signal Visible Energy vs q3",
     #"Visible Energy vs Lepton Pt Migration",
-    #"True Signal Visible Energy vs Lepton Pt",
+    "True Signal Visible Energy vs Lepton Pt",
 
     # "Q3 Migration",
     # "Lepton Pt Migration",
@@ -352,6 +352,7 @@ HISTS_TO_MAKE = [
      "tags":{"mc_only","truth_class"}},
     {"variables":["True Q0","True Lepton Pt"],
      "tags":{"mc_only","truth_class"}},
+     "True Signal Neutrino Energy"
     #"Lepton Energy High Inline",
     # {"variables":["W"],
     #  "tags": {"sideband","truth_class"}
