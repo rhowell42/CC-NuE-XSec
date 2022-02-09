@@ -27,11 +27,11 @@ PLOTS_TO_MAKE = [
     #{"key":"Electron Energy"},
     {"key":"True Visible Energy"},
     {"key":"Visible Energy"},
-    {"key":"Q3"},
-    {"key":"True q3"},
-    {"key": {
-        "variables":["W"],
-    }},
+    # {"key":"Q3"},
+    # {"key":"True q3"},
+    # {"key": {
+    #     "variables":["W"],
+    # }},
 ]
 
 NMinus1CutPlot = [
@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
         if Reco :
             #cProfile.run('plotRecoKin(st=="mc", Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,"NuECCQE",AnalysisConfig.count[0],AnalysisConfig.count[1]), outputSelectionHistogram)')
-            plotRecoKin(st=="mc", Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,"NuECCQE",AnalysisConfig.count[0],AnalysisConfig.count[1]), outputSelectionHistogram)
+            plotRecoKin(st=="mc", Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,None,AnalysisConfig.count[0],AnalysisConfig.count[1]), outputSelectionHistogram)
 
         print("selection is done for ", st, AnalysisConfig.playlist)
 

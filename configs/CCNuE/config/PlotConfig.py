@@ -33,7 +33,7 @@ BACKGROUND_FIT_Q3_BIN =[0.0, 0.6, 0.8, 1.0, 1.2, 1.6, 2]
 LOW_RECOIL_BIN_Q3_Truth = [0.0, 0.2, 0.4,0.6, 0.8, 1.0, 1.2]
 LOW_RECOIL_BIN_Q3 =  LOW_RECOIL_BIN_Q3_Truth
 LOW_RECOIL_BIN_Q0_Truth = [0.,0.05]+[ 0.1*i for i in range(1,7)]+[0.2*i for i in range(4,7)]
-LOW_RECOIL_BIN_Q0 = [0.0,0.04,0.08,0.12,0.16,0.24,0.32,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2]
+LOW_RECOIL_BIN_Q0 = [0.0,0.02,0.04,0.06,0.08,0.1,0.12,0.16,0.24,0.32,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2]
 # LOW_RECOIL_BIN_Q0_Truth = [0.0, 0.08, 0.16,0.32,0.60, 1.00, 1.2]
 # LOW_RECOIL_BIN_Q0 = [0.0, 0.04, 0.08,0.12,0.16,0.24,0.32,0.4,0.6,0.8,1.0,1.2]
 #LOW_RECOIL_BIN_Q0 =  [0.04*i for i in range(31)]
@@ -252,7 +252,6 @@ HISTS_TO_MAKE = [
 
     {"variables":["Visible Zoomin","Lepton Energy"],
      "tags": {"truth_class","sideband"},
-      "cuts":[lambda event: event.kin_cal.reco_q2_cal<0.02, lambda event: event.kin_cal.reco_Etheta2<0.0032]
      },
 
     # {"variables":["PsiEe","Lepton Theta"],

@@ -242,16 +242,11 @@ class PtTuningWeight(MyWeighterBase):
     def __init__(self):
         super(PtTuningWeight,self).__init__( lambda universe:universe.kin_cal.reco_Pt_lep)
         self.f = ROOT.TFile.Open("{}/background_fit/tune3-Eel.root".format(os.environ["CCNUEROOT"]))
-        self.hist_dict = {i:self.f.Get(i) for i in ["Pi0","Signal"]}
+        self.hist_dict = {i:self.f.Get(i) for i in ["Pi0"]}
 
         self.cate_map["NCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["Pi0"])
         self.cate_map["CCDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["Pi0"])
-        self.cate_map["CCNuEQE"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
-        self.cate_map["CCNuEDelta"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
-        self.cate_map["CCNuE2p2h"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
-        self.cate_map["CCNuEDIS"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
-        self.cate_map["CCNuE"] = partial(self.fileBasedWeight,hist=self.hist_dict["Signal"])
-
+        
 class RHCPtTuningWeight(MyWeighterBase):
     def __init__(self):
         super(RHCPtTuningWeight,self).__init__( lambda universe:universe.kin_cal.reco_Pt_lep)
@@ -294,11 +289,14 @@ class RHCEelPtTuningWeight():
 
 class FHCPtTuningWeight():
     def __init__(self):
-        self.RHCWeight = RHCEelPtTuningWeight()
+        self.CVWeight = RHCEelPtTuningWeight()
         self.FHCWeight = PtTuningWeight()
 
+    def cut(self,universe):
+        return 0.2<universe.kin_cal.reco_visE <0.5 and universe.kin_cal.reco_Pt_lep<1.0
+
     def GetWeight(self,universe):
-        return self.RHCWeight.GetWeight(universe)*self.FHCWeight.GetWeight(universe)
+        return self.CVWeight.GetWeight(universe)* (self.FHCWeight.GetWeight(universe) if self.cut(universe) else 1)
 
 class FHCPtTuningWeightAlt():
     def __init__(self):

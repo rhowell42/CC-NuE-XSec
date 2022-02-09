@@ -24,16 +24,17 @@ def SubtractPoissonHistograms(h,h1):
     return h
 
 def FitLeakage(mnvplotter,data_hist,nue_hist,mc_hist):
+    def getMeanStr(hist,name):
+        hist.GetXaxis().SetRangeUser(0,100)
+        m = hist.GetMean()
+        err = hist.GetMeanError()
+        return "{} mean: {:.2f}\pm{:.2f}".format(name,m,err)
     mnvplotter.DrawDataMCWithErrorBand(data_hist,mc_hist,1.0,"TR")
     size = 0.05
     align = ctypes.c_int(1)
     xLabel = ctypes.c_double(1)
     yLabel = ctypes.c_double(1)
     mnvplotter.DecodePosition("TR", size, align, xLabel, yLabel )
-    m1 = data_hist.GetMean()
-    data_hist.GetXaxis().SetRangeUser(0,100)
-    m2 = data_hist.GetMean()
-    print(m1,m2)
     #data_hist.Fit("gaus","M0+","",0,100)
     #fit = data_hist.GetFunction("gaus")
     #if not fit:
@@ -42,25 +43,19 @@ def FitLeakage(mnvplotter,data_hist,nue_hist,mc_hist):
     #u =fit.GetParameter(1)
     #sig = fit.GetParameter(2)
     #s = "data: {:.2f}#pm{:.2f}".format(u,sig)
-    s = "data mean: {:.2f}".format(m2)
+    s = getMeanStr(data_hist,"data")
     mnvplotter.AddPlotLabel(s,xLabel.value,yLabel.value,size,4,112,align.value)
     #mc_hist.Fit("gaus","M0+","",0,100)
     #fit = mc_hist.GetFunction("gaus")
     #fit.Draw("SAME")
     #u =fit.GetParameter(1)
     #sig = fit.GetParameter(2)
-    mc_hist.GetXaxis().SetRangeUser(0,100)
-    m3 = mc_hist.GetMean()
-    s = "MC mean: {:.2f}".format(m3)
+    s = getMeanStr(mc_hist,"MC")
     mnvplotter.AddPlotLabel(s,xLabel.value,yLabel.value-0.05,size,4,112,align.value)
     nue_hist.Draw("HIST SAME")
-    nue_hist.GetXaxis().SetRangeUser(0,100)
-    m4 = nue_hist.GetMean()
-    s = "MC nu+e mean: {:.2f}".format(m4)
+    s =  getMeanStr(nue_hist,"nu+e")
     mnvplotter.AddPlotLabel(s,xLabel.value,yLabel.value-0.1,size,4,112,align.value)
     
-    
-
 
 if __name__ == "__main__":
     #input knobs

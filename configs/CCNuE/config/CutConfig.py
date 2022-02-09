@@ -73,32 +73,32 @@ SAMPLE_CUTS = {
     "Signal" : [
         #precuts
         "NoCut",
-        "HasNoBackExitingTracks",
-        #"HasNoNonEMExitingTracks",
         "HasTracks",
-        #fiducial vertex
-        #"HasFiducialVertex",
-        #"Vertex_Z_Centralized",
-        "Vertex_Z",
-        "Vertex_Apothem",
-        #EM shower quality
+        "HasNoBackExitingTracks",
         "EMLikeTrackScore",
+        #quality cuts
         "DSCalVisE",
         "ODCalVisE",
-        "DeadTime",
+        "VertexTrackMultiplicity",
         "Afterpulsing",
+        #"HasNoNonEMExitingTracks",
+        #EM shower quality
+        "StartPointVertexMultiplicity",
+        "MeanFrontdEdX",
         "NonMIPClusFrac",
         "TransverseGapScore",
-        "HasNoVertexMismatch",
+
+        #phase space
+        "Vertex_Z",
+        "Vertex_Apothem",
+        "Eavail"
+        #"DeadTime",
+
+        #"HasNoVertexMismatch",
         #"RecoQ3",
         #"Exuv",
         #"Euv",
-        # rejection high recoil events
-        "StartPointVertexMultiplicity",
-        "VertexTrackMultiplicity",
-        # Pi0 rejection
-        "MeanFrontdEdX",
-        "Eavail"
+
         #"LLR",
         #"Psi",
     ],
@@ -131,13 +131,13 @@ SAMPLE_CUTS = {
         "EMLikeTrackScore",
         "DSCalVisE",
         "ODCalVisE",
-        "HasNoVertexMismatch",
+        #"HasNoVertexMismatch",
         "VertexTrackMultiplicity",
         "StartPointVertexMultiplicity",
         #"Psi",         #differnt from signal
         "NonMIPClusFrac",
         "TransverseGapScore",
-        "DeadTime",
+        #"DeadTime",
         "Afterpulsing",
         "Eavail",
         "InverseMeanFrontdEdX",
@@ -156,13 +156,13 @@ SAMPLE_CUTS = {
         "EMLikeTrackScore",
         "DSCalVisE",
         "ODCalVisE",
-        "HasNoVertexMismatch",
+       # "HasNoVertexMismatch",
         "VertexTrackMultiplicity",
          "StartPointVertexMultiplicity",
         #"Psi",         #differnt from signal
         "NonMIPClusFrac",
         "TransverseGapScore",
-        "DeadTime",
+        #"DeadTime",
         "Afterpulsing",
         "Eavail",
         "InverseMeanFrontdEdX",
@@ -181,11 +181,11 @@ SAMPLE_CUTS = {
         "EMLikeTrackScore",
         "DSCalVisE",
         "ODCalVisE",
-        "HasNoVertexMismatch",
+        #"HasNoVertexMismatch",
         "VertexTrackMultiplicity",
         "NonMIPClusFrac",
         "TransverseGapScore",
-        "DeadTime",
+        #"DeadTime",
         "Afterpulsing",
         "Eavail",
         "InverseMeanFrontdEdX",

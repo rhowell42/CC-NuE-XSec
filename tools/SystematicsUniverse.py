@@ -19,7 +19,6 @@ from config import SystematicsConfig
 from tools import Utilities
 from collections import OrderedDict
 from tools import pcweight
-from .pcweight import GetModelWeight,MyWeighter
 
 OneSigmaShift = [-1.0,1.0]
 M_e = 0.511 # MeV
@@ -46,6 +45,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         self.nEntries = chain.GetEntries()
         self.mc = nsigma is not None
         self.chain=chain
+        self.pcweighter = pcweight.MyWeighter
 
     # magic function that allow direct access to TBranch by Universe.TBranch, but prohibit any python magic variable being generated.
     def __getattr__(self,attrName):
@@ -55,6 +55,9 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         if attrName == "kin_cal" or attrName == "classifier":
             #the two attrs can't be in chainwrapper 
             raise AttributeError()
+
+        if attrName ==  "pcweighter":
+            print (self.ShortName())
 
         # determine the dimension of leaf.
         try:
@@ -124,7 +127,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
                 self.weight = self.GetModelWeight() if self.is_pc else self.GetStandardWeight()
         if bkgtuning or self.nsigma is None:
             if self.tuning_weight is None:
-                self.tuning_weight = MyWeighter.GetWeight(self)
+                self.tuning_weight = self.pcweighter.GetWeight(self)
             return self.weight *self.tuning_weight
         else:
             return self.weight
@@ -153,7 +156,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
             return super(CVUniverse,self).GetLowQ2PiWeight(channel.upper())
 
     def GetModelWeight(self):
-        w = GetModelWeight(self, 'Eel',"Pi0") # (Ee, Theta, ETh), (PCElectron, PCPhoton, PCPi0)
+        w = pcweight.GetModelWeight(self, 'Eel',"Pi0") # (Ee, Theta, ETh), (PCElectron, PCPhoton, PCPi0)
         return w
 
 
@@ -229,7 +232,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         return max(0,fuzz) * SystematicsConfig.AVAILABLE_E_CORRECTION
 
     def GetLeakageCorrection(self):
-        return SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw())
+        return SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw()) + SystematicsConfig.LEAKAGE_BIAS if self.nsigma is None else 0
 
     def Pi0_Additional_Leakage(self):
         return random.uniform(0,20) if self.mc and (self.mc_intType == 4 or (self.mc_current==2 and self.mc_intType==10)) else 0
@@ -645,9 +648,7 @@ class LeakageUniverse(CVUniverse,object):
         super(LeakageUniverse,self).__init__(chain,nsigma)
 
     def GetLeakageCorrection(self):
-        #return super(LeakageUniverse,self).GetLeakageCorrection() * (1+self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS)
-
-        return super(LeakageUniverse,self).GetLeakageCorrection() + ( self.nsigma*10 if abs(self.mc_primaryLepton) ==11 else 0)
+        return super(LeakageUniverse,self).GetLeakageCorrection() + ( self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS if abs(self.mc_primaryLepton) ==11 else 0)
 
     def ShortName(self):
         return "Leakage_Uncertainty"
@@ -658,6 +659,26 @@ class LeakageUniverse(CVUniverse,object):
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [LeakageUniverse(chain,i) for i in OneSigmaShift]
+
+class BkgTuneUniverse(CVUniverse,object):
+    def __init__(self,chain,nsigma,s):
+        super(BkgTuneUniverse,self).__init__(chain,nsigma)
+        if s == "FHCPt_tune1":
+            self.pcweighter = pcweight.FHCPtTuningWeightAlt()
+        elif s == "FHCPt_tune2":
+            self.pcweighter = pcweight.FHCPtTuningWeight()
+        else:
+            raise ValueError("Unknown bkgtune method: {}".format(s))
+
+    def ShortName(self):
+        return "bkg_tune"
+
+    def LatexName(self):
+        return "Background Tune strategy"
+
+    @staticmethod
+    def GetSystematicsUniverses(chain):
+         return [BkgTuneUniverse(chain,1,i) for i in ["FHCPt_tune1","FHCPt_tune2"]]
 
 
 def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=None):
@@ -702,15 +723,17 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
 
             #Electron momentum universe
             if abs(SystematicsConfig.AnaNuPDG)==12:
+                #Electron energy universe
                 universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
+                #Electron angle universe
+                universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
             elif abs(SystematicsConfig.AnaNuPDG)==14:
                 universes.extend(MuonUniverseMinerva.GetSystematicsUniverses(chain ))
                 universes.extend(MuonUniverseMinos.GetSystematicsUniverses(chain ))
             else:
                 raise ValueError ("AnaNuPDG should be \pm 12 or 14, but you set {}".format(SystematicsConfig.AnaNuPDG))
 
-            # #Electron angle universe
-            universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
+           
             # #beam angle shift universe
             universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
             #particle response shift universe
@@ -729,7 +752,6 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
 
             # #RPA universe:
             universes.extend(RPAUniverse.GetSystematicsUniverses(chain ))
-
 
             # # #LowQ2PionUniverse
             universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
@@ -751,6 +773,9 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
 
             #leakage universe
             universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
+
+            #bkgtune universe
+            universes.extend(BkgTuneUniverse.GetSystematicsUniverses(chain ))
 
 
     # Group universes in dict.

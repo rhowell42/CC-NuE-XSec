@@ -152,10 +152,10 @@ DefaultPlotters={
 }
 
 PLOTS_TO_MAKE = [
-    {"variables":["Visible Energy","Lepton Pt"],
-      "plot_type":"errband",
-      "args":("Leakage_Uncertainty",),
-      },
+    # {"variables":["Visible Energy","Lepton Pt"],
+    #   "plot_type":"errband",
+    #   "args":("Leakage_Uncertainty",),
+    #   },
     # {"name":"Lepton Energy",
     #  "plot_type":"stacked"},
     {"name":"Neutrino Energy",
@@ -285,8 +285,7 @@ PLOTS_TO_MAKE = [
     #  "slicer":PlotTools.ProjectionX},
     {"variables":["Visible Energy","Lepton Pt"],
      "plot_type":"err"},
-
-    # {"variables":["Lepton Pt"]},
+    {"name":"Lepton Pt"},
     # {"variables":["Lepton Pt"],
     #  "plot_type":"err"},
     # {"variables":["Visible Energy","Lepton Energy"]},

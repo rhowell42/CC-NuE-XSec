@@ -237,8 +237,7 @@ def TopNErrorBand(hist,topN):
     return result
 
 
-def AdaptivePlotterErrorGroup(hist,topN,mnvplotter=MNVPLOTTER):
-    result = TopNErrorBand(hist,topN)
+def AdaptivePlotterErrorGroup(hist,result,mnvplotter=MNVPLOTTER):
     rest = [i for i in hist.GetVertErrorBandNames() if i not in result]
     updatePlotterErrorGroup({"Rest":rest},mnvplotter)
 

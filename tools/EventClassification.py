@@ -12,6 +12,7 @@ import ROOT
 from config.CutConfig import SAMPLE_CUTS,KINEMATICS_CUTS
 from tools.CutLibrary import CUTS
 from config.SignalDef import SIGNAL_DEFINATION,TRUTH_CATEGORIES,EXTRA_OTHER
+from array import array
 
 
 
@@ -66,6 +67,12 @@ class EventClassifier(object):
 
 
         self.counter = [0,0]
+        self.signal_cuts = SAMPLE_CUTS["Signal"]
+        self.signal_cuts.extend(["Reco{}".format(cut_name) for cut_name in KINEMATICS_CUTS])
+        self.cut_stats = {
+            "selected":dict.fromkeys(self.signal_cuts,0),
+            "signal":dict.fromkeys(self.signal_cuts,0),
+        }
         #self.RegisterBranches()
 
         #instantiate centralized cuts:
@@ -100,11 +107,38 @@ class EventClassifier(object):
             sc = cl() and sc
 
         if self.new_truth:
-            if self.side_band is not None:
-                self.counter[0] += 1
+            self.cutStat()
+        return sc
+
+    def cutStat(self):
+        for i in self.signal_cuts:
+            if self.reco_cuts_passed[i]:
+                self.cut_stats["selected"][i]+=1
+                if self.is_true_signal:
+                    self.cut_stats["signal"][i]+=1
+            else:
+                break
+
+        if self.side_band is not None:
+            self.counter[0] += 1
             if self.is_true_signal:
                 self.counter[1] += 1
-        return sc
+
+    def GetStatTree(self):
+        tree = ROOT.TTree("cut_stat", "Cut Statistics Tree")
+        temp_dict = {}
+        for i in self.signal_cuts:
+            for j in ["selected","signal"]:
+                s = "{}_{}".format(i,j)
+                temp_dict[s]=array("I",[0])
+                tree.Branch(s,temp_dict[s],"{}/I".format(s))
+        for i in self.signal_cuts:
+            for j in ["selected","signal"]:
+                s = "{}_{}".format(i,j)
+                temp_dict[s][0]=self.cut_stats[j][i]
+        print(tree.Fill())
+        return tree
+
 
     def _ClassifyReco(self):
         """ Determine if the event passes the cuts on reconstructed quantities. """

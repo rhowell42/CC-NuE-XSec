@@ -26,6 +26,18 @@ PLOTPATH = "/minerva/data/users/hsu/numunueRatioPlots/"
 
 #E_SIGNALS = MU_SIGNALS
 
+def SubtractPoissonHistograms(h,h1):
+    h.AddMissingErrorBandsAndFillWithCV(h1)
+    errors = []
+    for i in range(h.GetSize()):
+        errors.append(math.sqrt(h.GetBinError(i)**2 + h1.GetBinError(i)**2))
+    h.Add(h1,-1)
+    for i in range(h.GetSize()):
+        if errors[i]==0:
+            continue
+        h.SetBinError(i,errors[i])
+    return h
+
 def repeat(f,n):
     def rf(x):
         for i in range(n):
@@ -118,10 +130,10 @@ def MakeCompPlot():
         f = ROOT.TFile.Open(filename)
         return f,POT
     def Draw(mnvplotter,*args,canvas=PlotTools.CANVAS):
-        mc_hist1 = args[0].GetCVHistoWithError()
-        mc_hist2 = args[1].GetCVHistoWithError()
-        data_hist1 = args[2].GetCVHistoWithError() if len(args)>2 else None
-        data_hist2 = args[3].GetCVHistoWithError() if len(args)>3 else None
+        mc_hist1 = args[0]
+        mc_hist2 = args[1]
+        data_hist1 = args[2] if len(args)>2 else None
+        data_hist2 = args[3] if len(args)>3 else None
         leg = ROOT.TLegend(0.5,0.7,0.9,0.9).Clone()
         # if data_hist:
         #     data_hist.Draw("E1 X0")
@@ -150,14 +162,14 @@ def MakeCompPlot():
         leg.Draw()
 
     def DrawRatio(mnvplotter,h1,h2):
-        mnvplotter.DrawDataMCRatio(h1, h2, 1.0 ,True,True,0,2)
+        mnvplotter.DrawDataMCRatio(h1.GetCVHistoWithError(), h2.GetCVHistoWithError(), 1.0 ,True,0,2)
 
     def DrawDoubleRatio(mnvplotter,h1,h2,h3,h4):
         h_r1 = h1.Clone("{}_ratio1".format(h1.GetName))
         h_r2 = h3.Clone("{}_ratio2".format(h3.GetName))
         h_r1.Divide(h_r1,h2)
         h_r2.Divide(h_r2,h4)
-        mnvplotter.DrawDataMCRatio(h_r1, h_r2, 1.0 ,True,True,0,2)
+        mnvplotter.DrawDataMCRatio(h_r1.GetCVHistoWithError(), h_r2.GetCVHistoWithError(), 1.0 ,True,0,2)
 
     nueMCfile,nueMCPOT = getFileAndPOT(nuefile)
     nueBkgfile,nueBkgPOT = getFileAndPOT(nuebkgtunedfile)
@@ -181,12 +193,11 @@ def MakeCompPlot():
         hmubkg.Scale(numuDataPOT/numuMCPOT)
         hmudata = numuDatafile.Get(hist_name)
         if hmudata:
-            hmudata.Add(hmubkg,-1)
+            SubtractPoissonHistograms(hmudata,hmubkg)
         hedata = nueDatafile.Get(hist_name)
         if hedata:
-            hedata.Add(hebkg,-1)
+            SubtractPoissonHistograms(hedata,hebkg)
 
-        
         Slicer = PlotTools.Make2DSlice if he.GetDimension()==2 else (lambda hist : [hist])
         if hedata:
             PlotTools.MakeGridPlot(Slicer,DrawRatio,[hedata,he],draw_seperate_legend = he.GetDimension()==2)

@@ -36,7 +36,7 @@ def GetXSectionHistogram(unfolded,efficiency,is_mc):
     return unfolded
 
 def DivideFlux(unfolded,is_mc):
-    frw= PlotUtils.flux_reweighter("minervame1A",12,USE_NUE_CONSTRAINT) #playlist is dummy for now
+    frw= PlotUtils.flux_reweighter("minervame1d1m1nweightedave",12,USE_NUE_CONSTRAINT) #playlist is dummy for now
     flux = frw.GetIntegratedFluxReweighted(12,unfolded,NEUTRINO_ENERGY_RANGE[0],NEUTRINO_ENERGY_RANGE[1],False)
     flux.PopVertErrorBand("Flux_BeamFocus")
     flux.PopVertErrorBand("ppfx1_Total")
@@ -151,7 +151,12 @@ if __name__ == "__main__":
         PlotTools.MNVPLOTTER.axis_maximum = 0.6
         PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec],draw_seperate_legend=True)
         PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_err"))
-        PlotTools.AdaptivePlotterErrorGroup(xsec,18)
+        PlotTools.AdaptivePlotterErrorGroup(xsec,PlotTools.TopNErrorBand(xsec,7))
+        PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec],draw_seperate_legend=True)
+        PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_err_top7"))
+        PlotTools.AdaptivePlotterErrorGroup(xsec,["GENIE_MaCCQE", "GENIE_MaNCEL",
+    "GENIE_MaRES",
+    "GENIE_MvRES",])
         PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec],draw_seperate_legend=True)
         PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_err_top7"))
         PlotTools.MNVPLOTTER.axis_maximum = -1111

@@ -76,6 +76,7 @@ def plotRecoKin(mc, chainwrapper, outfile):
         #print entry.histwrapper.name
         entry.Finalize()
 
+    eventClassifier.GetStatTree().Write("",ROOT.TObject.kOverwrite)
     print("counter for reco,truth: ", eventClassifier.counter)
 
 def plotTruthKin(chainwrapper,outfile):

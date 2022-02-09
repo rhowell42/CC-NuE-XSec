@@ -38,7 +38,8 @@ LEAKAGE_CORRECTION = lambda E: 0.008*E
 #LEAKAGE_CORRECTION = lambda E: 0
 AVAILABLE_E_CORRECTION = 1.17
 
-LEAKAGE_SYSTEMATICS = 0.25 #percent
+LEAKAGE_SYSTEMATICS = 2 # MeV
+LEAKAGE_BIAS = 5#MeV
 
 # electron angle uncertainty
 ELECTRON_ANGLE_UNCERTAINTY = 1e-3 # this is muon angular resolution. I am worry about this.
