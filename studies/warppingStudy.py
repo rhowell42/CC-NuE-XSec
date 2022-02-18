@@ -151,26 +151,26 @@ def RunTransWrapper(tupleName,tag,njobs):
 
 AlternativeModels = {
   "CV":None,
-  "LowQ2Pi0": ("LowQ2Pi",0),
-  "LowQ2Pi1": ("LowQ2Pi",1),
-  "LowQ2Pi2": ("LowQ2Pi",2),
-  "LowQ2Pi3": ("LowQ2Pi",3),
-  "2p2h0": ("Low_Recoil_2p2h_Tune",0),
-  "2p2h1": ("Low_Recoil_2p2h_Tune",1),
-  "2p2h2": ("Low_Recoil_2p2h_Tune",2),
-  "RPA_highq20" :("RPA_HighQ2",0),
-  "RPA_highq21" :("RPA_HighQ2",1),
-  "RPA_lowq20" :("RPA_LowQ2",0),
-  "RPA_lowq21" :("RPA_LowQ2",1),
-  "MK_Model":("MK_model",0),
-  "FSI_Weight0":("fsi_weight",0),
-  "FSI_Weight1":("fsi_weight",1),
-  "FSI_Weight2":("fsi_weight",2),
+  # "LowQ2Pi0": ("LowQ2Pi",0),
+  # "LowQ2Pi1": ("LowQ2Pi",1),
+  # "LowQ2Pi2": ("LowQ2Pi",2),
+  # "LowQ2Pi3": ("LowQ2Pi",3),
+  # "2p2h0": ("Low_Recoil_2p2h_Tune",0),
+  # "2p2h1": ("Low_Recoil_2p2h_Tune",1),
+  # "2p2h2": ("Low_Recoil_2p2h_Tune",2),
+  # "RPA_highq20" :("RPA_HighQ2",0),
+  # "RPA_highq21" :("RPA_HighQ2",1),
+  # "RPA_lowq20" :("RPA_LowQ2",0),
+  # "RPA_lowq21" :("RPA_LowQ2",1),
+  # "MK_Model":("MK_model",0),
+  # "FSI_Weight0":("fsi_weight",0),
+  # "FSI_Weight1":("fsi_weight",1),
+  # "FSI_Weight2":("fsi_weight",2),
   "SuSA2p2h":("SuSA_Valencia_Weight",0),
-  "Leakage0":("Leakage_Uncertainty",0),
-  "Leakage1":("Leakage_Uncertainty",1),
-  "GenieMaCCQE_UP":("GENIE_MaCCQE",1),
-  "GenieMaCCQE_DOWN":("GENIE_MaCCQE",0),
+  # "Leakage0":("Leakage_Uncertainty",0),
+  # "Leakage1":("Leakage_Uncertainty",1),
+  # "GenieMaCCQE_UP":("GENIE_MaCCQE",1),
+  # "GenieMaCCQE_DOWN":("GENIE_MaCCQE",0),
 }
 
 Measurables = [
@@ -187,6 +187,7 @@ if __name__ == '__main__':
   data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag,True)
   if use_siganl_rich_sample:
     signal_rich_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(playlist+"-BigNuE",False))
+    mc_pot = Utilities.GetHistogram(signal_rich_file,"Eavail_q3_migration_reco").Integral(0,-1,0,-1) / 17379 *1e21
   else:
     signal_rich_file = None
   ifile="fin.root"

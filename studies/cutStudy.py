@@ -36,7 +36,8 @@ PLOTS_TO_MAKE = [
 
 NMinus1CutPlot = [
     #("Wexp")
-    #("MeanFrontdEdX",),("LLR",),("RecoQ3",),("RecoElectronEnergy",)
+    ("MeanFrontdEdX",),
+    #("LLR",),("RecoQ3",),("RecoElectronEnergy",)
 ]
 
 def plotRecoKin(mc, chainwrapper, outname):

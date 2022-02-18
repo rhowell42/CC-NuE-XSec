@@ -168,7 +168,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
 
     @Utilities.decorator_ReLU
     def ElectronEnergy(self):
-        return self.ElectronEnergyRaw() + self.GetEMEnergyShift() +self.GetLeakageCorrection()
+        return self.ElectronEnergyRaw() + self.GetEMEnergyShift()# +self.GetLeakageCorrection()
 
     def ElectronP3D(self):
         allp = self.GetVecOfVecDouble("prong_part_E")
@@ -242,7 +242,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
     @Utilities.decorator_ReLU
     def AvailableEnergy(self):
         #return self.GetEAvail()* SystematicsConfig.AVAILABLE_E_CORRECTION
-        return (self.GetEAvail() -self.GetCorrection()) * SystematicsConfig.AVAILABLE_E_CORRECTION
+        return self.GetEAvail() * SystematicsConfig.AVAILABLE_E_CORRECTION-self.GetCorrection()
 
     @Utilities.decorator_ReLU
     def RecoilEnergy(self):
