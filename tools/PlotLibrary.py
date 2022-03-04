@@ -444,6 +444,13 @@ VARIABLE_DICT = {
         "binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
         "value_getter" : lambda event: event.kin_cal.reco_E_nu_cal,
     },
+    "Biased Neutrino Energy":
+    {
+        "name" : "Enu_avail",
+        "title" : "E_{e}+E_avail (GeV)",
+        "binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
+        "value_getter" : lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE,
+    },
      "True Neutrino Energy":
     {
         "name" : "tEnu",
