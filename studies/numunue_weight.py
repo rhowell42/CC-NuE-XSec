@@ -112,7 +112,7 @@ def FindScale2(target,migration):
     tmp = SVD.Invert()
     r = ROOT.TMatrixD(migration.GetNbinsX()+2,1)
     r.Mult(tmp,t)
-    return repeat(smooth,2)(r)
+    return repeat(smooth,0)(r)
 
 def smooth(iput):
     tmp = iput[11][0]
@@ -221,6 +221,6 @@ def MakeCompPlot():
 
 
 if __name__ == "__main__":
-    MakeCompPlot()
+    #MakeCompPlot()
     # MakeScaleFile(["Enu","tEnu","tEnu_true_signal"])
-    # MakeScaleFile2()
+    MakeScaleFile2()
