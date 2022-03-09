@@ -152,6 +152,7 @@ class KinematicsCalculator(object):
         # calc q2, q3
         self.reco_E_nu_cal = self.reco_E_lep + self.reco_q0
         self.reco_E_nu_QE = KinematicsCalculator.Enu_QE(self.reco_E_lep, self.reco_P_lep, self.reco_theta_lep_rad, self.M_lep_sqr)
+        self.reco_q2_QE = KinematicsCalculator.Q2_cal(self.reco_E_lep, self.reco_theta_lep_rad, self.reco_P_lep, self.M_lep_sqr, self.reco_E_nu_QE)
         self.reco_q2_cal = KinematicsCalculator.Q2_cal(self.reco_E_lep, self.reco_theta_lep_rad, self.reco_P_lep, self.M_lep_sqr, self.reco_E_nu_cal)
 
         self.reco_q3 = self.calcq3(self.reco_q2_cal,self.reco_E_nu_cal,self.reco_E_lep)
@@ -213,6 +214,13 @@ class KinematicsCalculator(object):
         self.true_theta_lep_rad = self.event.GetThetalepTrue()
         self.true_theta_lep = math.degrees(self.true_theta_lep_rad)
         self.true_visE = self.CalculateVisibleE()
+        self.true_pt = self.true_P_lep*math.sin(self.true_theta_lep_rad)
+        # true_4v = self.event.mc_primFSLepton
+        # print(true_4v,self.true_P_lep,self.true_theta_lep_rad)
+        # beam_rad = -0.05887
+        # pyp = -math.sin(beam_rad)*true_4v[2]+math.cos(beam_rad)*true_4v[1]
+        # pt = math.sqrt(true_4v[0]**2+pyp**2)/1e3
+        # print (self.true_pt,pt)
 
         if self.include_hadron_momenta:
             for part_idx in range(len(self.event.mc_FSPartPDG)):

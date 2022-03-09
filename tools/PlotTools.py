@@ -45,6 +45,11 @@ def PrepareSlicer(hist_holder):
         return None
         #raise KeyError("Only 1D,2D histograms are supported")
 
+def ErrorBandFetcher(hist,errorband,i):
+    h= hist.GetVertErrorBand(errorband)
+    return h.GetHist(i) if h else hist
+
+
 def IdentitySlicer(hist):
     return [hist.Clone()]
 

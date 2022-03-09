@@ -14,6 +14,7 @@ from tools import Utilities,PlotTools
 from config.UnfoldingConfig import HISTOGRAMS_TO_UNFOLD,REGULATION_PARAMETER
 from config.DrawingConfig import Default_Plot_Type,Default_Scale,DefaultPlotters,DefaultSlicer
 from tools.unfoldingwrapper import DeOverflowWrapper,WithBackgroundWrapper,IdentityWrapper
+from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS,DETAILED_ERROR_GROUPS
 
 MNVUNFOLD = UnfoldUtils.MnvUnfold()
 ROOT.TH1.AddDirectory(False)
@@ -98,13 +99,13 @@ def DrawPostUnfolding(data_hist1,data_hist2):
     draw_seperate_legend = data_hists.dimension!=1
     plotfunction = lambda mnvplotter, data_hist, mc_hist: mnvplotter.DrawDataMCWithErrorBand(data_hist,mc_hist,1.0,"TR")
     hists = [data_hist2.GetCVHistoWithError(),data_hist1.GetCVHistoWithError()]
+    PlotTools.updatePlotterErrorGroup(CONSOLIDATED_ERROR_GROUPS)
+
     PlotTools.MakeGridPlot(slicer,plotfunction,hists,CanvasConfig,draw_seperate_legend)
     PlotTools.Print(AnalysisConfig.PlotPath(data_hists.plot_name,"Signal","comp_unfolded_"+background_scale_tag))
     plotfunction = lambda mnvplotter,data_hist, mc_hist: mnvplotter.DrawDataMCRatio(data_hist, mc_hist, 1.0 ,True,0,2)
     PlotTools.MakeGridPlot(slicer,plotfunction,hists,CanvasConfig,draw_seperate_legend)
     PlotTools.Print(AnalysisConfig.PlotPath(data_hists.plot_name,"Signal","ratio_unfolded_"+background_scale_tag))
-
-    
 
     PlotTools.MNVPLOTTER.axis_maximum = 0.5
     plotfunction = lambda mnvplotter,data_hist: mnvplotter.DrawErrorSummary(data_hist)
@@ -167,6 +168,6 @@ if __name__ == "__main__":
         unfolded_file.cd()
         unfolded.Write(data_hists.plot_name+"_bkg_unfolding")
         #unfolded.Scale(1,"width")
-        #DrawPostUnfolding(unfolded)
+        DrawPostUnfolding(unfolded,migration_hists[2])
 
     unfolded_file.Close()

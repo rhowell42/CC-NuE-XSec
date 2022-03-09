@@ -24,6 +24,13 @@ E_BACKGROUNDS = ["NuEElastic","NonFiducial","NonPhaseSpace","CCNuEAntiNu",
 MU_BACKGROUNDS = ["NC","CCNuE","CCAntiNuMu","NonFiducial","NonPhaseSpace","Other"]
 PLOTPATH = "/minerva/data/users/hsu/numunueRatioPlots/"
 
+SIGNAL_CHANNEL_PAIR = [
+    ("CCQE","CCNuEQE"),
+    ("CCDelta","CCNuEDelta"),
+    ("CCDIS","CCNuEDIS"),
+    ("CCOther","CCNuE")
+]
+
 #E_SIGNALS = MU_SIGNALS
 
 def SubtractPoissonHistograms(h,h1):
@@ -219,8 +226,16 @@ def MakeCompPlot():
         PlotTools.MakeGridPlot(Slicer,DrawRatio,[he,hmu],draw_seperate_legend = he.GetDimension()==2)
         PlotTools.CANVAS.Print("{}{}_MCratio.png".format(PLOTPATH,hist_name))
 
+        for numu_sig,nue_sig in SIGNAL_CHANNEL_PAIR:
+            he = GetSignalHist(nueMCfile,[nue_sig],hist_name)
+            hmu = GetSignalHist(numuMCfile,[numu_sig],hist_name)
+            hmu.Scale(numuDataPOT/numuMCPOT)
+            he.Scale(numuDataPOT/nueMCPOT)
+            PlotTools.MakeGridPlot(Slicer,DrawRatio,[he,hmu],draw_seperate_legend = he.GetDimension()==2)
+            PlotTools.CANVAS.Print("{}{}_{}MCratio.png".format(PLOTPATH,hist_name,numu_sig))
+
 
 if __name__ == "__main__":
-    #MakeCompPlot()
+    MakeCompPlot()
     # MakeScaleFile(["Enu","tEnu","tEnu_true_signal"])
-    MakeScaleFile2()
+    #MakeScaleFile2()

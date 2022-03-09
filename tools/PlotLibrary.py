@@ -77,8 +77,9 @@ def TranslateSettings(key):
                     tmp = DecMap[key](tmp,var["binning"])
 
             settings.setdefault("value_getter",[]).append(tmp)
-        settings["title"] = ";"+";".join(VARIABLE_DICT[_]["title"] for _ in settings["variables"])
-        settings["name"] = "_".join(VARIABLE_DICT[_]["name"] for _ in settings["variables"])
+        settings["title"] = ";"+";".join(VARIABLE_DICT[_]["title"] for _ in settings["variables"])+ "NEvents/GeV^{}".format(len(settings["variables"]))
+        if "name" not in settings:
+            settings["name"] = "_".join(VARIABLE_DICT[_]["name"] for _ in settings["variables"])
         del settings["variables"]
 
     return settings
@@ -354,7 +355,14 @@ VARIABLE_DICT = {
     {
         "name" : "Eel",
         "title" : "Reconstructed E_lep (GeV)", 
-        "binning" : PlotConfig.ELECTRON_ENERGY_BINNING,  
+        "binning" : PlotConfig.ELECTRON_ENERGY_BINNING,
+        "value_getter" : lambda event: event.kin_cal.reco_E_lep,
+    },
+    "Lepton Energy Neutrino-4":
+    {
+        "name" : "Eel_nu4",
+        "title" : "Reconstructed E_lep (GeV)", 
+        "binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
         "value_getter" : lambda event: event.kin_cal.reco_E_lep,
     },
     "Electron Candidate True PID":
@@ -447,7 +455,7 @@ VARIABLE_DICT = {
     "Biased Neutrino Energy":
     {
         "name" : "Enu_avail",
-        "title" : "E_{e}+E_avail (GeV)",
+        "title" : "E_{e}+E_{avail} (GeV)",
         "binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
         "value_getter" : lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE,
     },
@@ -682,15 +690,6 @@ PLOT_SETTINGS= {
         "binning" : [PlotConfig.NEUTRINO_ENERGY_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_E_nu_cal],
         "tags": reco_tags
-    },
-    "True Lepton Energy":
-    {
-        "name" : "tEel",
-        "title" : "True Lepton Energy; E_e (GeV); dNEvents/dE_e",
-        "binning" : [PlotConfig.EXCESS_ENERGY_FIT],
-        "value_getter" : [lambda event: event.kin_cal.true_E_lep],
-        "tags": reco_tags
-
     },
     "True Neutrino Energy":
     {

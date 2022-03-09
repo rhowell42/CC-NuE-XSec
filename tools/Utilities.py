@@ -300,7 +300,10 @@ def getFilesAndPOTScale(playlist, type_path_map, ntuple_tag,raw_pot = False):
             path = type_path_map[t]
         except KeyError:
             continue
-        pots[i]= getPOTFromFile(path) or getPOT(playlist,t,ntuple_tag)
+        try:
+            pots[i]= getPOTFromFile(path) or getPOT(playlist,t,ntuple_tag)
+        except KeyError:
+            pots[i]=None
         files[i]=ROOT.TFile.Open(path) or None
 
     pot_scale = pots[0]/pots[1] if pots.count(None) == 0 else 1.0

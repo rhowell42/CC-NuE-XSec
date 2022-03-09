@@ -12,9 +12,13 @@
     <class name="PlotUtils::Universe2p2h<PythonMinervaUniverse>" />
     <class name="PlotUtils::RPAUniverse<PythonMinervaUniverse>" />
     <class name="PlotUtils::LowQ2PionUniverse<PythonMinervaUniverse>" />
-    <class name="PlotUtils::MuonUniverseMinerva<PythonMinervaUniverse>" />
     <class name="PlotUtils::MuonUniverseMinos<PythonMinervaUniverse>" />
     <class name="PlotUtils::Cut<PythonMinervaUniverse,PlotUtils::detail::empty>" />
+    <class name="PlotUtils::TargetMassScintillatorUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::TargetMassCarbonUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::TargetMassWaterUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::TargetMassIronUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::TargetMassLeadUniverse<PythonMinervaUniverse>" />
     <class name="PlotUtils::detail::empty" />
     <class name="reco::HasMINOSMatch<PythonMinervaUniverse,PlotUtils::detail::empty>" />
     <class name="reco::ZRange<PythonMinervaUniverse,PlotUtils::detail::empty>" />

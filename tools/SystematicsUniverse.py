@@ -232,7 +232,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         return max(0,fuzz) * SystematicsConfig.AVAILABLE_E_CORRECTION
 
     def GetLeakageCorrection(self):
-        return SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw()) + SystematicsConfig.LEAKAGE_BIAS if self.nsigma is None else 0
+        return SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw()) + (SystematicsConfig.LEAKAGE_BIAS if self.nsigma is None else 0)
 
     def Pi0_Additional_Leakage(self):
         return random.uniform(0,20) if self.mc and (self.mc_intType == 4 or (self.mc_current==2 and self.mc_intType==10)) else 0
@@ -242,7 +242,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
     @Utilities.decorator_ReLU
     def AvailableEnergy(self):
         #return self.GetEAvail()* SystematicsConfig.AVAILABLE_E_CORRECTION
-        return self.GetEAvail() * SystematicsConfig.AVAILABLE_E_CORRECTION-self.GetCorrection()
+        return self.GetEAvail()*SystematicsConfig.AVAILABLE_E_CORRECTION - self.GetCorrection()
 
     @Utilities.decorator_ReLU
     def RecoilEnergy(self):
@@ -567,6 +567,20 @@ class GeantHadronUniverse(ROOT.PlotUtils.GeantHadronUniverse(ROOT.PythonMinervaU
    def GetSystematicsUniverses(chain):
        return [GeantHadronUniverse(chain,i,j) for j in SystematicsConfig.GEANT_PARTICLES for i in OneSigmaShift]
 
+class TargetMassUniverse(ROOT.PlotUtils.TargetMassScintillatorUniverse(ROOT.PythonMinervaUniverse),CVUniverse,object):
+    def __init__(self,chain,nsigma):
+        super(TargetMassUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.TargetMassScintillatorUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+
+    def GetStandardWeight(self):
+        weight = super(TargetMassUniverse,self).GetStandardWeight()
+        weight*= self.GetWeightRatioToCV()
+        return weight
+
+    @staticmethod
+    def GetSystematicsUniverses(chain):
+        return [TargetMassUniverse(chain, i) for i in OneSigmaShift]
+
 class MKModelUniverse(CVUniverse,object):
     def __init__(self,chain,nsigma):
         super(MKModelUniverse,self).__init__(chain,nsigma)
@@ -712,7 +726,7 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
         #Set NonResPi weight
         CVUniverse.SetNonResPiReweight(SystematicsConfig.NonResPi)
         CVUniverse.SetDeuteriumGeniePiTune(False)
-        CVUniverse.SetZExpansionFaReweight(SystematicsConfig.NumZExpansionUniverses)
+        CVUniverse.SetZExpansionFaReweight(bool(SystematicsConfig.NumZExpansionUniverses))
         CVUniverse.SetNFluxUniverses(SystematicsConfig.NUM_FLUX_UNIVERSE)
 
         if chain.GetTree().GetName() == "Truth":
@@ -733,7 +747,6 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             else:
                 raise ValueError ("AnaNuPDG should be \pm 12 or 14, but you set {}".format(SystematicsConfig.AnaNuPDG))
 
-           
             # #beam angle shift universe
             universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
             #particle response shift universe
@@ -776,6 +789,9 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
 
             #bkgtune universe
             universes.extend(BkgTuneUniverse.GetSystematicsUniverses(chain ))
+
+            #target mass universe
+            universes.extend(TargetMassUniverse.GetSystematicsUniverses(chain ))
 
 
     # Group universes in dict.

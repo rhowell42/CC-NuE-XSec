@@ -34,8 +34,8 @@ BEAM_ANGLE = math.radians(-3.3)
 BEAM_XANGLE_UNCERTAINTY = 1*1e-3 #radians
 BEAM_YANGLE_UNCERTAINTY = 0.9*1e-3
 
-LEAKAGE_CORRECTION = lambda E: 0.008*E
-#LEAKAGE_CORRECTION = lambda E: 0
+#LEAKAGE_CORRECTION = lambda E: 0.008*E
+LEAKAGE_CORRECTION = lambda E: 0
 AVAILABLE_E_CORRECTION = 1.17
 
 LEAKAGE_SYSTEMATICS = 2 # MeV
@@ -104,8 +104,8 @@ RPA_UNIVERSES = {
 
 NonResPi=True
 LowQ2PiWeightChannel = None
-LowQ2PiWeightSysChannel = ["JOINT","NUPI0"]
-NumZExpansionUniverses = 0 #Means Don't use Zexpansion. 100 is default Z expansion
+LowQ2PiWeightSysChannel = ["Joint"]
+NumZExpansionUniverses = 100 #Means Don't use Zexpansion. 100 is default Z expansion
 
 RESPONSE_BRANCHES = [
     "p",
@@ -236,7 +236,8 @@ DETECTOR_RESPONSE_ERROR_GROUPS = {
     "Beam Angle": ["beam_angle",],
     "EM energy scale": ["elE_ECAL","elE_HCAL"],
     "Birk's Constant" : ["birks"],
-    "Particle Response":["response_"+i for i in RESPONSE_BRANCHES]
+    "Particle Response":["response_"+i for i in RESPONSE_BRANCHES],
+    "Leakage Estimation" : ["Leakage_Uncertainty"]
 }
 
 MINERVA_TUNNING_ERROR_GROUPS = {
@@ -263,13 +264,16 @@ GEANT_ERROR_GROUPS = {
     "GEANT" : ["GEANT_" +i for i in ("Neutron","Pion","Proton")]
 }
 
+BKG_TUNNING_ERROR_GROUPS = {
+    "BKG_TUNNING" : ["bkg_tune"]
+}
+
 
 CONSOLIDATED_ERROR_GROUPS_CONFIG = {
  	"Detector model": [DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS],
- 	"Interaction model": [GENIE_ERROR_GROUPS],
-    "FSI": [FSI_ERROR_GROUPS],
+ 	"Interaction model": [GENIE_ERROR_GROUPS,FSI_ERROR_GROUPS],
     "MnvTunes" :[MINERVA_TUNNING_ERROR_GROUPS],
-    "Alternative 2p2h models" : [MINERVA_TUNNING_ERROR_GROUPS2]
+    "Alternative Tunning methods" : [BKG_TUNNING_ERROR_GROUPS]
    # "Others":[DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS,GENIE_ERROR_GROUPS,FSI_ERROR_GROUPS,MINERVA_TUNNING_ERROR_GROUPS],
 }
 

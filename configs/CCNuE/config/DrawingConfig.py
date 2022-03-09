@@ -31,7 +31,7 @@ Categories["2p2h"]={
     "color": COLORS[1]
 }
 Categories["CCDIS"]= {
-    "title": "CC #nu_{#mu} DIS",
+    "title": "CC #nu_{#mu} #pi^{0}",
     "color" : COLORS[3]
 }
 Categories["NCCOH"]= {
@@ -40,14 +40,14 @@ Categories["NCCOH"]= {
 }
 
 Categories["NCDIS"]= {
-    "title": "NC DIS",
-    "color" : COLORS[6]
+    "title": "NC #pi^{0}",
+    "color" : COLORS[5]
 }
 
 Categories["irreducible"] = {
     "cate":{"NuEElastic","CCNuEAntiNu"},
     "title":"Wrong Sign and nu+e",
-    "color" : COLORS[5]
+    "color" : COLORS[6]
 }
 
 Categories["Other"] = {
@@ -182,6 +182,17 @@ PLOTS_TO_MAKE = [
      "slicer":lambda hist: PlotTools.Make2DSlice(hist,True,interval=2),
      "sideband_group": ("Excess",("Excess_High_Inline","Excess_Low_Inline")),
      },
+
+    {"variables":["Lepton Energy","Q3"],
+      "slicer": lambda hist: [hist.ProjectionX("{}_px".format(hist.GetName()),0,6)]},
+    {"variables":["Lepton Energy"]},
+    {"variables":["Biased Neutrino Energy","Q3"],
+     "slicer": lambda hist: [hist.ProjectionX("{}_px".format(hist.GetName()),0,6)]},
+    {"variables":["Biased Neutrino Energy"]},
+    {"variables":["Lepton Energy","Lepton Pt"]},
+    {"variables":["Biased Neutrino Energy","Lepton Pt"]},
+ 
+    {"variables":["Visible Energy","Lepton Energy"]},
     # {"variables":["PsiEe","Lepton Energy"],
     #  "slicer": PlotTools.ProjectionY},
     #  {"variables":["PsiEe","Lepton Energy"],

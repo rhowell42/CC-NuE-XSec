@@ -192,7 +192,7 @@ if __name__ =="__main__":
         print(sys.argv[1])
         hists = sys.argv[1:]
     else:
-        hists = ["CCNUE_Warping_2022-01-25-132428_hists","CCNUE_Warping_2022-01-25-214504_hists"]
+        hists = ["CCNUE_Warping_2022-02-28-135620_hists"]
     
     plotpathroot = "/minerva/data/users/hsu/nu_e/plot/warping/"
     target = ["Eavail_Lepton_Pt","Eavail_q3"]
