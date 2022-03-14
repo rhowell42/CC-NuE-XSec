@@ -25,7 +25,7 @@ BLUEARC = "/minerva/data/users/{}/nu_e".format(os.environ["USER"])
 GIRDOUTPUT ="/pnfs/minerva/persistent/"
 
 
-SIDEBANDS=["Excess_High_Inline","Excess_Low_Inline"]
+SIDEBANDS=[]#"Excess_High_Inline","Excess_Low_Inline"]
 
 class _AnalysisConfig(object):
     Defaults = {

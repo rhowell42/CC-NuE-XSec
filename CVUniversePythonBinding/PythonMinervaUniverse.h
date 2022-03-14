@@ -10,7 +10,7 @@
 #include "PlotUtils/MnvNormalization.h" // PlotUtils::MnvNormalizer
 #include "PlotUtils/weight_fsi.h" // PlotUtils::weight_fsi
 #include "PlotUtils/weightCoherentPi.h" // PlotUtils::weight_coherent
-
+#include "PlotUtils/TargetMassSystematics.h"
 
 class PythonMinervaUniverse : public PlotUtils::MinervaUniverse {
 public:
@@ -38,6 +38,5 @@ public:
     return qp==-1? 0:qp;
   }
 };
-
 //PythonMinervaUniverse::Q0Spline PythonMinervaUniverse::current_spline;
 #endif /* PYTHONMINERVAUNIVERSE_H */

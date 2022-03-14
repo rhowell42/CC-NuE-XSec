@@ -1,1 +1,1 @@
-CCNuE/config/GRIDConfig.py
+../../CCNuE/config/GRIDConfig.py

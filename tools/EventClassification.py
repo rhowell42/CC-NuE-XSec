@@ -113,7 +113,7 @@ class EventClassifier(object):
 
     def cutStat(self):
         for i in self.signal_cuts:
-            if self.reco_cuts_passed[i]:
+            if (i.startswith("Inverse") and not self.reco_cuts_passed[i]) or self.reco_cuts_passed[i]:
                 self.cut_stats["selected"][i]+=1
                 if self.is_true_signal:
                     self.cut_stats["signal"][i]+=1

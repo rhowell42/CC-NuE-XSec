@@ -23,6 +23,7 @@
 #include "PlotUtils/RPAReweighter.h"
 #include "PlotUtils/SuSAFromValencia2p2hReweighter.h"
 #include "PlotUtils/TargetMassSystematics.h"
+#include "PlotUtils/TargetUtils.h"
 
 template class PlotUtils::Model<PythonMinervaUniverse>;
 template class PlotUtils::Reweighter<PythonMinervaUniverse>;
@@ -57,6 +58,7 @@ template class PlotUtils::Cut<PythonMinervaUniverse>;
 template class reco::HasMINOSMatch<PythonMinervaUniverse>;
 template class reco::ZRange<PythonMinervaUniverse>;
 template class reco::Apothem<PythonMinervaUniverse>;
+
 #endif /* CVUNIVERSEPYTHONBINDING_H */
 
 

@@ -22,7 +22,7 @@ QE_binding_E = 34 # MeV  (same as nu_mu PRL for FHC)
 
 # these will be used repeatedly in calculations.
 # better just do the arithmetic once here.
-M_n_star = (M_n - QE_binding_E)
+M_n_star = M_n#(M_n - QE_binding_E)
 M_e_sqr = M_e**2
 M_mu_sqr = M_mu**2
 M_n_star_sqr = M_n_star**2
@@ -152,7 +152,8 @@ class KinematicsCalculator(object):
         # calc q2, q3
         self.reco_E_nu_cal = self.reco_E_lep + self.reco_q0
         self.reco_E_nu_QE = KinematicsCalculator.Enu_QE(self.reco_E_lep, self.reco_P_lep, self.reco_theta_lep_rad, self.M_lep_sqr)
-        self.reco_q2_QE = KinematicsCalculator.Q2_cal(self.reco_E_lep, self.reco_theta_lep_rad, self.reco_P_lep, self.M_lep_sqr, self.reco_E_nu_QE)
+        self.reco_q2_QE = 2 * M_n/1e3*(self.reco_E_nu_QE-self.reco_E_lep)
+        #self.reco_q2_QE = KinematicsCalculator.Q2_cal(self.reco_E_lep, self.reco_theta_lep_rad, self.reco_P_lep, self.M_lep_sqr, self.reco_E_nu_QE)
         self.reco_q2_cal = KinematicsCalculator.Q2_cal(self.reco_E_lep, self.reco_theta_lep_rad, self.reco_P_lep, self.M_lep_sqr, self.reco_E_nu_cal)
 
         self.reco_q3 = self.calcq3(self.reco_q2_cal,self.reco_E_nu_cal,self.reco_E_lep)
@@ -160,6 +161,8 @@ class KinematicsCalculator(object):
         self.reco_W2 = (M_n/1e3)**2+2*M_n/1e3*self.reco_q0-self.reco_q2_cal
         self.reco_W = math.sqrt(self.reco_W2) if self.reco_W2>=0 else -1
         self.reco_Etheta2 = self.reco_E_lep * self.reco_theta_lep_rad**2
+        #if self.event.mc_intType==7:
+        #    print (self.reco_E_nu_QE,self.reco_q2_cal,self.reco_q2_QE,self.reco_Etheta2,self.reco_Pt_lep)
         # viewE = (self.event.prong_XViewE[0], self.event.prong_VViewE[0],self.event.prong_UViewE[0])
         # self.Ex = (viewE[0])/sum(viewE)
         # self.Eu = (viewE[1])/sum(viewE)

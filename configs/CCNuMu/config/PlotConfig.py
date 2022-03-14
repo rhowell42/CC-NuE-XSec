@@ -44,7 +44,7 @@ LOW_RECOIL_BIN_Q0_Truth = [0,0.05]+[ 0.1*i for i in range(1,7)]+[0.2*i for i in 
 #LOW_RECOIL_BIN_Q0 = [0.05 * i for i in range(17)] + [0.1 * i for i in range(9,21)]#,0.05,0.1,0.12,0.16,0.24,0.32,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2]
 #LOW_RECOIL_BIN_Q0 = [0.05 * i for i in range(25)]#,0.05,0.1,0.12,0.16,0.24,0.32,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2]
 # LOW_RECOIL_BIN_Q0_Truth = [0.0, 0.08, 0.16,0.32,0.60, 1.00, 1.2]
-LOW_RECOIL_BIN_Q0 = [0.0,0.04,0.08,0.12,0.16,0.24,0.32,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2]
+LOW_RECOIL_BIN_Q0 = LOW_RECOIL_BIN_Q0_Truth#[0.0,0.04,0.08,0.12,0.16,0.24,0.32,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2]
 
 
 RESOLUTION_BINNING = [-1.0+0.1*i for i in range(41)]
@@ -116,7 +116,7 @@ ELECTRON_ENERGY_RESIDUAL_BINNING = [-1+0.05* i for i in range(0,41)]
 #EXCESS_ENERGY_BINNING = [0, 3, 6, 9, 12, 15, 20]  # ELECTRON_ENERGY_BINNING + [12, 15, 20]
 #ELECTRON_ENERGY_BINNING = [0.75, 2, 3, 5, 7, 9, 20]  # Jaewon's bins
 #NEUTRINO_ENERGY_BINNING = [i for i in range(6)] + [7, 10] # , 13, 18, 25]
-NEUTRINO_ENERGY_BINNING = list(range(0,25))
+NEUTRINO_ENERGY_BINNING = list(range(0,13)) + [15,18,21] 
 #NEUTRINO_ENERGY_BINNING_BIGGER = [i for i in range(6)] + [7, 10, 13, 18, 25]
 #OD_ENERGY_BINNING = [0, 0.5, 1, 2, 3, 4, 5] 
 #VISIBLE_ENERGY_BINNING = [ 0.1*i for i in range(20) ] + [0.2*i for i in range(10, 20)] + [0.5*i for i in range(8, 14)] + range(7, 10)

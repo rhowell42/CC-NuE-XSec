@@ -33,8 +33,27 @@ def GetXSectionHistogram(unfolded,efficiency,is_mc):
     DivideFlux(unfolded,is_mc)
     #divide by N nucleaon
     Nnucleon = TARGET_UTILS.GetTrackerNNucleons(FIDUCIAL_Z_RANGE[0],FIDUCIAL_Z_RANGE[1],is_mc)
-    unfolded.Scale(1.0/Nnucleon)
+    h_nucleon = GetNnucleonError(unfolded,Nnucleon)
+    unfolded.Divide(unfolded,h_nucleon)
     return unfolded
+
+def GetNnucleonError(hist,ntargets):
+    hist_target = hist.Clone("number_of_targets")
+    hist_target.ClearAllErrorBands()
+    hist_target.Reset()
+    errband_name = "Target_Mass_CH"
+    band_err = 0.014
+    hist_target.AddVertErrorBand(errband_name,2)
+
+    for i in range(hist_target.GetSize()):
+        hist_target.SetBinContent(i,ntargets)
+        hist_target.SetBinError(i,0)
+        hist_target.GetVertErrorBand(errband_name).SetBinContent(i,ntargets)
+        hist_target.GetVertErrorBand(errband_name).GetHist(0).SetBinContent(i,ntargets*(1-band_err))
+        hist_target.GetVertErrorBand(errband_name).GetHist(1).SetBinContent(i,ntargets*(1+band_err))
+    hist_target.AddMissingErrorBandsAndFillWithCV(hist)
+    return hist_target
+
 
 def DivideFlux(unfolded,is_mc):
     frw= PlotUtils.flux_reweighter("minervame1d1m1nweightedave",12,USE_NUE_CONSTRAINT) #playlist is dummy for now

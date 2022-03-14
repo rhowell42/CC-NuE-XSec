@@ -77,7 +77,7 @@ def TranslateSettings(key):
                     tmp = DecMap[key](tmp,var["binning"])
 
             settings.setdefault("value_getter",[]).append(tmp)
-        settings["title"] = ";"+";".join(VARIABLE_DICT[_]["title"] for _ in settings["variables"])+ "NEvents/GeV^{}".format(len(settings["variables"]))
+        settings["title"] = ";"+";".join(VARIABLE_DICT[_]["title"] for _ in settings["variables"])+ ";NEvents/GeV^{}".format(len(settings["variables"]))
         if "name" not in settings:
             settings["name"] = "_".join(VARIABLE_DICT[_]["name"] for _ in settings["variables"])
         del settings["variables"]

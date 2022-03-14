@@ -8,8 +8,8 @@ from tools import PlotTools,Utilities
 
 
 ROOT.TH1.AddDirectory(False)
-numufile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1D_nx_muon_MAD.root"
-nuefile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1D_nx_electron_MAD.root"
+numufile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1LMOP_muon_MAD.root"
+nuefile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1LMOP_electron_MAD.root"
 nuebkgtunedfile =  "/minerva/data/users/hsu/nu_e/kin_dist_mcme1D_nx_electron_MAD.root"
 nuedatafile = "/minerva/data/users/hsu/nu_e/kin_dist_datame1D_nx_electron_MAD.root"
 numuweightedfile =  {
@@ -168,8 +168,9 @@ def MakeCompPlot():
             leg.AddEntry(mc_hist2,"weighted numu MC")
         leg.Draw()
 
-    def DrawRatio(mnvplotter,h1,h2):
-        mnvplotter.DrawDataMCRatio(h1.GetCVHistoWithError(), h2.GetCVHistoWithError(), 1.0 ,True,0,2)
+    def DrawRatio(mnvplotter,h1,h2,include_systematics = False):
+        cast = (lambda x:x.GetCVHistoWithError()) if include_systematics else (lambda x:x.GetCVHistoWithStatError()) 
+        mnvplotter.DrawDataMCRatio(cast(h1),cast(h2), 1.0 ,True,0,2)
 
     def DrawDoubleRatio(mnvplotter,h1,h2,h3,h4):
         h_r1 = h1.Clone("{}_ratio1".format(h1.GetName))
@@ -236,6 +237,6 @@ def MakeCompPlot():
 
 
 if __name__ == "__main__":
-    MakeCompPlot()
+    #MakeCompPlot()
     # MakeScaleFile(["Enu","tEnu","tEnu_true_signal"])
-    #MakeScaleFile2()
+    MakeScaleFile2()

@@ -16,7 +16,6 @@ import ROOT
 
 from config import CutConfig
 
-
 class SelectionCut(object):
     def __init__(self, **kwargs):
         self.name = kwargs["name"]
@@ -72,7 +71,6 @@ CUT_CONFIGS = {
         "cut_fn": lambda val: True,
         "variable_range": VARIABLE_RANGE_01,
     },
-    
     "HasFiducialVertex": {
         "cut_fn": REQUIRE_POSITIVE_INT,
         "variable_range": VARIABLE_RANGE_01,
@@ -367,8 +365,7 @@ class Cuts(object):
             self.cutmap[key]=SelectionCut(**config)
             return self.cutmap[key]
         else:
-            raise KeyError("Cut {} not defined")
-
+            raise KeyError("Cut {} not defined".format(key))
 
 CUTS = Cuts()
 # for name, config in CUT_CONFIGS.items():
@@ -378,4 +375,3 @@ CUTS = Cuts()
 # for name, config in KINEMATICS_CUT_CONFIGS.items():
 #     config["name"] = name
 #     CUTS[name] = SelectionCut(**config)
-
