@@ -18,8 +18,11 @@ from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS,DETAILED_ERROR_GR
 
 MNVUNFOLD = UnfoldUtils.MnvUnfold()
 ROOT.TH1.AddDirectory(False)
+USE_BIGNUE=False
 
-def SubtractPoissonHistograms(h,h1):
+def SubtractPoissonHistograms(h,h1,pseudo_data=False):
+    if pseudo_data:
+        h.ClearAllErrorBands ()
     h.AddMissingErrorBandsAndFillWithCV (h1)
     errors = []
     for i in range(h.GetSize()):
@@ -132,7 +135,7 @@ if __name__ == "__main__":
     if not scale_file:
         scale_file = mc_file
         print ("Didn't find scale file. using mc file instead")
-    signal_rich_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(re.sub("-tune[0-9]","",playlist)+"-BigNuE",False))
+    signal_rich_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(re.sub("-tune[0-9]","",playlist)+"-BigNuE",False)) if USE_BIGNUE else None
     if not signal_rich_file:
         signal_rich_file = mc_file
         print ("Didn't find signal rich file, using mc file instead")
@@ -162,7 +165,7 @@ if __name__ == "__main__":
         #migration_hists[1].Add(signal_background[0],Nevent1/Nevent2)
         signal_background[0].Scale(pot_scale)
         data = data_hists.GetHist()
-        SubtractPoissonHistograms(data, signal_background[0])
+        SubtractPoissonHistograms(data, signal_background[0],True)
         unfolded = unfolding(data,migration_hists[0],migration_hists[1],true_signal.GetHist(),migration_hists[2])
         #unfolded = unfold(plot,data)
         unfolded_file.cd()

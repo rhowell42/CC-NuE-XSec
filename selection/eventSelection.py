@@ -82,7 +82,7 @@ def plotRecoKin(mc, chainwrapper, outfile):
 def plotTruthKin(chainwrapper,outfile):
     kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = True, calc_reco = False)
     eventClassifier = EventClassifier(classifiers=["Truth"],use_kin_cuts=True, use_sideband=[])
-    universes = GetAllSystematicsUniverses(chainwrapper, False)
+    universes = GetAllSystematicsUniverses(chainwrapper, False, AnalysisConfig.is_pc, AnalysisConfig.exclude_universes)
     for univ in chain.from_iterable(iter(universes.values())):
         univ.LoadTools(kin_cal,eventClassifier)
 
@@ -120,6 +120,8 @@ def preparePlots(universes,mc):
     #for region in ["Signal"]+AnalysisConfig.sidebands:
 
     for entry in HISTS_TO_MAKE:
+        if (isinstance(entry,str) and entry.startswith("True Signal")):
+            continue
         settings = {"key":entry,"region":AnalysisConfig.sidebands,"mc":mc}
         plots.update(MakePlotProcessors(**settings))
 

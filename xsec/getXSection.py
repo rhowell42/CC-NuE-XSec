@@ -20,10 +20,13 @@ XSEC_TO_MAKE = [
     "Visible Energy vs q3",
     "Visible Energy vs Lepton Pt"
 ]
-threshold = 100
+USE_BIGNUE = False
+threshold = 100 if USE_BIGNUE else 1
 TARGET_UTILS = PlotUtils.TargetUtils.Get()
 warping_errorband = ["fsi_weight","SuSA_Valencia_Weight","MK_model"]
 #warping_errorband = ["SuSA_Valencia_Weight"]
+#FLUX="minervame1d1m1nweightedave"
+FLUX="minervame1d"
 
 def GetXSectionHistogram(unfolded,efficiency,is_mc):
     #divide by efficiency
@@ -56,7 +59,7 @@ def GetNnucleonError(hist,ntargets):
 
 
 def DivideFlux(unfolded,is_mc):
-    frw= PlotUtils.flux_reweighter("minervame1d1m1nweightedave",12,USE_NUE_CONSTRAINT) #playlist is dummy for now
+    frw= PlotUtils.flux_reweighter(FLUX,12,USE_NUE_CONSTRAINT) #playlist is dummy for now
     flux = frw.GetIntegratedFluxReweighted(12,unfolded,NEUTRINO_ENERGY_RANGE[0],NEUTRINO_ENERGY_RANGE[1],False)
     flux.PopVertErrorBand("Flux_BeamFocus")
     flux.PopVertErrorBand("ppfx1_Total")
@@ -144,7 +147,7 @@ if __name__ == "__main__":
     data_file,mc_reco_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag,True)
     unfolded_file = ROOT.TFile.Open(AnalysisConfig.UnfoldedHistoPath(playlist,AnalysisConfig.bkgTune_tag,False))
     #mc_reco_file = ROOT.TFile.Open(AnalysisCmc_reco_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(playlist,False,False))
-    mc_truth_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(playlist+"-BigNuE",False))
+    mc_truth_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(playlist+"-BigNuE",False)) if USE_BIGNUE else None 
     xsec_file = ROOT.TFile.Open(AnalysisConfig.XSecHistoPath(playlist),"RECREATE")
     for plot in XSEC_TO_MAKE:
         PlotTools.updatePlotterErrorGroup(CONSOLIDATED_ERROR_GROUPS)
@@ -166,7 +169,7 @@ if __name__ == "__main__":
         plotter = lambda mnvplotter,data_hist, mc_hist: mnvplotter.DrawDataMCWithErrorBand(data_hist.GetCVHistoWithError(),mc_hist.GetCVHistoWithStatError(),1.0,"TR")
         PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec,mc_xsec],draw_seperate_legend=True)
         PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec"))
-        plotter = lambda mnvplotter, data_hist,mc_hist : mnvplotter.DrawDataMCRatio(data_hist.GetCVHistoWithError(),mc_hist.GetCVHistoWithStatError(),1.0,True,0,2)
+        plotter = lambda mnvplotter, data_hist,mc_hist : mnvplotter.DrawDataMCRatio(data_hist.GetCVHistoWithError(),mc_hist.GetCVHistoWithStatError(),1.0,True,0.99,1.01)
         PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec,mc_xsec],draw_seperate_legend=True)
         PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_ratio"))
         plotter = lambda mnvplotter, hist: mnvplotter.DrawErrorSummary(hist)

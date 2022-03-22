@@ -5,6 +5,7 @@ import PlotUtils
 import UnfoldUtils
 from multiprocessing import Process
 from tools import PlotTools,Utilities
+from functools import partial
 
 
 ROOT.TH1.AddDirectory(False)
@@ -13,8 +14,8 @@ nuefile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1LMOP_electron_MAD.root"
 nuebkgtunedfile =  "/minerva/data/users/hsu/nu_e/kin_dist_mcme1D_nx_electron_MAD.root"
 nuedatafile = "/minerva/data/users/hsu/nu_e/kin_dist_datame1D_nx_electron_MAD.root"
 numuweightedfile =  {
-    "mc":"/minerva/data/users/hsu/nu_e/kin_dist_mcme1D_nx_weighted_muon_MAD.root",
-    "data":"/minerva/data/users/hsu/nu_e/kin_dist_datame1D_nx_weighted_muon_MAD.root"
+    "mc":"/minerva/data/users/hsu/nu_e/kin_dist_mcme1LMOP_muon_weighted_MAD.root",
+    "data":"/minerva/data/users/hsu/nu_e/kin_dist_datame1LMOP_muon_weighted_MAD.root"
 }
 
 MU_SIGNALS = ["CCQE","CCDelta","CC2p2h","CCDIS","CCOther"]
@@ -172,12 +173,12 @@ def MakeCompPlot():
         cast = (lambda x:x.GetCVHistoWithError()) if include_systematics else (lambda x:x.GetCVHistoWithStatError()) 
         mnvplotter.DrawDataMCRatio(cast(h1),cast(h2), 1.0 ,True,0,2)
 
-    def DrawDoubleRatio(mnvplotter,h1,h2,h3,h4):
+    def DrawDoubleRatio(mnvplotter,h1,h2,h3,h4,include_systematics = False):
         h_r1 = h1.Clone("{}_ratio1".format(h1.GetName))
         h_r2 = h3.Clone("{}_ratio2".format(h3.GetName))
         h_r1.Divide(h_r1,h2)
         h_r2.Divide(h_r2,h4)
-        mnvplotter.DrawDataMCRatio(h_r1.GetCVHistoWithError(), h_r2.GetCVHistoWithError(), 1.0 ,True,0,2)
+        DrawRatio(mnvplotter,h_r1,h_r2,include_systematics)
 
     nueMCfile,nueMCPOT = getFileAndPOT(nuefile)
     nueBkgfile,nueBkgPOT = getFileAndPOT(nuebkgtunedfile)
@@ -203,6 +204,7 @@ def MakeCompPlot():
         if hmudata:
             SubtractPoissonHistograms(hmudata,hmubkg)
         hedata = nueDatafile.Get(hist_name)
+        hedata.Scale(numuDataPOT/nueDataPOT)
         if hedata:
             SubtractPoissonHistograms(hedata,hebkg)
 
@@ -232,7 +234,8 @@ def MakeCompPlot():
             hmu = GetSignalHist(numuMCfile,[numu_sig],hist_name)
             hmu.Scale(numuDataPOT/numuMCPOT)
             he.Scale(numuDataPOT/nueMCPOT)
-            PlotTools.MakeGridPlot(Slicer,DrawRatio,[he,hmu],draw_seperate_legend = he.GetDimension()==2)
+            drawer = partial(DrawRatio, include_systematics=False)
+            PlotTools.MakeGridPlot(Slicer,drawer,[he,hmu],draw_seperate_legend = he.GetDimension()==2)
             PlotTools.CANVAS.Print("{}{}_{}MCratio.png".format(PLOTPATH,hist_name,numu_sig))
 
 

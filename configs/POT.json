@@ -912,5 +912,12 @@
                 "playlist_location": "file_option/playlist_ccqenue_mcme1P_BigNuE_MAD.txt"
             }
         }
+    },
+    "me1D_ext_2p2h": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1D_ext_2p2h_MAD.txt"
+            }
+        }
     }
 }

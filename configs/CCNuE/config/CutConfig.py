@@ -81,20 +81,18 @@ SAMPLE_CUTS = {
         "ODCalVisE",
         "VertexTrackMultiplicity",
         "Afterpulsing",
+        "DeadTime",
         #"HasNoNonEMExitingTracks",
         #EM shower quality
         "StartPointVertexMultiplicity",
         "MeanFrontdEdX",
         "NonMIPClusFrac",
         "TransverseGapScore",
-
         #phase space
         "Vertex_Z",
         "Vertex_Apothem",
         "Eavail",
-        "DeadTime",
-
-        "HasNoVertexMismatch",
+        # "HasNoVertexMismatch",
         #"RecoQ3",
         #"Exuv",
         #"Euv",

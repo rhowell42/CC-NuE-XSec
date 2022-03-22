@@ -116,7 +116,7 @@ ELECTRON_ENERGY_RESIDUAL_BINNING = [-1+0.05* i for i in range(0,41)]
 #EXCESS_ENERGY_BINNING = [0, 3, 6, 9, 12, 15, 20]  # ELECTRON_ENERGY_BINNING + [12, 15, 20]
 #ELECTRON_ENERGY_BINNING = [0.75, 2, 3, 5, 7, 9, 20]  # Jaewon's bins
 #NEUTRINO_ENERGY_BINNING = [i for i in range(6)] + [7, 10] # , 13, 18, 25]
-NEUTRINO_ENERGY_BINNING = list(range(0,13)) + [15,18,21] 
+NEUTRINO_ENERGY_BINNING = list(range(0,13)) + [15,20] 
 #NEUTRINO_ENERGY_BINNING_BIGGER = [i for i in range(6)] + [7, 10, 13, 18, 25]
 #OD_ENERGY_BINNING = [0, 0.5, 1, 2, 3, 4, 5] 
 #VISIBLE_ENERGY_BINNING = [ 0.1*i for i in range(20) ] + [0.2*i for i in range(10, 20)] + [0.5*i for i in range(8, 14)] + range(7, 10)
@@ -337,9 +337,9 @@ HISTS_TO_MAKE = [
     #  },
 
     "Visible Energy vs q3",
-    #"Visible Energy vs q3 Migration",
+    "Visible Energy vs q3 Migration",
     "True Signal Visible Energy vs q3",
-    #"Visible Energy vs Lepton Pt Migration",
+    "Visible Energy vs Lepton Pt Migration",
     "True Signal Visible Energy vs Lepton Pt",
 
     # "Q3 Migration",

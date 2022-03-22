@@ -6,53 +6,26 @@ PLAYLISTS = {
         # "me1A_nx",
         # "me1B_nx",
         # "me1C_nx",
-        #"me1D_nx",
+        "me1D_nx",
         #"me1E_nx",
         #"me1F_nx",
         #"me1G_nx",
-        "me1L_nx",
-        "me1M_nx",
+        # "me1L_nx",
+        # "me1M_nx",
         #"me1N_nx",
-        "me1O_nx",
-        "me1P_nx",
-    ],
-    "FHC_BigNuE": [
-        "me1A_BigNuE",
-        "me1B_BigNuE",
-        "me1C_BigNuE",
-        "me1D_BigNuE",
-        "me1E_BigNuE",
-        "me1F_BigNuE",
-        "me1G_BigNuE",
-        "me1L_BigNuE",
-        "me1M_BigNuE",
-        "me1N_BigNuE",
-        "me1O_BigNuE",
-        "me1P_BigNuE",
+        # "me1O_nx",
+        # "me1P_nx",
     ],
 
     "RHC": [
         "Minerva5",
     ],
 
-    "FHC_NCDIF": [
-        "me1A_NCDIF",
-        "me1B_NCDIF",
-        "me1C_NCDIF",
-        "me1D_NCDIF",
-        "me1E_NCDIF",
-        "me1F_NCDIF",
-        "me1G_NCDIF",
-        "me1L_NCDIF",
-        "me1M_NCDIF",
-        "me1N_NCDIF",
-        "me1O_NCDIF",
-        "me1P_NCDIF",
-    ],
-    "FHC_Extended_2p2h":[
-        "me1A_ext_2p2h"
-    ]
 }
+PLAYLISTS["FHC_BigNuE"] = list(map(lambda x:x.replace("nx","BigNuE"),PLAYLISTS["FHC"]))
+PLAYLISTS["FHC_NCDIF"] = list(map(lambda x:x.replace("nx","NCDIF"),PLAYLISTS["FHC"]))
+PLAYLISTS["FHC_Extended_2p2h"] = list(map(lambda x:x.replace("nx","ext_2p2h"),PLAYLISTS["FHC"]))
+
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--RHC", "--rhc",

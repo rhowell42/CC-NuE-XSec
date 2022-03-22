@@ -296,7 +296,7 @@ parser.add_argument("--cal_POT","--cal-POT",
                     action="store_true",
                     default=False)
 
-parser.add_argument("--only_cal_POT","--only-cal-POT",
+parser.add_argument("--no-reco","--no_reco",
                     help="do not run selection but only count POT",
                     dest = "run_reco",
                     action="store_false",

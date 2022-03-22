@@ -148,8 +148,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
     #def GetPCWeight(self):
     #    return 1.0
 
-    def GetMyLowQ2PiWeight(self):
-        channel = SystematicsConfig.LowQ2PiWeightChannel
+    def GetMyLowQ2PiWeight(self,channel = SystematicsConfig.LowQ2PiWeightChannel):
         if channel is None:
             return 1
         else:
@@ -431,8 +430,25 @@ class LowQ2PionUniverse(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUnive
     @staticmethod
     def GetSystematicsUniverses(chain):
         cvshifts = [LowQ2PionUniverse(chain,i,SystematicsConfig.LowQ2PiWeightChannel) for i in OneSigmaShift] if SystematicsConfig.LowQ2PiWeightChannel is not None else []
-        cvshifts.extend([LowQ2PionUniverse(chain,i,j) for j in SystematicsConfig.LowQ2PiWeightSysChannel for i in ([-1,1] if j is not None else [0])])
         return cvshifts
+
+class LowQ2PionUniverseAlt(CVUniverse,object):
+    def __init__(self,chain,channel):
+        super(LowQ2PionUniverseAlt,self).__init__(chain, 0)
+        self.channel = channel
+
+    def ShortName(self):
+        return "LowQ2Pi_{}".format(self.channel)
+
+    def LatexName(self):
+        return "Low Q2 Pion Suppression Channel {}".format(self.channel)
+
+    def GetMyLowQ2PiWeight(self):
+        return super(LowQ2PionUniverseAlt,self).GetMyLowQ2PiWeight(self.channel)
+
+    @staticmethod
+    def GetSystematicsUniverses(chain):
+        return [LowQ2PionUniverseAlt(chain,i) for i in SystematicsConfig.LowQ2PiWeightSysChannel]
 
 class MuonUniverseMinerva(ROOT.PlotUtils.MuonUniverseMinerva(ROOT.PythonMinervaUniverse),CVUniverse, object):
     def __init__(self,chain,nsigma):

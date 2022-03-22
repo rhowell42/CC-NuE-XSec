@@ -91,6 +91,10 @@ def PrepareSignalDecompose(data_hists,mc_hists,cates,sys_on_mc = True, sys_on_da
         raise KeyError("Non sense making signal decomposition plots without mc")
     return plotfunction,hists
 
+def PrepareModelComparison(data_hists,mc_hists,models):
+    if not mc_hists.valide:
+        raise KeyError("Non sense making model comparison plots without mc ")
+
 def PrepareSignalDecomposeRatio(data_hists,mc_hists,cates,sys_on_mc = True, sys_on_data = False,only_cated = False):
     def ReSumHists(h_list):
         if len(h_list) == 0:
