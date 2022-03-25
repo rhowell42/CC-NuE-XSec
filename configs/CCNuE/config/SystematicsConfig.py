@@ -253,11 +253,11 @@ MINERVA_TUNNING_ERROR_GROUPS2 = {
 }
 
 GENIE_ERROR_GROUPS = {
-    "GENIE" : ["GENIE_"+ i for i in (GENIE_UNIVERSES+["MaCCQE", "Rvn1pi", "Rvp1pi"] ) if not i.startswith("Fr") ]
+    "GENIE" : ["GENIE_"+ i for i in (GENIE_UNIVERSES+["MaCCQE", "Rvn1pi", "Rvp1pi"] ) if not (i.startswith("Fr") or i.startswith("MFP")) ]
 }
 
 FSI_ERROR_GROUPS = {
-    "GENIE-FSI" : ["GENIE_"+ i for i in GENIE_UNIVERSES  if i.startswith("Fr") ]
+    "GENIE-FSI" : ["GENIE_"+ i for i in GENIE_UNIVERSES  if (i.startswith("Fr") or i.startswith("MFP")) ]
 }
 
 GEANT_ERROR_GROUPS = {

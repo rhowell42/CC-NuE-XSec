@@ -723,6 +723,9 @@
         "mc": {
             "Sarah": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1A_extend2p2h_Sarah.txt"
+            },
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1A_ext_2p2h_MAD.txt"
             }
         }
     },
@@ -917,6 +920,76 @@
         "mc": {
             "MAD": {
                 "playlist_location": "file_option/playlist_ccqenue_mcme1D_ext_2p2h_MAD.txt"
+            }
+        }
+    },
+    "me1L_ext_2p2h": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1L_ext_2p2h_MAD.txt"
+            }
+        }
+    },
+    "me1M_ext_2p2h": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1M_ext_2p2h_MAD.txt"
+            }
+        }
+    },
+    "me1O_ext_2p2h": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1O_ext_2p2h_MAD.txt"
+            }
+        }
+    },
+    "me1P_ext_2p2h": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1P_ext_2p2h_MAD.txt"
+            }
+        }
+    },
+    "me1B_ext_2p2h": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1B_ext_2p2h_MAD.txt"
+            }
+        }
+    },
+    "me1C_ext_2p2h": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1C_ext_2p2h_MAD.txt"
+            }
+        }
+    },
+    "me1E_ext_2p2h": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1E_ext_2p2h_MAD.txt"
+            }
+        }
+    },
+    "me1F_ext_2p2h": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1F_ext_2p2h_MAD.txt"
+            }
+        }
+    },
+    "me1G_ext_2p2h": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1G_ext_2p2h_MAD.txt"
+            }
+        }
+    },
+    "me1N_ext_2p2h": {
+        "mc": {
+            "MAD": {
+                "playlist_location": "file_option/playlist_ccqenue_mcme1N_ext_2p2h_MAD.txt"
             }
         }
     }

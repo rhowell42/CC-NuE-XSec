@@ -39,10 +39,10 @@ threshold = 10
 remove=""
 NUniverses_per_job = NUniverses
 K=0
-Sys_on_Data=False
+Sys_on_Data=True
 unfoldwithFakes = False
 use_siganl_rich_sample = True
-use_siganl_rich_sample_as_fake_data = True
+use_siganl_rich_sample_as_fake_data = False
 LOCAL=False
 #Additional_uncertainties = [0,1,2,3,4,5,6,7,8,9,10]
 
@@ -252,6 +252,7 @@ if __name__ == '__main__':
 
     if signal_rich_file and data_file!=signal_rich_file:
       #means data truth is a not true, but a sample drawn
+      pass
       scale_to_signal_rich_sample = sumhist(MnvMCtruth)/sumhist(MnvDatatruth)
       MnvDatatruth = Utilities.GetHistogram(signal_rich_file, prefix+ "_migration_truth")
       MnvDataBackground.Scale(scale_to_signal_rich_sample)

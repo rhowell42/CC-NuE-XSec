@@ -107,7 +107,7 @@ class EventClassifier(object):
         for cl in self.classifiers_to_use:
             sc = cl() and sc
 
-        if self.new_truth:
+        if self.new_truth and len(self.classifiers_to_use)==2:
             self.cutStat()
         return sc
 

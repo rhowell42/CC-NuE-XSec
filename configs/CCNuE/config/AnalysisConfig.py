@@ -307,7 +307,7 @@ parser.add_argument("--exclude_universes","--exclude-universes",
                     nargs="*",
 )
 
-parser.add_argument("--skip_2p2h","--skip_2p2h",
+parser.add_argument("--skip_2p2h","--skip-2p2h",
                     help="do not want 2p2h events,(use this when you are going to run delicate 2p2h sample.)",
                     action="store_true",
                     default=False)

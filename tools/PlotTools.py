@@ -36,6 +36,10 @@ def Logy(canvas):
     canvas.SetLogy(1)
     return True
 
+def Logz(canvas):
+    canvas.SetLogz(1)
+    return True
+
 def PrepareSlicer(hist_holder):
     if hist_holder.dimension==1:
         return lambda x:[x.Clone()]
@@ -91,9 +95,6 @@ def PrepareSignalDecompose(data_hists,mc_hists,cates,sys_on_mc = True, sys_on_da
         raise KeyError("Non sense making signal decomposition plots without mc")
     return plotfunction,hists
 
-def PrepareModelComparison(data_hists,mc_hists,models):
-    if not mc_hists.valide:
-        raise KeyError("Non sense making model comparison plots without mc ")
 
 def PrepareSignalDecomposeRatio(data_hists,mc_hists,cates,sys_on_mc = True, sys_on_data = False,only_cated = False):
     def ReSumHists(h_list):
@@ -218,7 +219,7 @@ def PrepareMigration(data_hists,mc_hists):
     if not(mc_hists.valid):
         raise KeyError("No MC histogram to plot migration")
     hists = [mc_hists.GetHist()]
-    plotfunction = lambda mnvplotter,mc_hist: mnvplotter.DrawNormalizedMigrationHistogram(mc_hist,False,False,True,True)
+    plotfunction = lambda mnvplotter,mc_hist: mnvplotter.DrawNormalizedMigrationHistogram(mc_hist,False,False,True,mc_hists.GetHist().GetSize()>20**2)
     return plotfunction,hists
 
 def updatePlotterErrorGroup(group,mnvplotter=MNVPLOTTER):
@@ -286,21 +287,34 @@ def MakeDataMCPlot(data_hist, mc_hist, pot_scale=1.0, sys_on_mc = True, sys_on_d
     else:
         local_data.Draw("E1X0")
 
-def MakeDataMCStackedPlot(data_hist, mc_hists, legend = "TR", pot_scale=1.0, mnvplotter=MNVPLOTTER,canvas=CANVAS):
+def MakeModelVariantPlot(data_hist, mc_hists, color=None, title=None,lenged ="TR",pot_scale=1.0,mnvplotter=MNVPLOTTER,canvas=CANVAS):
     if not mc_hists:
-        raise KeyError("Doesn't make sense to plot stacked histogram without MC")
+        raise KeyError("Doesn't make sense to plot model variation without MC")
     TArray = ROOT.TObjArray()
     for i in range(len(mc_hists)):
         if color:
-            mc_hists[i].SetFillColor(color[i])
+            mc_hists[i].SetLineColor(color[i])
         if title:
             mc_hists[i].SetTitle(title[i])
         TArray.Add(mc_hists[i])
+    mnvplotter.DrawDataMCVariations(data_hist,TArray,pot_scale,lenged,True,True)
 
-    if data_hist is not None:
-        mnvplotter.DrawDataStackedMC(data_hist,TArray,pot_scale,legend,"Data",0,0,1001)
-    else:
-        mnvplotter.DrawStackedMC(TArray,pot_scale,legend,0,0,1001)
+
+# def MakeDataMCStackedPlot(data_hist, mc_hists, legend = "TR", pot_scale=1.0, mnvplotter=MNVPLOTTER,canvas=CANVAS):
+#     if not mc_hists:
+#         raise KeyError("Doesn't make sense to plot stacked histogram without MC")
+#     TArray = ROOT.TObjArray()
+#     for i in range(len(mc_hists)):
+#         if color:
+#             mc_hists[i].SetFillColor(color[i])
+#         if title:
+#             mc_hists[i].SetTitle(title[i])
+#         TArray.Add(mc_hists[i])
+
+#     if data_hist is not None:
+#         mnvplotter.DrawDataStackedMC(data_hist,TArray,pot_scale,legend,"Data",0,0,1001)
+#     else:
+#         mnvplotter.DrawStackedMC(TArray,pot_scale,legend,0,0,1001)
 
 def MakeSignalDecomposePlot(data_hist, mc_hist, mc_hists, title, color, pot_scale = 1.0, mnvplotter=MNVPLOTTER,canvas=CANVAS):
     if data_hist is not None:

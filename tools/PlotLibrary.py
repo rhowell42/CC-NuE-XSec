@@ -1343,8 +1343,8 @@ PLOT_SETTINGS= {
     {
         "name" : "Eel_migration",
         "title" : "Lepton Energy Migration; Reco E (GeV); True E (GeV)",
-        "binning" : [PlotConfig.ELECTRON_ENERGY_BINNING,
-                     PlotConfig.ELECTRON_ENERGY_BINNING],
+        "binning" : [PlotConfig.NEUTRINO_ENERGY_BINNING,
+                     PlotConfig.NEUTRINO_ENERGY_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep,lambda event: event.kin_cal.true_E_lep],
         "tags":migration_tags,
     },
@@ -1384,9 +1384,9 @@ PLOT_SETTINGS= {
     {
         "name" : "eltheta_migration",
         "title" : "Lepton Theta Migration; Reco #theta (degree); True #theta (degree)",
-        "binning" : [PlotConfig.EXCESS_ANGLE_BINNING,
-                     PlotConfig.EXCESS_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.reco_theta_e,lambda event: event.kin_cal.true_theta_e],
+        "binning" : [PlotConfig.ELECTRON_ANGLE_BINNING,
+                     PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.reco_theta_lep,lambda event: event.kin_cal.true_theta_lep],
         "tags":reco_tags,
     },
      "Lepton Energy Theta":
@@ -1620,7 +1620,7 @@ PLOT_SETTINGS= {
         "name" : "eltheta_resolution",
         "title" : "Lepton Theta Resolution; Lepton Theta Resolution; NEvents",
         "binning" : [PlotConfig.RESOLUTION_BINNING],
-        "value_getter" : [lambda event: (event.kin_cal.reco_theta_e-event.kin_cal.true_theta_e)/event.kin_cal.true_theta_e],
+        "value_getter" : [lambda event: (event.kin_cal.reco_theta_lep-event.kin_cal.true_theta_lep)/event.kin_cal.true_theta_lep],
         "tags":resolution_tags,
         "cuts":[skip_sys]
     },
@@ -1638,10 +1638,10 @@ PLOT_SETTINGS= {
     "Lepton Energy Resolution":
     {
         "name" : "Eel_resolution",
-        "title" : ";True Lepton Energy (GeV);Lepton Energy Resolution; Lepton Energy NEvents",
-        "binning" : [PlotConfig.ELECTRON_ENERGY_BINNING,PlotConfig.RESOLUTION_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.true_E_lep, lambda event: event.kin_cal.reco_E_lep/event.kin_cal.true_E_lep -1],
-        "tags":migration_tags,
+        "title" : ";Lepton Energy Resolution; NEvents",
+        "binning" : [PlotConfig.RESOLUTION_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.reco_E_lep/event.kin_cal.true_E_lep -1],
+        "tags":resolution_tags,
         "cuts":[skip_sys]
     },
 

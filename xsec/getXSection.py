@@ -20,13 +20,40 @@ XSEC_TO_MAKE = [
     "Visible Energy vs q3",
     "Visible Energy vs Lepton Pt"
 ]
-USE_BIGNUE = False
+USE_BIGNUE = True
 threshold = 100 if USE_BIGNUE else 1
 TARGET_UTILS = PlotUtils.TargetUtils.Get()
 warping_errorband = ["fsi_weight","SuSA_Valencia_Weight","MK_model"]
 #warping_errorband = ["SuSA_Valencia_Weight"]
-#FLUX="minervame1d1m1nweightedave"
-FLUX="minervame1d"
+FLUX="minervame1d1m1nweightedave"
+#FLUX="minervame1d"
+COLORS=ROOT.MnvColors.GetColors()
+MODELS = {
+    "MnvTune v1": {
+        "errorband":(None,None),
+        "color":COLORS[0]
+    },
+    "2p2h Tune (QE)": {
+        "errorband":("Low_Recoil_2p2h_Tune",2),
+        "color":COLORS[1]
+    },
+    "SuSA 2p2h" : {
+        "errorband":("SuSA_Valencia_Weight",0),
+        "color":COLORS[2]
+    },
+    "MK model": {
+        "errorband": ("MK_model",0),
+        "color":COLORS[4]
+    },
+    "Low Q2 Pion Joint": {
+        "errorband" : ("LowQ2Pi",0),
+        "color": COLORS[5]
+    },
+    "Low Q2 Pion NuPi0": {
+        "errorband" : ("LowQ2Pi",2),
+        "color": COLORS[6]
+    }
+}
 
 def GetXSectionHistogram(unfolded,efficiency,is_mc):
     #divide by efficiency
@@ -55,6 +82,7 @@ def GetNnucleonError(hist,ntargets):
         hist_target.GetVertErrorBand(errband_name).GetHist(0).SetBinContent(i,ntargets*(1-band_err))
         hist_target.GetVertErrorBand(errband_name).GetHist(1).SetBinContent(i,ntargets*(1+band_err))
     hist_target.AddMissingErrorBandsAndFillWithCV(hist)
+    print ("Target Normalization: {:.4E},{:.4E}".format(ntargets,ntargets*0.014))
     return hist_target
 
 
@@ -64,6 +92,7 @@ def DivideFlux(unfolded,is_mc):
     flux.PopVertErrorBand("Flux_BeamFocus")
     flux.PopVertErrorBand("ppfx1_Total")
     flux.Scale(1e-4*(mc_pot if is_mc else data_pot)) #change unit to nu/cm^2
+    print ("Flux Normalization: {:.4E},{:.4E}".format(flux.GetBinContent(1,1),flux.GetTotalError(False).GetBinContent(1,1)))
     unfolded.Divide(unfolded,flux)
 
 def ProjectUniverseContent(num, den, i, j,num_o,den_o):
@@ -141,6 +170,24 @@ def GetMCXSectionHistogram(mc_file,plot):
         titles.append(DrawingConfig.SignalDecomposition[chan]["title"])
     return unfolded,sig_dep,colors,titles
 
+def DrawModelComparison(data_hist,mc_hist,models=MODELS,band_on_mc=True):
+    _cate = []
+    _mc_models = []
+    _colors = []
+    for k,v in models.items():
+        _cate.append(k)
+        _colors.append(v["color"])
+        htmp = mc_hist if band_on_mc else data_hist
+        if v["errorband"][0]:
+            _mc_models.append(PlotUtils.MnvH2D(htmp.GetVertErrorBand(v["errorband"][0]).GetHist(v["errorband"][1])))
+        else:
+            _mc_models.append(htmp)
+    plotter = lambda mnvplotter,data_hist, *mc_ints : partial(PlotTools.MakeModelVariantPlot,color=_colors,title=_cate)(data_hist, mc_ints)
+    PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[data_hist,*_mc_models],draw_seperate_legend=True)
+    PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_models"))
+
+
+
 if __name__ == "__main__":
     playlist= AnalysisConfig.playlist
     type_path_map = { t:AnalysisConfig.SelectionHistoPath(playlist,t =="data",False) for t in AnalysisConfig.data_types}
@@ -154,6 +201,7 @@ if __name__ == "__main__":
         unfolded = Utilities.GetHistogram(unfolded_file,PLOT_SETTINGS[plot]["name"]+"_bkg_unfolding")
         efficiency = GetEfficiency(mc_reco_file,mc_truth_file,plot)
         xsec = GetXSectionHistogram(unfolded,efficiency,False)
+        
         mc_xsec,sig_dep,colors,titles = GetMCXSectionHistogram(mc_reco_file,plot)
         ylabel = xsec.GetZaxis().GetTitle().replace("NEvents","d^{{2}}#sigma/d{X}d{Y}".format(X="E_{avail}",Y=plot.split()[-1]))
         #ylabel += "(cm^2/Gev^2/c^2/Nucleon)"
@@ -163,8 +211,8 @@ if __name__ == "__main__":
 
         for h in [xsec,mc_xsec,*sig_dep]:
             h.Scale(1.0,"width")
-            for e in warping_errorband:
-                h.PopVertErrorBand(e)
+        for e in warping_errorband:
+            xsec.PopVertErrorBand(e)
 
         plotter = lambda mnvplotter,data_hist, mc_hist: mnvplotter.DrawDataMCWithErrorBand(data_hist.GetCVHistoWithError(),mc_hist.GetCVHistoWithStatError(),1.0,"TR")
         PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec,mc_xsec],draw_seperate_legend=True)
@@ -176,19 +224,20 @@ if __name__ == "__main__":
         PlotTools.MNVPLOTTER.axis_maximum = 1
         PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec],draw_seperate_legend=False)
         PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_err"))
-    #     PlotTools.AdaptivePlotterErrorGroup(xsec,PlotTools.TopNErrorBand(xsec,7))
-    #     PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec],draw_seperate_legend=True)
-    #     PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_err_top7"))
-    #     PlotTools.AdaptivePlotterErrorGroup(xsec,["GENIE_MaCCQE", "GENIE_MaNCEL",
-    # "GENIE_MaRES",
-    # "GENIE_MvRES",])
-    #     PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec],draw_seperate_legend=True)
-    #     PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_err_top7"))
+        # PlotTools.AdaptivePlotterErrorGroup(xsec,PlotTools.TopNErrorBand(xsec,7))
+        # PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec],draw_seperate_legend=True)
+        # PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_err_top7"))
+        PlotTools.AdaptivePlotterErrorGroup(xsec,["GENIE_MaCCQE", "GENIE_MaNCEL",
+    "GENIE_MaRES",
+    "GENIE_MvRES",])
+        PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec],draw_seperate_legend=True)
+        PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_err_top7"))
         PlotTools.MNVPLOTTER.axis_maximum = -1111
 
         plotter = lambda mnvplotter,data_hist, mc_hist, *mc_ints : partial(PlotTools.MakeSignalDecomposePlot,color=colors,title=titles)(data_hist.GetCVHistoWithError(),mc_hist.GetCVHistoWithStatError(),mc_ints)
         PlotTools.MakeGridPlot(PlotTools.Make2DSlice,plotter,[xsec,mc_xsec,*sig_dep],draw_seperate_legend=True)
         PlotTools.Print(AnalysisConfig.PlotPath(PLOT_SETTINGS[plot]["name"],playlist,"xsec_sigdep"))
+        DrawModelComparison(xsec,mc_xsec,band_on_mc=True)
         xsec_file.cd()
         xsec.Write(PLOT_SETTINGS[plot]["name"]+"_dataxsec")
         mc_xsec.Write(PLOT_SETTINGS[plot]["name"]+"_mcxsec")

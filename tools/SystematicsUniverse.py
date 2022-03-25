@@ -446,6 +446,9 @@ class LowQ2PionUniverseAlt(CVUniverse,object):
     def GetMyLowQ2PiWeight(self):
         return super(LowQ2PionUniverseAlt,self).GetMyLowQ2PiWeight(self.channel)
 
+    def IsVerticalOnly(self):
+        return True
+
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [LowQ2PionUniverseAlt(chain,i) for i in SystematicsConfig.LowQ2PiWeightSysChannel]
@@ -523,7 +526,6 @@ class ElectronAngleShiftUniverse(CVUniverse):
     def GetSystematicsUniverses(chain ):
         return [ElectronAngleShiftUniverse(chain,  1) for i in range(SystematicsConfig.NUM_UNIVERSE)]
 
-    
 
 ###########################################################################
 class BirksShiftUniverse(CVUniverse):
@@ -592,6 +594,7 @@ class TargetMassUniverse(ROOT.PlotUtils.TargetMassScintillatorUniverse(ROOT.Pyth
         weight = super(TargetMassUniverse,self).GetStandardWeight()
         weight*= self.GetWeightRatioToCV()
         return weight
+    
 
     @staticmethod
     def GetSystematicsUniverses(chain):
@@ -700,6 +703,9 @@ class BkgTuneUniverse(CVUniverse,object):
         else:
             raise ValueError("Unknown bkgtune method: {}".format(s))
 
+    def IsVerticalOnly(self):
+        return True
+
     def ShortName(self):
         return "bkg_tune"
 
@@ -750,24 +756,6 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
 
         if exclude is None or "all" not in exclude:
             # Vertical shift first to skip some cut calculation
-
-            #Electron momentum universe
-            if abs(SystematicsConfig.AnaNuPDG)==12:
-                #Electron energy universe
-                universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
-                #Electron angle universe
-                universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
-            elif abs(SystematicsConfig.AnaNuPDG)==14:
-                universes.extend(MuonUniverseMinerva.GetSystematicsUniverses(chain ))
-                universes.extend(MuonUniverseMinos.GetSystematicsUniverses(chain ))
-            else:
-                raise ValueError ("AnaNuPDG should be \pm 12 or 14, but you set {}".format(SystematicsConfig.AnaNuPDG))
-
-            # #beam angle shift universe
-            universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
-            #particle response shift universe
-            universes.extend(ResponseUniverse.GetSystematicsUniverses(chain ))
-
             #Flux universe
             universes.extend(FluxUniverse.GetSystematicsUniverses(chain ))
 
@@ -779,11 +767,12 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             # #2p2h universes
             universes.extend(Universe2p2h.GetSystematicsUniverses(chain ))
 
-            # #RPA universe:
+            #RPA universe:
             universes.extend(RPAUniverse.GetSystematicsUniverses(chain ))
 
-            # # #LowQ2PionUniverse
+            #LowQ2PionUniverse
             universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain ))
 
             # #birk shift universe
             # #universes.extend(BirksShiftUniverse.GetSystematicsUniverses(chain ))
@@ -800,14 +789,33 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             #hadron reweight shifting universe
             universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
 
-            #leakage universe
-            universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
-
             #bkgtune universe
             universes.extend(BkgTuneUniverse.GetSystematicsUniverses(chain ))
 
             #target mass universe
             universes.extend(TargetMassUniverse.GetSystematicsUniverses(chain ))
+
+            #Lateral Universes:
+            #Electron momentum universe
+            if abs(SystematicsConfig.AnaNuPDG)==12:
+                #Electron energy universe
+                universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
+                #Electron angle universe
+                universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
+            elif abs(SystematicsConfig.AnaNuPDG)==14:
+                universes.extend(MuonUniverseMinerva.GetSystematicsUniverses(chain ))
+                universes.extend(MuonUniverseMinos.GetSystematicsUniverses(chain ))
+            else:
+                raise ValueError ("AnaNuPDG should be \pm 12 or 14, but you set {}".format(SystematicsConfig.AnaNuPDG))
+
+            # #beam angle shift universe
+            universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
+            #particle response shift universe
+            universes.extend(ResponseUniverse.GetSystematicsUniverses(chain ))
+            #leakage universe
+            universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
+
+
 
 
     # Group universes in dict.

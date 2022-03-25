@@ -93,7 +93,7 @@ def submitJob( tupleName):
   os.system( "chmod 777 %s" % wrapper_name )
   
   #cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s/testRelease.tar.gz -d HISTS %s -d LOGS %s -r %s -N %d --expected-lifetime=%dh --cmtconfig=%s -i /cvmfs/minerva.opensciencegrid.org/minerva/software_releases/%s/ file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , os.environ["MINERVA_RELEASE"], njobs, 12, os.environ["CMTCONFIG"],os.environ["MINERVA_RELEASE"], os.environ["PWD"] , wrapper_name )
-  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB --tar_file_name dropbox://%s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 12, os.environ["PWD"] , wrapper_name )
+  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB --tar_file_name dropbox://%s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 18, os.environ["PWD"] , wrapper_name )
   # Copy local files to PNFS, they aren't there already
   #copyLocalFilesToPNFS(tupleName,outdir_logs) 
  
@@ -135,12 +135,12 @@ if __name__ == '__main__':
         continue
 
       if gridargs.memory is None:
-        memory = 2000 if dataSwitch == "data" else 5000
+        memory = 2000 if dataSwitch == "data" else 4000
       else:
         memory = gridargs.memory
     
       if gridargs.count is None:
-        count = 1000 if dataSwitch == "data" else 1
+        count = 1
       else:
         count = gridargs.count
 

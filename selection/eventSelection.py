@@ -33,7 +33,7 @@ ROOT.TH1.AddDirectory(False)
 def plotRecoKin(mc, chainwrapper, outfile):
     """ The main code of event selection """
     kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = mc, is_pc = AnalysisConfig.is_pc)
-    eventClassifier = EventClassifier(classifiers=["Reco","Truth"] if mc else ["Reco"], use_kin_cuts=True, use_sideband = AnalysisConfig.sidebands)
+    eventClassifier = EventClassifier(classifiers=["Truth","Reco"] if mc else ["Reco"], use_kin_cuts=True, use_sideband = AnalysisConfig.sidebands)
     universes = GetAllSystematicsUniverses(chainwrapper, not mc, AnalysisConfig.is_pc, AnalysisConfig.exclude_universes)
     for univ in chain.from_iterable(iter(universes.values())):
         univ.LoadTools(kin_cal,eventClassifier)
@@ -62,7 +62,7 @@ def plotRecoKin(mc, chainwrapper, outfile):
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
 
-            if eventClassifier.side_band is not None or eventClassifier.is_true_signal:
+            if eventClassifier.side_band is not None:
                 for entry in Plots:
                     entry.Process(universe)
 
@@ -112,7 +112,6 @@ def plotTruthKin(chainwrapper,outfile):
     for entry in Plots:
         entry.Finalize()
 
-    print("counter for reco,truth: ", eventClassifier.counter)
 
 def preparePlots(universes,mc):
     # make a bunch of Plot Processor, grouped by signal/sideband

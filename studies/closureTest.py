@@ -6,7 +6,7 @@ from tools.PlotLibrary import PLOT_SETTINGS
 import subprocess
 import os
 
-ClosureFileDIR= "/minerva/data/users/hsu/Closure"
+ClosureFileDIR= "/minerva/data/users/hsu/Closure/bigNuE"
 MYEVT = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1D_nx_col13_Closure_MAD.root"
 MYXSEC = "/minerva/data/users/hsu/nu_e/xsec_me1D_nx_col13_Closure_MAD.root"
 
@@ -15,13 +15,14 @@ CHANNEL_MAPPING = {
     "res": "_CCNuEDelta",
     "2p2h":"_CCNuE2p2h"
 }
+tolerance = 0.1
 
 def ratio(h1,h2,suffix=None):
     h1.ClearAllErrorBands()
     htmp = h1.Clone("{}_Clone".format(h1.GetName()))
     htmp.Divide(h1,h2)
-    htmp.SetMaximum(1.001)
-    htmp.SetMinimum(0.999)
+    htmp.SetMaximum(1+tolerance)
+    htmp.SetMinimum(1-tolerance)
     can = ROOT.TCanvas("c2","c2")
     htmp.Draw("COLZ")
     name = h1.GetName() if suffix is None else "{}{}".format(h1.GetName(),suffix)
