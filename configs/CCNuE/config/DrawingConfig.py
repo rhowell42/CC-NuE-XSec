@@ -21,15 +21,15 @@ Categories["ExcessModel"] = {
 }
 Categories["CCNuE"]={
     "title" : "CC #nu_{e}",
-    "cate":{"CCNuEQE","CCNuEDelta","CCNuEDIS","CCNuE"},
+    "cate":{"CCNuEQE","CCNuEDelta","CCNuEDIS","CCNuE","CCNuE2p2h"},
     "color": COLORS[0]
 }
 
-Categories["2p2h"]={
-    "title": "CC #nu_{e} 2p2h",
-    "cate" :{"CCNuE2p2h"},
-    "color": COLORS[1]
-}
+# Categories["2p2h"]={
+#     "title": "CC #nu_{e} 2p2h",
+#     "cate" :{"CCNuE2p2h"},
+#     "color": COLORS[1]
+# }
 Categories["CCDIS"]= {
     "title": "CC #nu_{#mu} #pi^{0}",
     "color" : COLORS[3]
@@ -44,10 +44,13 @@ Categories["NCDIS"]= {
     "color" : COLORS[5]
 }
 
-Categories["irreducible"] = {
-    "cate":{"NuEElastic","CCNuEAntiNu"},
-    "title":"Wrong Sign and nu+e",
+Categories["CCNuEAntiNu"] = {
+    "title":"Wrong Sign",
     "color" : COLORS[6]
+}
+Categories["NuEElastic"] = {
+    "title":"#nu+e",
+    "color" : COLORS[1]
 }
 
 Categories["Other"] = {
@@ -73,11 +76,11 @@ SignalDecomposition = {
     },
     "CCNuE2p2h" : {
         "title" : "CC #nu_{e}-2p2h",
-        "color": COLORS[3]
+        "color": COLORS[5]
     },
     "CCNuE": {
         "title" : "CC #nu_{e}-Other",
-        "color": COLORS[5]
+        "color": COLORS[3]
     },
     "Background" : {
         "title" : "Backgrounds",

@@ -297,7 +297,7 @@ def MakeModelVariantPlot(data_hist, mc_hists, color=None, title=None,lenged ="TR
         if title:
             mc_hists[i].SetTitle(title[i])
         TArray.Add(mc_hists[i])
-    mnvplotter.DrawDataMCVariations(data_hist,TArray,pot_scale,lenged,True,True)
+    mnvplotter.DrawDataMCVariations(data_hist,TArray,pot_scale,lenged,True,True,False,False,False)
 
 
 # def MakeDataMCStackedPlot(data_hist, mc_hists, legend = "TR", pot_scale=1.0, mnvplotter=MNVPLOTTER,canvas=CANVAS):

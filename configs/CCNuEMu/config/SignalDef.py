@@ -17,7 +17,7 @@ IsCC = lambda event: event.mc_current == 1
 IsNC = lambda event: event.mc_current == 2
 
 IsQE =  lambda event : event.mc_intType==1 and event.mc_charm!=1
-IsDelta = lambda event : event.mc_intType == 2
+IsDelta = lambda event : event.mc_intType == 2 and event.mc_resID==0
 IsDIS = lambda event : event.mc_intType == 3
 IsCoherent = lambda event: event.mc_intType == 4
 IsElastic = lambda event: event.mc_intType == 7

@@ -23,7 +23,7 @@ XSEC_TO_MAKE = [
 USE_BIGNUE = True
 threshold = 100 if USE_BIGNUE else 1
 TARGET_UTILS = PlotUtils.TargetUtils.Get()
-warping_errorband = ["fsi_weight","SuSA_Valencia_Weight","MK_model"]
+warping_errorband = ["fsi_weight","SuSA_Valencia_Weight","MK_model","LowQ2Pi_Joint","LowQ2Pi_NUPI0"]
 #warping_errorband = ["SuSA_Valencia_Weight"]
 FLUX="minervame1d1m1nweightedave"
 #FLUX="minervame1d"
@@ -43,14 +43,14 @@ MODELS = {
     },
     "MK model": {
         "errorband": ("MK_model",0),
-        "color":COLORS[4]
+        "color":COLORS[7]
     },
     "Low Q2 Pion Joint": {
-        "errorband" : ("LowQ2Pi",0),
+        "errorband" : ("LowQ2Pi_Joint",0),
         "color": COLORS[5]
     },
     "Low Q2 Pion NuPi0": {
-        "errorband" : ("LowQ2Pi",2),
+        "errorband" : ("LowQ2Pi_NUPI0",0),
         "color": COLORS[6]
     }
 }
@@ -179,7 +179,10 @@ def DrawModelComparison(data_hist,mc_hist,models=MODELS,band_on_mc=True):
         _colors.append(v["color"])
         htmp = mc_hist if band_on_mc else data_hist
         if v["errorband"][0]:
-            _mc_models.append(PlotUtils.MnvH2D(htmp.GetVertErrorBand(v["errorband"][0]).GetHist(v["errorband"][1])))
+            try:
+                _mc_models.append(PlotUtils.MnvH2D(htmp.GetVertErrorBand(v["errorband"][0]).GetHist(v["errorband"][1])))
+            except ReferenceError:
+                continue
         else:
             _mc_models.append(htmp)
     plotter = lambda mnvplotter,data_hist, *mc_ints : partial(PlotTools.MakeModelVariantPlot,color=_colors,title=_cate)(data_hist, mc_ints)
