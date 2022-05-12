@@ -9,13 +9,13 @@ from functools import partial
 
 
 ROOT.TH1.AddDirectory(False)
-numufile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1LMOP_muon_MAD.root"
-nuefile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1LMOP_electron_MAD.root"
-nuebkgtunedfile =  "/minerva/data/users/hsu/nu_e/kin_dist_mcme1D_nx_electron_MAD.root"
-nuedatafile = "/minerva/data/users/hsu/nu_e/kin_dist_datame1D_nx_electron_MAD.root"
+numufile = "/minerva/data/users/rhowell/nu_e/kin_dist_mcme1LMOP_muon_MAD.root"
+nuefile = "/minerva/data/users/rhowell/nu_e/kin_dist_mcme1LMOP_electron_MAD.root"
+nuebkgtunedfile =  "/minerva/data/users/rhowell/nu_e/kin_dist_mcme1D_nx_electron_MAD.root"
+nuedatafile = "/minerva/data/users/rhowell/nu_e/kin_dist_datame1D_nx_electron_MAD.root"
 numuweightedfile =  {
-    "mc":"/minerva/data/users/hsu/nu_e/kin_dist_mcme1LMOP_muon_weighted_MAD.root",
-    "data":"/minerva/data/users/hsu/nu_e/kin_dist_datame1LMOP_muon_weighted_MAD.root"
+    "mc":"/minerva/data/users/rhowell/nu_e/kin_dist_mcme1LMOP_muon_weighted_MAD.root",
+    "data":"/minerva/data/users/rhowell/nu_e/kin_dist_datame1LMOP_muon_weighted_MAD.root"
 }
 
 MU_SIGNALS = ["CCQE","CCDelta","CC2p2h","CCDIS","CCOther"]
@@ -23,7 +23,7 @@ E_SIGNALS = ["CCNuEQE","CCNuEDelta","CCNuE2p2h","CCNuEDIS","CCNuE"]
 E_BACKGROUNDS = ["NuEElastic","NonFiducial","NonPhaseSpace","CCNuEAntiNu",
                  "ExcessModel","CCDIS","CCOther","NCCOH","NCDIS","NCRES","NCOther"]
 MU_BACKGROUNDS = ["NC","CCNuE","CCAntiNuMu","NonFiducial","NonPhaseSpace","Other"]
-PLOTPATH = "/minerva/data/users/hsu/numunueRatioPlots/"
+PLOTPATH = "/minerva/data/users/rhowell/numunueRatioPlots/"
 
 SIGNAL_CHANNEL_PAIR = [
     ("CCQE","CCNuEQE"),

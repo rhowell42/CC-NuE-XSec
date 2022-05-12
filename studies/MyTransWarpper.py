@@ -49,9 +49,9 @@ def DrawUnfoldingResult(h_unfolded,h_truth,h_cov,name):
     tmp.Divide(h_truth)
     tmp.GetZaxis().SetRangeUser(0.5,1.5)
     tmp.Draw("COLZ")
-    c.Print("/minerva/data/users/hsu/tests/"+name+"ratio.png")
+    c.Print("/minerva/data/users/rhowell/tests/"+name+"ratio.png")
     h_cov.Draw("COLZ")
-    c.Print("/minerva/data/users/hsu/tests/"+name+"cov.png")
+    c.Print("/minerva/data/users/rhowell/tests/"+name+"cov.png")
     
 
 def MyUnfoldWrapper(warpper,data,options):
@@ -138,7 +138,7 @@ def Approach3(mig,mc_reco,mc_truth, fakedata_reco, fakedata_bkg, fakedata_truth)
     return chi2s
 
 if __name__ == '__main__':
-    f = ROOT.TFile.Open('/minerva/data/users/hsu/nu_e/kin_dist_mcme_RHC_Scale_Sarah.root')
+    f = ROOT.TFile.Open('/minerva/data/users/rhowell/nu_e/kin_dist_mcme_RHC_Scale_Sarah.root')
     # mig = ROOT.TH2D(f.Get("Eavail_migration"))
     # mc_reco = ROOT.TH1D(f.Get("Eavail"))
     # mc_truth = ROOT.TH1D(f.Get("Eavail_migration").ProjectionY())

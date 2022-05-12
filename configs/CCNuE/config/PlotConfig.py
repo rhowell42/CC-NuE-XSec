@@ -110,6 +110,9 @@ ELECTRON_ENERGY_RESIDUAL_BINNING = [-1+0.05* i for i in range(0,41)]
 #ELECTRON_ENERGY_BINNING = [0.75, 2, 3, 5, 7, 9, 20]  # Jaewon's bins
 #NEUTRINO_ENERGY_BINNING = [i for i in range(6)] + [7, 10] # , 13, 18, 25]
 NEUTRINO_ENERGY_BINNING = [2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,10,12.5,15,20]
+
+INV_NEUTRINO_ENERGY_BINNING = [1/2.5,1/2.75,1/3.0,1/3.25,1/3.5,1/3.75,1/4.0,1/4.5,1/5.0,1/5.5,1/6.0,1/6.5,1/7.0,1/7.5,1/8.0,1/10,1/12.5,1/15,1/20]
+
 #NEUTRINO_ENERGY_BINNING_BIGGER = [i for i in range(6)] + [7, 10, 13, 18, 25]
 #OD_ENERGY_BINNING = [0, 0.5, 1, 2, 3, 4, 5] 
 #VISIBLE_ENERGY_BINNING = [ 0.1*i for i in range(20) ] + [0.2*i for i in range(10, 20)] + [0.5*i for i in range(8, 14)] + range(7, 10)
@@ -243,6 +246,7 @@ def Printvar(event):
 #assert set(INT_COLORS.keys())==set(INT_NAMES.keys())
 
 HISTS_TO_MAKE = [
+     "Energy Estimator Neutrino-4",
      "Visible Energy",
      "Q0",
      "Q3",

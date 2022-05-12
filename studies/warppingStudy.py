@@ -210,7 +210,7 @@ if __name__ == '__main__':
     # outdir_logs = "/pnfs/minerva/%s/users/%s/%s_logs" % (PNFS_switch,os.environ["USER"],processingID)
     # os.system( "mkdir %s" % outdir_logs )
     os.system( "mkdir -p grid_wrappers/%s" % processingID )
-    outdir_tarball="/minerva/data/users/hsu/tarballs/hsu-%s.tar.gz" % (processingID)
+    outdir_tarball="/minerva/data/users/rhowell/tarballs/rhowell-%s.tar.gz" % (processingID)
     createTarball(outdir_tarball)
     memory =4000
   for prefix in Measurables:

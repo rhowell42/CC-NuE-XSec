@@ -30,8 +30,8 @@ void confusionM(double selected,double selected_signal,double total_event,double
 }
 
 int printEfficiencyNPurity() {
-  TFile* f = TFile::Open("/minerva/data/users/hsu/nu_e/cut_study_mcme1B_nx_wcut_real_Sarah.root");
-  //TFile* fsig = TFile::Open("/minerva/data/users/hsu/nu_e/truth_dist_mcme1B_nx_collab1_LLR.root")
+  TFile* f = TFile::Open("/minerva/data/users/rhowell/nu_e/cut_study_mcme1B_nx_wcut_real_Sarah.root");
+  //TFile* fsig = TFile::Open("/minerva/data/users/rhowell/nu_e/truth_dist_mcme1B_nx_collab1_LLR.root")
   const char* const var = "tEavail";
   std::vector<std::string> signal_list;
   //{"CCNuEQE","CCNuEDelta","CCNuEDIS","CCNuE2p2h","CCNuE"};

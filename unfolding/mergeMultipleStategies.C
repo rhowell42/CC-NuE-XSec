@@ -7,7 +7,7 @@
 
 void mergeMultipleStategies() {
   TH1::AddDirectory(false);
-  std::string file_path = "/minerva/data/users/hsu/nu_e/";
+  std::string file_path = "/minerva/data/users/rhowell/nu_e/";
   std::vector<std::string> hist_names;
   hist_names.push_back("Eavail_Lepton_Pt_bkg_unfolding");
   hist_names.push_back("Eavail_q3_bkg_unfolding");

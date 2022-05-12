@@ -174,6 +174,7 @@ PLOTS_TO_MAKE = [
     # {"name": "Lepton Theta"},
     # {"name": "Psi"},
     {"name":"Q0"},
+    {"name":"Energy Estimator Neutrino-4"},
     {"name":"Q3"},
     {"name":"Visible Energy",
       "plot_type" : "comp",},

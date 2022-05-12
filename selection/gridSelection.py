@@ -5,9 +5,8 @@ from tools import Utilities
 
 baseDir = os.path.dirname(os.path.abspath(__file__))+"/../"
 MacroName = baseDir.split("/")[-4]
-MAT = os.environ["PLOTUTILSROOT"].split("/")[-2]
+MAT = "MAT-MINERvA/"+os.environ["PLOTUTILSROOT"].split("/")[-2]
 CONFIG=os.environ["PYTHONPATH"].split(":")[0].split("/")[-1]
-print(CONFIG)
 
 def createTarball(outDir):
   print("I'm inside createTarball()")
@@ -126,7 +125,7 @@ if __name__ == '__main__':
   outdir_logs = "/pnfs/minerva/%s/users/%s/%s_logs" % (PNFS_switch,os.environ["USER"],processingID)
   os.system( "mkdir -p %s" % outdir_logs )
   os.system( "mkdir -p grid_wrappers/%s" % processingID )
-  outdir_tarball=gridargs.tarball if gridargs.tarball else "/pnfs/minerva/resilient/tarballs/hsu-%s.tar.gz" % (processingID)
+  outdir_tarball=gridargs.tarball if gridargs.tarball else "/pnfs/minerva/resilient/tarballs/rhowell-%s.tar.gz" % (processingID)
   createTarball(outdir_tarball)
 
   for playlist in gridargs.playlists:

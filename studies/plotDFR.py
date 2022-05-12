@@ -1,6 +1,6 @@
 import ROOT,PlotUtils
 
-f =ROOT.TFile.Open("/minerva/data/users/hsu/nu_e/kin_dist_mcme_NCDIF_col10EelPt_Had.root")
+f =ROOT.TFile.Open("/minerva/data/users/rhowell/nu_e/kin_dist_mcme_NCDIF_col10EelPt_Had.root")
 
 hist_name = "inline_upstream_E_Psi"
 energy_index = range(1,6)

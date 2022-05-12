@@ -2,8 +2,8 @@ import ROOT
 import PlotUtils
 import sys
 
-#path = "/pnfs/minerva/persistent/users/hsu/{}_hists/transWrap_{}{}_0.root".format("CCNUE_Waring5","FSI_Weight0","Eavail_Lepton_Pt")
-#path = "/minerva/app/users/hsu/cmtuser/Minerva_CCNuEAna/Ana/CCNuE/macros/Low_Recoil/studies/transWrapT_FSI_Weight0Eavail_Lepton_Pt.root"
+#path = "/pnfs/minerva/persistent/users/rhowell/{}_hists/transWrap_{}{}_0.root".format("CCNUE_Waring5","FSI_Weight0","Eavail_Lepton_Pt")
+#path = "/minerva/app/users/rhowell/cmtuser/Minerva_CCNuEAna/Ana/CCNuE/macros/Low_Recoil/studies/transWrapT_FSI_Weight0Eavail_Lepton_Pt.root"
 # c1.SetLogy(0)
 #for i in Iterations:
 #     f = ROOT.TFile.Open(path)
@@ -194,7 +194,7 @@ if __name__ =="__main__":
     else:
         hists = ["CCNUE_Warping_2022-02-28-135620_hists"]
     
-    plotpathroot = "/minerva/data/users/hsu/nu_e/plot/warping/"
+    plotpathroot = "/minerva/data/users/rhowell/nu_e/plot/warping/"
     target = ["Eavail_Lepton_Pt","Eavail_q3"]
     #model = ["CV","SuSA2p2h"]
     model = ["CV","MK_Model", "FSI_Weight0", "FSI_Weight1", "FSI_Weight2","SuSA2p2h", "LowQ2Pi0","LowQ2Pi2","LowQ2Pi1","LowQ2Pi3","2p2h0","2p2h1","2p2h2","RPA_highq20","RPA_lowq20","RPA_highq21","RPA_lowq21","GenieMaCCQE_UP","GenieMaCCQE_DOWN"]
@@ -206,6 +206,6 @@ if __name__ =="__main__":
         for j in target:
             for k in model:
                 for l in [-1,0,1]:
-                    path = "/pnfs/minerva/scratch/users/hsu/{}/transWrap_{}{}_{}.root".format(i,k,j,l)
+                    path = "/pnfs/minerva/scratch/users/rhowell/{}/transWrap_{}{}_{}.root".format(i,k,j,l)
                     draw(path,k)
                     draw3(path,k)

@@ -73,6 +73,14 @@ parser.add_argument("--bignue", "--BIGNUE",
                     default=""
 )
 
+parser.add_argument("--biggenie", "--BIGGENIE",
+                    dest="special_sample",
+                    action="store_const",
+                    const="_BigGenie",
+                    help="Use BigGenie special sample",
+                    default=""
+)
+
 parser.add_argument("--data_only", "--data-only",
                     dest="data_only",
                     action="store_true",

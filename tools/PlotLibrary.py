@@ -358,12 +358,12 @@ VARIABLE_DICT = {
         "binning" : PlotConfig.ELECTRON_ENERGY_BINNING,
         "value_getter" : lambda event: event.kin_cal.reco_E_lep,
     },
-    "Lepton Energy Neutrino-4":
+    "Energy Estimator Neutrino-4":
     {
-        "name" : "Eel_nu4",
-        "title" : "Reconstructed E_lep (GeV)", 
+        "name" : "Eest_nu4",
+        "title" : "E_e + E_{avail} (GeV)", 
         "binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
-        "value_getter" : lambda event: event.kin_cal.reco_E_lep,
+        "value_getter" : lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE,
     },
     "Electron Candidate True PID":
     {

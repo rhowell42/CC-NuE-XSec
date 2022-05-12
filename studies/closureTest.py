@@ -6,9 +6,9 @@ from tools.PlotLibrary import PLOT_SETTINGS
 import subprocess
 import os
 
-ClosureFileDIR= "/minerva/data/users/hsu/Closure/bigNuE"
-MYEVT = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1D_nx_col13_Closure_MAD.root"
-MYXSEC = "/minerva/data/users/hsu/nu_e/xsec_me1D_nx_col13_Closure_MAD.root"
+ClosureFileDIR= "/minerva/data/users/rhowell/Closure/bigNuE"
+MYEVT = "/minerva/data/users/rhowell/nu_e/kin_dist_mcme1D_nx_col13_Closure_MAD.root"
+MYXSEC = "/minerva/data/users/rhowell/nu_e/xsec_me1D_nx_col13_Closure_MAD.root"
 
 CHANNEL_MAPPING = {
     "qe": "_CCNuEQE",
@@ -53,11 +53,11 @@ def Xsec():
     GENIEXsecFile.Close()
 
 def FBFTest():
-    with open("/minerva/data/users/hsu/Closure/me1D.txt") as f:
+    with open("/minerva/data/users/rhowell/Closure/me1D.txt") as f:
         s = 0
         for i,line in enumerate(f):
             print("file:{}, {}".format(i,line))
-            f = ROOT.TFile.Open("/pnfs/minerva/scratch/users/hsu/CCNUE_selection_2022-03-19-150821_hists/kin_dist_mcme1D_nx_col13_Closure_MAD_{}.root".format(i))
+            f = ROOT.TFile.Open("/pnfs/minerva/scratch/users/rhowell/CCNUE_selection_2022-03-19-150821_hists/kin_dist_mcme1D_nx_col13_Closure_MAD_{}.root".format(i))
             h=f.Get("Eavail_q3_true_signal")
             if h:
                 my_evt=h.GetEntries()

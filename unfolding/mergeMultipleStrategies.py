@@ -10,7 +10,7 @@ hist_names = {
     "Eavail_Lepton_Pt_bkg_unfolding",
 }
 
-dir_path = "/minerva/data/users/hsu/nu_e/"
+dir_path = "/minerva/data/users/rhowell/nu_e/"
 
 file_names = {
     "bkgfit_me_q3_tune_RHC_Scale_Sarah.root",

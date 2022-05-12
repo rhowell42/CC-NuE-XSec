@@ -1,8 +1,8 @@
 #12.5 include 50 Mev bin , 12.6 without
 stag="col13.1"
 ntag="MAD"
-#tarball="/pnfs/minerva/resilient/tarballs/hsu-gridselection-macro$(date +%H%M%S).tar.gz"
-tarball="/minerva/data/users/hsu/tarballs/hsu-gridselection-macro$(date +%H%M%S).tar.gz"
+#tarball="/pnfs/minerva/resilient/tarballs/rhowell-gridselection-macro$(date +%H%M%S).tar.gz"
+tarball="/minerva/data/users/rhowell/tarballs/rhowell-gridselection-macro$(date +%H%M%S).tar.gz"
 if [[ -f $tarball ]]; then
     rm  $tarball
 fi
@@ -17,6 +17,6 @@ python gridSelection.py $common_flag --truth --skip_2p2h
 #diffractive pi0 sample
 python gridSelection.py $common_flag --NCDIF --count 5
 #extended 2p2h sample
-python gridSelection.py $common_flag --ext_2p2h --count 5 --truth
+#python gridSelection.py $common_flag --ext_2p2h --count 5 --truth
 #signal rich sample
-python gridSelection.py $common_flag --bignue --truth --count 5
+python gridSelection.py $common_flag --biggenie --truth --count 5

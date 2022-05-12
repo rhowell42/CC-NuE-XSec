@@ -3,8 +3,8 @@ import os, time, sys, math
 import PlotUtils
 from array import array
 
-#f1 = ROOT.TFile.Open("/minerva/data/users/hsu/nu_e/kin_dist_mcme1A-E_col12.1_MAD.root")
-f2 = ROOT.TFile.Open("/minerva/data/users/hsu/nu_e/kin_dist_mcme1A-F-BigNuE_col12.2_MAD.root")
+#f1 = ROOT.TFile.Open("/minerva/data/users/rhowell/nu_e/kin_dist_mcme1A-E_col12.1_MAD.root")
+f2 = ROOT.TFile.Open("/minerva/data/users/rhowell/nu_e/kin_dist_mcme1A-F-BigNuE_col12.2_MAD.root")
 
 hists = ["Eavail_Lepton_Pt_migration",
 #          "Eavail_Lepton_Pt_migration_truth",
