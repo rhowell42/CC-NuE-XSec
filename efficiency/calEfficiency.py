@@ -12,9 +12,10 @@ from tools.MyHistograms import MakePlotProcessors
 
 HISTS_TO_MAKE = [
     #"True Signal q0 vs q3",
-    "True Signal Visible Energy vs q3",
+    #"True Signal Visible Energy vs q3",
+    "Biased Neutrino Energy",
     #"True Visible Energy",
-    "True Signal Electron Theta"
+    #"True Signal Electron Theta"
 ]
 
 def MakeTruthHistogram(chainwrapper,outname):

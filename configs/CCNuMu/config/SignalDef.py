@@ -37,7 +37,6 @@ IsPi0InFinalState = lambda event: 111 in event.mc_FSPartPDG
 IsProtonInFinalState = lambda event: 2212 in event.mc_FSPartPDG
 IsMultiMeson = lambda event: countPDG(event.mc_FSPartPDG, [211,-211, 321,-321,323,-323,111,130,310,311])>1
 
-
 IsHeavyBaryon = lambda event: 3112 in event.mc_FSPartPDG or 3122 in event.mc_FSPartPDG or 3212 in event.mc_FSPartPDG or 3222 in event.mc_FSPartPDG or 4112 in event.mc_FSPartPDG or 4122 in event.mc_FSPartPDG or 4212 in event.mc_FSPartPDG or 4222 in event.mc_FSPartPDG
 IsMeson = lambda event: 211 in event.mc_FSPartPDG or -211 in event.mc_FSPartPDG or 321 in event.mc_FSPartPDG or -321 in event.mc_FSPartPDG or 323 in event.mc_FSPartPDG or -323 in event.mc_FSPartPDG  or 111 in event.mc_FSPartPDG or 130 in event.mc_FSPartPDG or 310 in event.mc_FSPartPDG or 311 in event.mc_FSPartPDG
 IsDeexcitationPhoton =  lambda event: event.mc_FSPartPDG[0] == 22 and event.mc_FSPartE[0] < 10
@@ -50,9 +49,9 @@ def IsInKinematicPhaseSpace(event):
 # In case a event satisfy multiple definations, the first takes priority.
 TRUTH_CATEGORIES = OrderedDict()
 TRUTH_CATEGORIES["NC"] = lambda event: IsNC(event)
-TRUTH_CATEGORIES["CCNuE"] = lambda event: IsNuE(event)
-TRUTH_CATEGORIES["CCAntiNuMu"] = lambda event: IsAntiNu(event)
-TRUTH_CATEGORIES["NonFiducial"] = lambda event: not IsFiducial(event)
+TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNuE(event)
+TRUTH_CATEGORIES["CCWrongSign"] = lambda event: IsCC(event) and IsAntiNu(event)
+#TRUTH_CATEGORIES["NonFiducial"] = lambda event: not IsFiducial(event)
 TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: not IsInKinematicPhaseSpace(event)
 TRUTH_CATEGORIES["CCQE"] = lambda event: IsQE(event)
 TRUTH_CATEGORIES["CCDelta"] = lambda event: IsDelta(event)
@@ -66,8 +65,8 @@ SIGNAL_DEFINATION = [
     "CCDelta",
     "CC2p2h",
     "CCDIS",
-    "CCOther"
+    "CCOther",
+    "CCWrongSign"
 ]
-
 EXTRA_OTHER = [
 ]

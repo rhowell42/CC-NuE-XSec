@@ -19,6 +19,9 @@ from config import SystematicsConfig
 from tools import Utilities
 from collections import OrderedDict
 from tools import pcweight
+#from .pcweight import GetModelWeight,MyWeighter
+from tools import AvailableECorrection
+
 
 OneSigmaShift = [-1.0,1.0]
 M_e = 0.511 # MeV
@@ -100,7 +103,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         super(CVUniverse,self).SetEntry(n_entry)
 
     def SetLeptonType(self):
-        if self.GetAnaToolName() != "MasterAnaDev" or self.HasNoBackExitingTracks:
+        if abs(SystematicsConfig.AnaNuPDG) == 12: 
             self.LeptonTheta = self.ElectronTheta
             self.LeptonEnergy = self.ElectronEnergy
             self.LeptonP3D = self.ElectronP3D
@@ -125,7 +128,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
                 self.weight = 1
             else:
                 self.weight = self.GetModelWeight() if self.is_pc else self.GetStandardWeight()
-        if bkgtuning or self.nsigma is None:
+        if bkgtuning and self.nsigma is None:
             if self.tuning_weight is None:
                 self.tuning_weight = self.pcweighter.GetWeight(self)
             return self.weight *self.tuning_weight
@@ -134,31 +137,126 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
 
     def GetStandardWeight(self):
         weight = 1.0
-        weight *=self.GetGenieWeight()
-        weight *=self.GetFluxAndCVWeight()
-        weight *=self.GetLowRecoil2p2hWeight()
-        weight *=self.GetRPAWeight()
-        weight *=self.GetMyLowQ2PiWeight()
+        weight *= self.GetGenieWeight()
+
+        ### take care of flavor swapped sample below ###
+        pdg = self.mc_incoming
+        newpdg = pdg
+        if SystematicsConfig.USE_SWAPPED:
+            if pdg == 12:
+                newpdg = 14
+            elif pdg == -12:
+                newpdg = -14
+            elif pdg == 14:
+                newpdg = 12
+            elif pdg == -14:
+                newpdg = -12
+            else:
+                print("Not neutrino PDG? {}".format(pdg))
+        pdg = newpdg
+        weight *= self.GetFluxAndCVWeight(self.mc_incomingE*1e-3,pdg)
+
+        weight *= self.GetLowRecoil2p2hWeight()
+        weight *= self.GetRPAWeight()
+        weight *= self.GetMyLowQ2PiWeight() # using MENU1PI for Aaron's result
         weight *= self.GetGeantHadronWeight()
-      
-        # for _ in self.weighters:
-        #     weight *= _()
+        weight *= self.GetMyMinosEfficiencyWeight()
+
+        ### MnvTune v4.3.1 block below ###
+        #weight *= self.GetTargetMassWeight() # 
+        weight *= self.GetCOHPionWeight() # Alejandro Ramirez's Result
+        if self.mc_intType == 4:
+            weight *= 1.4368 # diffractive coherent reweight from Aaron Mislivec
+
         return weight
+
 
     #def GetPCWeight(self):
     #    return 1.0
+    def GetMyMinosEfficiencyWeight(self):
+         if self.HasNoBackExitingTracks:
+             return 1
+         else:
+             return self.GetMinosEfficiencyWeight()
 
-    def GetMyLowQ2PiWeight(self,channel = SystematicsConfig.LowQ2PiWeightChannel):
+    def GetMyLowQ2PiWeight(self, channel = SystematicsConfig.LowQ2PiWeightChannel):
         if channel is None:
             return 1
         else:
             return super(CVUniverse,self).GetLowQ2PiWeight(channel.upper())
 
     def GetModelWeight(self):
-        w = pcweight.GetModelWeight(self, 'Eel',"Pi0") # (Ee, Theta, ETh), (PCElectron, PCPhoton, PCPi0)
+        w = GetModelWeight(self, 'Eel',"Pi0") # (Ee, Theta, ETh), (PCElectron, PCPhoton, PCPi0) 
         return w
 
+    def GetCOHPionWeight(self):
+        def GetTrueHighEpi():
+            nFSpi = self.mc_nFSPart
+            pionE = -1.0;
+            pionKE = -1.0;
+            for i in range(nFSpi):
+                try:
+                    pdg = self.mc_FSPartPDG[i]
+                except:
+                    continue
 
+                if pdg != 211:
+                    continue
+                energy = self.mc_FSPartE[i]
+                mass = 139.569
+                tpi = energy - mass
+                if tpi >= pionKE:
+                    pionKE = tpi
+                    pionE = energy
+            return pionE
+
+        def GetTrueAngleHighTpi():
+            nFSpi = self.mc_nFSPart
+            angle = -9999 #WRTbeam and in degrees
+            pionKE = 0.0
+            idk = -9999
+            for i in range(nFSpi):
+                try:
+                    pdg = self.mc_FSPartPDG[i]
+                except:
+                    continue
+
+                if pdg != 211:
+                    continue
+                energy = self.mc_FSPartE[i]
+                mass = 139.569
+                tpi = energy - mass
+                if tpi >= pionKE:
+                    pionKE = tpi
+                    pimomentumvec = ROOT.TVector3(self.mc_FSPartPx[i], self.mc_FSPartPy[i],self.mc_FSPartPz[i])
+                    r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+                    s=r(pimomentumvec)
+                    deg_wrtb = s.Theta()
+                    angle = deg_wrtb
+
+            #Making sure angle is only between 0 and pi
+            if angle < 0.0:
+                angle = -1.0*angle
+            if angle > math.pi:
+                angle = 2.0*math.pi - angle
+            return angle*180./math.pi # Degrees
+       
+        weight = 1.0
+        if self.mc_intType != 4:
+           return 1.0
+        elif self.mc_intType == 4:
+           npi = self.mc_FSPartPDG.count(211)
+           if npi == 0:
+               return 1.0
+           angle = GetTrueAngleHighTpi()
+           epi = GetTrueHighEpi()/1000. # This is supposed to be the energy of the pion!!!! 
+           if epi < 0:
+               return 1.0
+           else:
+               weight *= self.GetCoherentPiWeight(angle, epi) #Inputs are in Degrees and GeVi
+               return weight
+        else:
+            return 1.0
 
     #################### functions to be overide in systematics shift universes #################
 
@@ -167,21 +265,43 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
 
     @Utilities.decorator_ReLU
     def ElectronEnergy(self):
-        return self.ElectronEnergyRaw() + self.GetEMEnergyShift()# +self.GetLeakageCorrection()
+        return self.ElectronEnergyRaw() + self.GetEMEnergyShift() #+ self.GetLeakageCorrection()
 
     def ElectronP3D(self):
-        allp = self.GetVecOfVecDouble("prong_part_E")
-        #print([allp[0][i] for i in range(4)])
-        scale = self.GetEMEnergyShift()/allp[0][3] if (allp[0][3]>0) else 0
-        p = ROOT.Math.XYZVector(*tuple(list(allp[0])[:3]))*(1+scale)
+        electronp = self.GetVecOfVecDouble("prong_part_E")
+        #print([electronp[0][i] for i in range(4)])
+        scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
+        p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
         r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
         s=r(p)
         if s is None:
-            print (p,r,tuple(list(allp[0])[:3]))
+            print (p,r,tuple(list(electronp[0])[:3]))
         return s
+
+    def ElectronProtonAngle(self):
+        electronp = self.GetVecOfVecDouble("prong_part_E")
+        scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
+        electron_p = ROOT.TVector3(*tuple(list(electronp[0])[:3]))*(1+scale)
+        
+        protonX = self.MasterAnaDev_proton_Px_fromdEdx
+        protonY = self.MasterAnaDev_proton_Py_fromdEdx
+        protonZ = self.MasterAnaDev_proton_Pz_fromdEdx
+        proton_p = ROOT.TVector3(*tuple([protonX,protonY,protonZ]))
+        dotprod = proton_p.Dot(electron_p)
+        mag = proton_p.Mag() * electron_p.Mag()
+        if mag > 0:
+            dotprod /= mag
+        if protonX > -9998 and protonY > -9998 and protonZ > -9998:
+            return math.degrees(math.acos(dotprod))
+        else:
+            return -5
 
     def ElectronTheta(self):
         return self.ElectronP3D().Theta()
+
+    def PrimaryProtonTheta(self):
+        theta = self.MasterAnaDev_proton_theta
+        return math.degrees(theta) if theta>=0 else -1
 
     def ConeInsideE(self): 
         e = self.GetVecElem("prong_TrimmedCaloEnergy",0)/1e3
@@ -193,11 +313,12 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         localVec = list(self.GetVecDouble("ExtraEnergy"))
         e = sum(localVec)
 	#print e, 'out'
-        return e
+        return e 
 
     @staticmethod
     def Scale4VectorMomentum(vet,scale):
         return vet
+
 
     def PrimaryProtonScore(self):
         score = self.MasterAnaDev_proton_score 
@@ -207,20 +328,15 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         theta = self.MasterAnaDev_proton_theta
         return math.degrees(theta) if theta>=0 else -1
 
-    @property
-    def UpstreamInlineEnergy(self):
-        uie = self.GetDouble("UpstreamInlineEnergy")
-        vtx = 0
-        #vtx = sum(self.GetVecElem("Bined_UIE",i) for i in range(2))
-        vtx = self.GetDouble("recoil_energy_nonmuon_vtx50mm")
-        return max(0,uie-vtx)
 
     # =============== collcetion of all recoil energy stuff.========
     def GetEAvail(self):
-        if self.GetAnaToolName() == "MasterAnaDev":
-            return self.blob_recoil_E_tracker+self.blob_recoil_E_ecal
+        if self.GetAnaToolName() == "MasterAnaDev" or self.GetAnaToolName() == "CCQENu":
+            return self.blob_recoil_E_tracker+self.blob_recoil_E_ecal 
         else:
-            return self.recoile_passive_tracker+self.recoile_passive_ecal
+            correction = AvailableECorrection.GetSmoothVisECorrection(self)*1e3 #Eavail correction 
+            #return self.recoile_passive_tracker+self.recoile_passive_ecal
+            return self.recoile_passive_tracker+self.recoile_passive_ecal+correction
 
     def GetNuEFuzz(self):
         try:
@@ -230,8 +346,9 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         #return 0
         return max(0,fuzz) * SystematicsConfig.AVAILABLE_E_CORRECTION
 
-    def GetLeakageCorrection(self):
-        return SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw()) + (SystematicsConfig.LEAKAGE_BIAS if self.nsigma is None else 0)
+
+    def GetLeakageCorrection(self): 
+        return SystematicsConfig.LEAKAGE_CORRECTION(self.ElectronEnergyRaw()) + (SystematicsConfig.LEAKAGE_BIAS if self.nsigma is None else 0) 
 
     def Pi0_Additional_Leakage(self):
         return random.uniform(0,20) if self.mc and (self.mc_intType == 4 or (self.mc_current==2 and self.mc_intType==10)) else 0
@@ -241,16 +358,19 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
     @Utilities.decorator_ReLU
     def AvailableEnergy(self):
         #return self.GetEAvail()* SystematicsConfig.AVAILABLE_E_CORRECTION
-        return self.GetEAvail()*SystematicsConfig.AVAILABLE_E_CORRECTION - self.GetCorrection()
+        if abs(SystematicsConfig.AnaNuPDG) == 12:
+            return self.GetEAvail()* SystematicsConfig.AVAILABLE_E_CORRECTION -self.GetCorrection()
+        else:
+            return self.GetEAvail()
 
     @Utilities.decorator_ReLU
-    def RecoilEnergy(self):
+    def RecoilEnergy(self): 
         result = None
-        if self.GetAnaToolName() == "MasterAnaDev":
-            result = sum(self.__getattr__("blob_recoil_E_{}".format(i)) for i in ["tracker","ecal","hcal","od","nucl"])
+        if self.GetAnaToolName() == "MasterAnaDev" or self.GetAnaToolName() == "CCQENu":            
+            return sum(self.__getattr__("blob_recoil_E_{}".format(i)) for i in ["tracker","ecal","hcal","od","nucl"])
         else:
             result = sum(self.__getattr__("recoile_passive_{}".format(i)) for i in ["tracker","ecal","hcal","odclus","nucl"])
-        return result - self.GetCorrection()
+        return result - self.GetCorrection() 
 
     def GetFuzzCorrection(self):
         return 0
@@ -369,6 +489,32 @@ class GenieFaCCQEUniverse(ROOT.PlotUtils.GenieFaCCQEUniverse(ROOT.PythonMinervaU
         else:
             return [GenieFaCCQEUniverse(chain,i,-1) for i in OneSigmaShift]
 
+class GenieNormCCResUniverse(ROOT.PlotUtils.GenieNormCCResUniverse(ROOT.PythonMinervaUniverse),CVUniverse,object):
+    def __init__(self,chain,nsigma):
+        super(GenieNormCCResUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.GenieNormCCResUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+
+    @staticmethod
+    def GetSystematicsUniverses(chain ):
+        return [GenieNormCCResUniverse(chain,i) for i in OneSigmaShift]
+
+class GenieMaResUniverse(ROOT.PlotUtils.GenieMaResUniverse(ROOT.PythonMinervaUniverse),CVUniverse,object):
+    def __init__(self,chain,nsigma):
+        super(GenieMaResUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.GenieMaResUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+
+    @staticmethod
+    def GetSystematicsUniverses(chain ):
+        return [GenieMaResUniverse(chain,i) for i in OneSigmaShift]
+
+class GenieMvResUniverse(ROOT.PlotUtils.GenieMvResUniverse(ROOT.PythonMinervaUniverse),CVUniverse,object):
+    def __init__(self,chain,nsigma):
+        super(GenieMvResUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.GenieMvResUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+
+    @staticmethod
+    def GetSystematicsUniverses(chain ):
+        return [GenieMvResUniverse(chain,i) for i in OneSigmaShift]
 
 # I don't think nu_e analysis need minos shift
 # class MinosUniverse(ROOT.PlotUtils.GenieUniverse(ROOT.PythonMinervaUniverse), CVUniverse, object):
@@ -430,6 +576,7 @@ class LowQ2PionUniverse(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUnive
     @staticmethod
     def GetSystematicsUniverses(chain):
         cvshifts = [LowQ2PionUniverse(chain,i,SystematicsConfig.LowQ2PiWeightChannel) for i in OneSigmaShift] if SystematicsConfig.LowQ2PiWeightChannel is not None else []
+        #cvshifts.extend([LowQ2PionUniverse(chain,i,j) for j in SystematicsConfig.LowQ2PiWeightSysChannel for i in ([-1,1] if j is not None else [0])])
         return cvshifts
 
 class LowQ2PionUniverseAlt(CVUniverse,object):
@@ -453,6 +600,35 @@ class LowQ2PionUniverseAlt(CVUniverse,object):
     def GetSystematicsUniverses(chain):
         return [LowQ2PionUniverseAlt(chain,i) for i in SystematicsConfig.LowQ2PiWeightSysChannel]
 
+class MuonAngleXResolutionUniverse(ROOT.PlotUtils.MuonAngleXResolutionUniverse(ROOT.PythonMinervaUniverse),CVUniverse, object):
+    def __init__(self,chain,nsigma):
+        super(MuonAngleXResolutionUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.MuonAngleXResolutionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+
+
+    @staticmethod
+    def GetSystematicsUniverses(chain):
+        return [MuonAngleXResolutionUniverse(chain,i) for i in OneSigmaShift]
+
+class MuonResolutionUniverse(ROOT.PlotUtils.MuonResolutionUniverse(ROOT.PythonMinervaUniverse),CVUniverse, object):
+    def __init__(self,chain,nsigma):
+        super(MuonResolutionUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.MuonResolutionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+
+    @staticmethod
+    def GetSystematicsUniverses(chain):
+        return [MuonResolutionUniverse(chain,i) for i in OneSigmaShift]
+
+class MuonAngleYResolutionUniverse(ROOT.PlotUtils.MuonAngleYResolutionUniverse(ROOT.PythonMinervaUniverse),CVUniverse, object):
+    def __init__(self,chain,nsigma):
+        super(MuonAngleYResolutionUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.MuonAngleYResolutionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+
+
+    @staticmethod
+    def GetSystematicsUniverses(chain):
+        return [MuonAngleYResolutionUniverse(chain,i) for i in OneSigmaShift]
+
 class MuonUniverseMinerva(ROOT.PlotUtils.MuonUniverseMinerva(ROOT.PythonMinervaUniverse),CVUniverse, object):
     def __init__(self,chain,nsigma):
         super(MuonUniverseMinerva,self).__init__(chain,nsigma)
@@ -473,6 +649,22 @@ class MuonUniverseMinos(ROOT.PlotUtils.MuonUniverseMinos(ROOT.PythonMinervaUnive
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonUniverseMinos(chain,i) for i in OneSigmaShift]
+
+class MinosEfficiencyUniverse(ROOT.PlotUtils.MinosEfficiencyUniverse(ROOT.PythonMinervaUniverse),CVUniverse, object):
+    def __init__(self,chain,nsigma):
+        super(MinosEfficiencyUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.MinosEfficiencyUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+
+    def GetMyMinosEfficiencyWeight(self):
+         if self.HasNoBackExitingTracks:
+             return 1
+         else:
+             return super(MinosEfficiencyUniverse,self).GetMinosEfficiencyWeight()
+
+
+    @staticmethod
+    def GetSystematicsUniverses(chain):
+        return [MinosEfficiencyUniverse(chain,i) for i in OneSigmaShift]
 
 ###########################################################################
 class ElectronEnergyShiftUniverse(CVUniverse):
@@ -526,6 +718,7 @@ class ElectronAngleShiftUniverse(CVUniverse):
     def GetSystematicsUniverses(chain ):
         return [ElectronAngleShiftUniverse(chain,  1) for i in range(SystematicsConfig.NUM_UNIVERSE)]
 
+    
 
 ###########################################################################
 class BirksShiftUniverse(CVUniverse):
@@ -589,12 +782,10 @@ class TargetMassUniverse(ROOT.PlotUtils.TargetMassScintillatorUniverse(ROOT.Pyth
     def __init__(self,chain,nsigma):
         super(TargetMassUniverse,self).__init__(chain,nsigma)
         super(ROOT.PlotUtils.TargetMassScintillatorUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
-
     def GetStandardWeight(self):
         weight = super(TargetMassUniverse,self).GetStandardWeight()
         weight*= self.GetWeightRatioToCV()
         return weight
-    
 
     @staticmethod
     def GetSystematicsUniverses(chain):
@@ -680,41 +871,18 @@ class LeakageUniverse(CVUniverse,object):
     def __init__(self,chain,nsigma):
         super(LeakageUniverse,self).__init__(chain,nsigma)
 
-    def GetLeakageCorrection(self):
+    def GetLeakageCorrection(self): 
         return super(LeakageUniverse,self).GetLeakageCorrection() + ( self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS if abs(self.mc_primaryLepton) ==11 else 0)
 
     def ShortName(self):
         return "Leakage_Uncertainty"
 
     def LatexName(self):
-        return "Leakage Unvertainty"
+        return "Leakage Uncertainty"
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [LeakageUniverse(chain,i) for i in OneSigmaShift]
-
-class BkgTuneUniverse(CVUniverse,object):
-    def __init__(self,chain,nsigma,s):
-        super(BkgTuneUniverse,self).__init__(chain,nsigma)
-        if s == "FHCPt_tune1":
-            self.pcweighter = pcweight.FHCPtTuningWeightAlt()
-        elif s == "FHCPt_tune2":
-            self.pcweighter = pcweight.FHCPtTuningWeight()
-        else:
-            raise ValueError("Unknown bkgtune method: {}".format(s))
-
-    def IsVerticalOnly(self):
-        return True
-
-    def ShortName(self):
-        return "bkg_tune"
-
-    def LatexName(self):
-        return "Background Tune strategy"
-
-    @staticmethod
-    def GetSystematicsUniverses(chain):
-         return [BkgTuneUniverse(chain,1,i) for i in ["FHCPt_tune1","FHCPt_tune2"]]
 
 
 def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=None):
@@ -746,16 +914,43 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
         CVUniverse.SetAnalysisNuPDG(SystematicsConfig.AnaNuPDG)
 
         #Set NonResPi weight
-        CVUniverse.SetNonResPiReweight(SystematicsConfig.NonResPi)
-        CVUniverse.SetDeuteriumGeniePiTune(False)
-        CVUniverse.SetZExpansionFaReweight(bool(SystematicsConfig.NumZExpansionUniverses))
+        CVUniverse.SetNonResPiReweight(True)
+        CVUniverse.SetDeuteriumGeniePiTune(True)
+        CVUniverse.SetZExpansionFaReweight(bool(SystematicsConfig.NumZExpansionUniverses)) 
         CVUniverse.SetNFluxUniverses(SystematicsConfig.NUM_FLUX_UNIVERSE)
+        CVUniverse.RPAMaterials(True)
 
         if chain.GetTree().GetName() == "Truth":
             CVUniverse.SetTruth(True)
 
         if exclude is None or "all" not in exclude:
             # Vertical shift first to skip some cut calculation
+
+            # #Electron momentum universe
+            if abs(SystematicsConfig.AnaNuPDG)==12:
+                universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
+            elif abs(SystematicsConfig.AnaNuPDG)==14:
+                universes.extend(MuonUniverseMinerva.GetSystematicsUniverses(chain ))
+                universes.extend(MuonUniverseMinos.GetSystematicsUniverses(chain ))
+                universes.extend(MuonResolutionUniverse.GetSystematicsUniverses(chain ))
+                universes.extend(MuonAngleXResolutionUniverse.GetSystematicsUniverses(chain ))
+                universes.extend(MuonAngleYResolutionUniverse.GetSystematicsUniverses(chain ))
+                universes.extend(MinosEfficiencyUniverse.GetSystematicsUniverses(chain ))
+            else:
+                raise ValueError ("AnaNuPDG should be \pm 12 or 14, but you set {}".format(SystematicsConfig.AnaNuPDG))
+
+            #Electron angle universe
+            universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
+
+            #Electron momentum universe
+            #universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
+
+            #beam angle shift universe
+            universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
+
+            #particle response shift universe
+            universes.extend(ResponseUniverse.GetSystematicsUniverses(chain ))
+
             #Flux universe
             universes.extend(FluxUniverse.GetSystematicsUniverses(chain ))
 
@@ -763,21 +958,27 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             universes.extend(GenieUniverse.GetSystematicsUniverses(chain ))
             universes.extend(GenieRvx1piUniverse.GetSystematicsUniverses(chain ))
             universes.extend(GenieFaCCQEUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(GenieMaResUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(GenieMvResUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(GenieNormCCResUniverse.GetSystematicsUniverses(chain ))
 
-            # #2p2h universes
+            #2p2h universes
             universes.extend(Universe2p2h.GetSystematicsUniverses(chain ))
 
             #RPA universe:
             universes.extend(RPAUniverse.GetSystematicsUniverses(chain ))
 
+            #Non resonant pion universe
+            # #universes.extend(NonResonantPionUniverse.GetSystematicsUniverses(chain ))
+
             #LowQ2PionUniverse
             universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
-            universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain ))
+            #universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain )) used for warping study variant
 
             # #birk shift universe
-            # #universes.extend(BirksShiftUniverse.GetSystematicsUniverses(chain ))
+            ##universes.extend(BirksShiftUniverse.GetSystematicsUniverses(chain ))
 
-            # MKModelUniverse
+            #MKModelUniverse
             universes.extend(MKModelUniverse.GetSystematicsUniverses(chain ))
 
             #FSIWeighUniverse
@@ -789,33 +990,11 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             #hadron reweight shifting universe
             universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
 
-            #bkgtune universe
-            universes.extend(BkgTuneUniverse.GetSystematicsUniverses(chain ))
-
-            #target mass universe
-            universes.extend(TargetMassUniverse.GetSystematicsUniverses(chain ))
-
-            #Lateral Universes:
-            #Electron momentum universe
-            if abs(SystematicsConfig.AnaNuPDG)==12:
-                #Electron energy universe
-                universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
-                #Electron angle universe
-                universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
-            elif abs(SystematicsConfig.AnaNuPDG)==14:
-                universes.extend(MuonUniverseMinerva.GetSystematicsUniverses(chain ))
-                universes.extend(MuonUniverseMinos.GetSystematicsUniverses(chain ))
-            else:
-                raise ValueError ("AnaNuPDG should be \pm 12 or 14, but you set {}".format(SystematicsConfig.AnaNuPDG))
-
-            # #beam angle shift universe
-            universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
-            #particle response shift universe
-            universes.extend(ResponseUniverse.GetSystematicsUniverses(chain ))
             #leakage universe
             universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
 
-
+            #target mass universe
+            universes.extend(TargetMassUniverse.GetSystematicsUniverses(chain ))
 
 
     # Group universes in dict.
@@ -833,34 +1012,32 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
 #code for testing new cv universe.
 if __name__ == "__main__":
 
-    #path = "/minerva/data/users/hsu/merged_files/merged-1558038217.root"
-    path = "/pnfs/minerva/persistent/users/jyhan/NuECCQE/v21r1p1_recoilE_final/mcme1A/grid/central_value/minerva/ana/v21r1p1/00/11/00/17/SIM_minerva_00110017_Subruns_0325_NuECCQE_Ana_Tuple_v21r1p1.root"
+    #path = "/exp/minerva/data/users/hsu/merged_files/merged-1558038217.root"
+    #path = "/pnfs/minerva/persistent/users/jyhan/NuECCQE/v21r1p1_recoilE_final/mcme1A/grid/central_value/minerva/ana/v21r1p1/00/11/00/17/SIM_minerva_00110017_Subruns_0325_NuECCQE_Ana_Tuple_v21r1p1.root"
+    path = "/pnfs/minerva/persistent/DataPreservation/p4/FullDetector/Merged_mc_ana_me1A_DualVertex_p4/MasterAnaDev_mc_AnaTuple_run00110011_Playlist.root"
     
-    chain = ROOT.TChain("NuECCQE")
-    chainWrapper = PlotUtils.ChainWrapper("NuECCQE")
+    chain = ROOT.TChain("MasterAnaDev")
+    chainWrapper = PlotUtils.ChainWrapper("MasterAnaDev")
     chain.Add(path)
     chainWrapper.Add(path)
     chainWrapper.GetValue("prong_part_score",0)
     univs = GetAllSystematicsUniverses(chainWrapper,False)
-    for i in range(0,1):
-        univ = univs["Genie"][0]
-        univ.SetEntry(i)
-        chain.GetEntry(i)
-        print(univ.GetWeight())
-        #print univ.GetVecElem("prong_part_E",0,3)
-        e =  univ.GetVecOfVecDouble("prong_part_E")
-        print(e[0].size())
-        print(e[0][0],e[0][1],e[0][2])
-        print(chainWrapper.GetValue("prong_part_E",i,0))
-        print(chain.prong_part_E[0][0],chain.prong_part_E[0][1],chain.prong_part_E[0][2])
-        univ2 = univs["Flux"][0]
-        univ2.SetEntry(i)
-        print(univ.UseNuEConstraint())
-        print(univ2.UseNuEConstraint())
-        print(univ2.GetWeight())
-        print(univ.mc_FSPartPDG)
-        #for _ in univs["eltheta"]:
-        #    print _.shift_angle
+    cvmin = 0
+    cvmax = 0
+    for u in univs.keys():
+        if u == "cv":
+            continue
+
+        univ = univs[u][0]
+        #univ = univs[u][0]
+        univ.SetEntry(0)
+        chain.GetEntry(0)
+        minsigma = univ.GetWeight(False)
+        univ.SetEntry(1)
+        chain.GetEntry(1)
+        maxsigma = univ.GetWeight(False)
+        print(u)
+        print(minsigma,maxsigma)
+        print("")
 
 
-    #hist = PlotUtils.HistWrapper(ROOT.PythonMinervaUniverse)("name","title",5,0,10,map)

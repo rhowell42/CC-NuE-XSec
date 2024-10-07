@@ -11,8 +11,6 @@ from config.SignalDef import TRUTH_CATEGORIES,EXTRA_OTHER
 from config.CutConfig import SAMPLE_CUTS,KINEMATICS_CUTS
 from tools.CutLibrary import CUTS
 
-TRUE_SIGNAL_WEIGHTED=False
-
 class HistWrapper1D(HistWrapper):
     def __init__(self,title,bins):
         # Note: bins is an array of lower edges of each bin
@@ -109,6 +107,7 @@ class MnvResponseWrapper(object):
 
 class PlotProcessor():
     def __init__(self,name,title,binning,value_getter = None, cuts = None, weight_function = None,**kwargs):
+        
         if value_getter is None:
             print("You didn't tell me what to fill for plot: " + name)
             exit(1)
@@ -201,6 +200,8 @@ def MakePlotProcessors(**kwargs):
     plots = []
     tags = settings["tags"]
     settings.pop("tags")
+
+    
     if "suffix" in kwargs["key"]:
         settings["name"]+=kwargs["key"]["suffix"]
 
@@ -225,7 +226,7 @@ def MakePlotProcessors(**kwargs):
         if kwargs["mc"]:
             for plot in plots:
                 plot.AddCut(lambda universe: universe.classifier.is_true_signal)
-                plot.weight_function = lambda event:event.GetWeight(TRUE_SIGNAL_WEIGHTED)
+                plot.weight_function = lambda event:event.GetWeight(False)
         else:
             print("cant't make signal only plots for data")
             return plots
@@ -271,6 +272,8 @@ def MakeCutVariablePlot(cutname,value_getter=None):
         "name": cutname,
         "title":";{};NEvents".format(cutname),
     }
+
+    print (binning,value_getter,name)
 
     if value_getter is None:
         settings["value_getter"]=[CUTS[cutname].Values]

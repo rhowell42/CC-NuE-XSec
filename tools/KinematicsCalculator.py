@@ -22,14 +22,19 @@ QE_binding_E = 34 # MeV  (same as nu_mu PRL for FHC)
 
 # these will be used repeatedly in calculations.
 # better just do the arithmetic once here.
-M_n_star = M_n#(M_n - QE_binding_E)
+M_n_star = (M_n - QE_binding_E)
 M_e_sqr = M_e**2
 M_mu_sqr = M_mu**2
 M_n_star_sqr = M_n_star**2
 M_p_sqr = M_p**2
 BEAM_ANGLE = math.radians(-3.3)
+ 
+sin_ee_sqr = 0.4
+sin_ue_sqr = 0.002
+delta_m_sqr = 7.34 # eV^2
 
-
+L = 1
+E = 1
 
 class KinematicsCalculator(object):
     DEFAULTS = {
@@ -120,9 +125,6 @@ class KinematicsCalculator(object):
                 sc = _() and sc
             except Exception as e:
                 print(e)
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                print(exc_type, fname, exc_tb.tb_lineno)
                 #raise(e)
                 sc = False
         return sc
@@ -133,8 +135,6 @@ class KinematicsCalculator(object):
             nParticles = self.event.GetVecInt("prong_nParticles")
             if len(nParticles) < 1 or nParticles[0] < 1:
                 return False
-        elif not self.event.classifier.IncludeMuon:
-            return False
         event = self.event
 
         #decide if whether it is muon or electron event, and get lepton kinematics
@@ -146,14 +146,17 @@ class KinematicsCalculator(object):
         self.reco_theta_lep = math.degrees(self.reco_theta_lep_rad)
         self.reco_Pt_lep = self.reco_P_lep*math.sin(self.reco_theta_lep_rad)
 
+        #get appearance or disappearance probabilities
+        #self.reco_appearance = sin_ue_sqr*np.sin(1.27*delta_m_sqr*L/E)**2
+        #self.reco_dissapearance = sin_ee_sqr*np.sin(1.27*delta_m_sqr*L/E)**2\
+
         #now hadronic calorimetry
         self.reco_q0 = self.spliner.get_q0(self.event.RecoilEnergy()/1e3)
         self.reco_visE = self.event.AvailableEnergy()/1e3
+        
         # calc q2, q3
         self.reco_E_nu_cal = self.reco_E_lep + self.reco_q0
         self.reco_E_nu_QE = KinematicsCalculator.Enu_QE(self.reco_E_lep, self.reco_P_lep, self.reco_theta_lep_rad, self.M_lep_sqr)
-        self.reco_q2_QE = 2 * M_n/1e3*(self.reco_E_nu_QE-self.reco_E_lep)
-        #self.reco_q2_QE = KinematicsCalculator.Q2_cal(self.reco_E_lep, self.reco_theta_lep_rad, self.reco_P_lep, self.M_lep_sqr, self.reco_E_nu_QE)
         self.reco_q2_cal = KinematicsCalculator.Q2_cal(self.reco_E_lep, self.reco_theta_lep_rad, self.reco_P_lep, self.M_lep_sqr, self.reco_E_nu_cal)
 
         self.reco_q3 = self.calcq3(self.reco_q2_cal,self.reco_E_nu_cal,self.reco_E_lep)
@@ -161,15 +164,13 @@ class KinematicsCalculator(object):
         self.reco_W2 = (M_n/1e3)**2+2*M_n/1e3*self.reco_q0-self.reco_q2_cal
         self.reco_W = math.sqrt(self.reco_W2) if self.reco_W2>=0 else -1
         self.reco_Etheta2 = self.reco_E_lep * self.reco_theta_lep_rad**2
-        #if self.event.mc_intType==7:
-        #    print (self.reco_E_nu_QE,self.reco_q2_cal,self.reco_q2_QE,self.reco_Etheta2,self.reco_Pt_lep)
-        # viewE = (self.event.prong_XViewE[0], self.event.prong_VViewE[0],self.event.prong_UViewE[0])
-        # self.Ex = (viewE[0])/sum(viewE)
-        # self.Eu = (viewE[1])/sum(viewE)
-        # self.Ev = (viewE[2])/sum(viewE)
-        # self.Exuv = self.Ex-self.Eu-self.Ev
-        # self.Euv = self.Eu-self.Ev
-        #print (self.reco_visE,self.reco_q3)
+        #print(self.event.GetLowRecoilQ3(),self.reco_q3)
+        viewE = (self.event.prong_XViewE[0], self.event.prong_VViewE[0],self.event.prong_UViewE[0])
+        self.Ex = (viewE[0])/sum(viewE)
+        self.Eu = (viewE[1])/sum(viewE)
+        self.Ev = (viewE[2])/sum(viewE)
+        self.Exuv = self.Ex-self.Eu-self.Ev
+        self.Euv = self.Eu-self.Ev
             #self.LLR = self.event.GetLLR()
         # except RuntimeError:
             #this ntuple does not have these variables
@@ -217,13 +218,7 @@ class KinematicsCalculator(object):
         self.true_theta_lep_rad = self.event.GetThetalepTrue()
         self.true_theta_lep = math.degrees(self.true_theta_lep_rad)
         self.true_visE = self.CalculateVisibleE()
-        self.true_pt = self.true_P_lep*math.sin(self.true_theta_lep_rad)
-        # true_4v = self.event.mc_primFSLepton
-        # print(true_4v,self.true_P_lep,self.true_theta_lep_rad)
-        # beam_rad = -0.05887
-        # pyp = -math.sin(beam_rad)*true_4v[2]+math.cos(beam_rad)*true_4v[1]
-        # pt = math.sqrt(true_4v[0]**2+pyp**2)/1e3
-        # print (self.true_pt,pt)
+        self.true_Pt_lep = self.true_P_lep*math.sin(self.true_theta_lep_rad)
 
         if self.include_hadron_momenta:
             for part_idx in range(len(self.event.mc_FSPartPDG)):
@@ -405,6 +400,7 @@ class q3_spline(object):
 
     def get_q0(self,eavail):
         return self.s * interp(eavail,self.xp,self.fp)
+       
 
 class DefaultSpline(q3_spline):
     def __init__(self):

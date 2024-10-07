@@ -16,6 +16,7 @@ import ROOT
 
 from config import CutConfig
 
+
 class SelectionCut(object):
     def __init__(self, **kwargs):
         self.name = kwargs["name"]
@@ -65,11 +66,149 @@ def CalcApothem(x,y):
     else:
         return x
 
+def FHC_Cut(available_energy,lepton_energy):
+    if lepton_energy < 1.00:
+        return(0 < available_energy < 2.00)
+    elif 1.00 <= lepton_energy <= 1.75:
+        return(0 < available_energy < 0.9)
+    elif 1.75 < lepton_energy <= 3.00:
+        return(0 < available_energy < 1.3)
+    elif 3.00 < lepton_energy:
+        return(0 < available_energy < 2.00)
+    else:
+        return(False)
+
+def RHC_Cut(available_energy,lepton_energy):
+    if lepton_energy < 0.50:
+        return(0 < available_energy < 0.1)
+    elif 0.50 <= lepton_energy <= 0.75:
+        return(0 < available_energy < 1.3)
+    elif 0.75 < lepton_energy <= 1.00:
+        return(0 < available_energy < 0.35)
+    elif 1.00 < lepton_energy <= 1.25:
+        return(0 < available_energy < 0.90)
+    elif 1.25 < lepton_energy <= 1.50:
+        return(0 < available_energy < 2.00)
+    elif 1.50 < lepton_energy <= 2.25:
+        return(0 < available_energy < 0.90)
+    elif 2.25 < lepton_energy <= 3.50:
+        return(0 < available_energy < 1.30)
+    elif 3.50 < lepton_energy:
+        return(0 < available_energy < 2.00)
+    else:
+        return(False)
+
+def passSingleProtonCut(event, scoreShift = 0): 
+
+    # Keep around 81% efficiency in each Q2 region
+    pass_proton = False
+
+    #q2_reco = event.MasterAnaDev_Q2 + q2Shift 
+    #q2_reco /= 10**6 
+    q2_reco = event.kin_cal.reco_q2_cal
+    protonScore1_reco = event.MasterAnaDev_proton_score1 + scoreShift 
+    if q2_reco < 0.2: 
+        if protonScore1_reco > 0.2:
+            pass_proton = True
+        elif q2_reco >= 0.2 and q2_reco < 0.6:
+            if protonScore1_reco > 0.1:
+                pass_proton = True
+        elif q2_reco >= 0.6: 
+            if protonScore1_reco > 0.0:
+                pass_proton = True 
+
+    return(pass_proton)
+
+def passHybridProtonNodeCut(event, cutval):
+    means=[]
+    means.append(31.302)
+    means.append(11.418)
+    means.append(9.769)
+    means.append(8.675)
+    means.append(7.949)
+    sigmas=[]
+    sigmas.append(8.997)
+    sigmas.append(3.075)
+    sigmas.append(2.554)
+    sigmas.append(2.484)
+    sigmas.append(2.232)
+
+    nodeEnergyVal=0
+    chi2=0
+    n_nodes=event.MasterAnaDev_proton_nodes_nodesNormE_sz
+    if n_nodes>5:
+        for i in range(n_nodes):
+            if i==6:
+                break;
+            if i==0:
+                nodeEnergyVal+=event.MasterAnaDev_proton_nodes_nodesNormE[0]
+            elif i==1:
+                nodeEnergyVal+=event.MasterAnaDev_proton_nodes_nodesNormE[1]
+            else:
+                nodeEnergyVal=event.MasterAnaDev_proton_nodes_nodesNormE[i]
+            if i>=1:
+                chi2+=(nodeEnergyVal-means[i-1])*(nodeEnergyVal-means[i-1])/(sigmas[i-1]*sigmas[i-1])
+    else:
+        passes=passPrimaryProtonNodeCut(event)
+        if passes:
+            chi2=0;
+        else:
+            chi2=75
+    return chi2<cutval
+
+def passPrimaryProtonNodeCut(event):
+    #CutValuesbasedon22302
+    #Node0-1
+    #Node2
+    #Node3
+    #Node4
+    #Node5
+    #Node6
+
+    cutval1=19
+    cutval2=10
+    cutval3=9
+    cutval4=8
+    cutval5=5
+
+
+    #Primaryproton
+    vect_size=event.MasterAnaDev_proton_nodes_nodesNormE_sz
+
+    if vect_size==0:
+        return False #/nonodes
+    if event.MasterAnaDev_proton_nodes_nodesNormE[0]+event.MasterAnaDev_proton_nodes_nodesNormE[1]<cutval1:
+        return False
+    if event.MasterAnaDev_proton_nodes_nodesNormE[2]<cutval2:
+        return False
+    if event.MasterAnaDev_proton_nodes_nodesNormE[3]<cutval3:
+        return False
+    if event.MasterAnaDev_proton_nodes_nodesNormE[4]<cutval4:
+        return False
+    if vect_size>5:
+        if event.MasterAnaDev_proton_nodes_nodesNormE[5]<cutval5:
+            return False
+
+    #survivedloops?
+    return True
+
 CUT_CONFIGS = {
     "NoCut": {
         "value_getter": lambda event, nprong: None,
         "cut_fn": lambda val: True,
         "variable_range": VARIABLE_RANGE_01,
+    },
+    "True NuMu": {
+        "value_getter": lambda event, nprong: abs(event.mc_incoming),
+        "cut_fn": lambda val: val==14,
+    },
+    "True NuE": {
+        "value_getter": lambda event, nprong: abs(event.mc_incoming),
+        "cut_fn": lambda val: val==12,
+    },
+    "True Scattering": {
+        "value_getter": lambda event, nprong: abs(event.mc_intType),
+        "cut_fn": lambda val: val==7,
     },
     "HasFiducialVertex": {
         "cut_fn": REQUIRE_POSITIVE_INT,
@@ -82,6 +221,19 @@ CUT_CONFIGS = {
     "High UIE": {
         "value_getter": lambda event,nprong: event.UpstreamInlineEnergy,
         "cut_fn":lambda val : val>10,
+    },
+    "PsiEe": {
+        "value_getter": lambda event, nprong: (event.prong_TotalVisE[nprong]/1e3, event.Psi*event.kin_cal.reco_E_lep) ,
+        "cut_fn": lambda vals: vals[1] < CutConfig.PSIEE_FLAT_CUT,
+    },
+     "LowPsiEe": {
+        "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep*event.Psi,
+        "cut_fn": lambda vals: vals < CutConfig.PsiEe_CUT,
+        "variable_range": [0.2* i for i in range(0,21)]
+    },
+    "InversePsiEe": {
+        "value_getter": lambda event, nprong: (event.prong_TotalVisE[nprong]/1e3, event.Psi*event.kin_cal.reco_E_lep),
+        "cut_fn": lambda vals: vals[1] > CutConfig.PSIEE_FLAT_CUT,
     },
     "Vertex_Z": {
         "value_getter": lambda event, nprong: event.vtx[2],
@@ -180,12 +332,6 @@ CUT_CONFIGS = {
         "variable_range": [0.1* i for i in range(0,11)]
     },
 
-     "LowPsiEe": {
-        "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep*event.Psi,
-        "cut_fn": lambda vals: vals < CutConfig.PsiEe_CUT,
-        "variable_range": [0.2* i for i in range(0,21)]
-    },
-
     "Wexp": {
         "value_getter": lambda event, nprong: event.kin_cal.reco_W,
         "cut_fn": lambda vals: vals>0 and vals <= CutConfig.WEXP_CUT,
@@ -193,15 +339,47 @@ CUT_CONFIGS = {
     },
     "Eavail": {
         "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
-        "cut_fn": lambda vals: vals <= CutConfig.Reco_visEcut,
+        #"cut_fn": lambda vals: vals <= CutConfig.Reco_visEcut,
+        "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1],
         "variable_range": [0.4* i for i in range(0,11)]
     },
-
-    # "InversePsi": {
-    #     "value_getter": lambda event, nprong: (event.prong_TotalVisE[nprong]/1e3, event.Psi) ,
-    #     "cut_fn": lambda vals: vals[1] > CutConfig.PSI_FLAT_CUT,
-    #     "variable_range": [0.1* i for i in range(0,11)]
-    # },
+    "FHC_proton": {
+        "value_getter": lambda event, nprong: event,
+        #"cut_fn": lambda vals: CutConfig.EAVAIL_LOW[0] <= vals[0] < CutConfig.EAVAIL_LOW[1] if vals[1] < CutConfig.ELECTRON_ENERGY_CUTOFF else CutConfig.EAVAIL_HIGH[0] <= vals[0] < CutConfig.EAVAIL_HIGH[1],
+        "cut_fn": lambda val: passHybridProtonNodeCut(val,10),
+        #"cut_fn": lambda val: passSingleProtonCut(val,0),
+        "variable_range": [0.1* i for i in range(0,11)]
+    },
+    "Eavail_FHC": {
+        "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
+        #"cut_fn": lambda vals: CutConfig.EAVAIL_LOW[0] <= vals[0] < CutConfig.EAVAIL_LOW[1] if vals[1] < CutConfig.ELECTRON_ENERGY_CUTOFF else CutConfig.EAVAIL_HIGH[0] <= vals[0] < CutConfig.EAVAIL_HIGH[1],
+        "cut_fn": lambda val: CutConfig.visE_FHCRANGE[0] <= val < CutConfig.visE_FHCRANGE[1],
+        "variable_range": [0.4* i for i in range(0,11)]
+    },
+    "Eavail_RHC": {
+        "value_getter": lambda event, nprong: (event.kin_cal.reco_visE, event.kin_cal.reco_E_lep),
+        #"cut_fn": lambda vals: CutConfig.EAVAIL_LOW[0] <= vals[0] < CutConfig.EAVAIL_LOW[1] if vals[1] < CutConfig.ELECTRON_ENERGY_CUTOFF else CutConfig.EAVAIL_HIGH[0] <= vals[0] < CutConfig.EAVAIL_HIGH[1],
+        "cut_fn": lambda vals: RHC_Cut(vals[0],vals[1]),
+        "variable_range": [0.4* i for i in range(0,11)]
+    },
+    "Pt": {
+        "value_getter": lambda event, nprong: event.kin_cal.reco_Pt_lep,
+        "cut_fn": lambda val: CutConfig.RECO_PT_RANGE[0] <= val < CutConfig.RECO_PT_RANGE[1],
+        "variable_range": [0.1*i for i in range(0,21)]
+    },
+    "Etheta": {
+        "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * (event.kin_cal.reco_theta_lep_rad)**2,
+        "cut_fn": lambda vals: vals >= CutConfig.Ethetasquared_CUT,
+    },
+    "OpeningAngle": {
+        "value_getter": lambda event, nprong: event.ElectronProtonAngle(),
+        "cut_fn": lambda val: CutConfig.RECO_ANGLE[0] <= val <= CutConfig.RECO_ANGLE[1],
+    },
+    "InversePsi": {
+         "value_getter": lambda event, nprong: (event.prong_TotalVisE[nprong]/1e3, event.Psi) ,
+         "cut_fn": lambda vals: vals[1] > CutConfig.PSI_FLAT_CUT,
+         "variable_range": [0.1* i for i in range(0,11)]
+     },
 
     "MeanFrontdEdX": {
         "value_getter": lambda event, nprong: event.prong_dEdXMeanFrontTracker[nprong],
@@ -242,6 +420,26 @@ CUT_CONFIGS = {
         "value_getter": lambda event, nprong: event.prong_TransverseGapScore[nprong],
         "cut_fn": lambda val: val > CutConfig.TRANSVERSE_GAP_SCORE_CUT,
         "variable_range": [1.5* i for i in range(0,21)]
+    },
+    
+    "ProtonScore": {
+        "value_getter": lambda event, nprong: event.MasterAnaDev_proton_score1,
+        "cut_fn": lambda val: 0 <= val <= 1,
+    },
+
+    "ZDifference": {
+        "value_getter": lambda event, nprong: (event.MasterAnaDev_proton_startPointZ,event.prong_axis_vertex[nprong][2]),
+        "cut_fn": lambda vals: CutConfig.RECO_ZDIFF_RANGE[0]<= vals[0]-vals[1] <= CutConfig.RECO_ZDIFF_RANGE[1],
+    },
+
+    "ZDifference_vtx": {
+        "value_getter": lambda event, nprong: (event.prong_axis_vertex[nprong][2],event.vtx[2]),
+        "cut_fn": lambda vals: CutConfig.RECO_VTX_ZDIFF_RANGE[0]<= vals[0]-vals[1] <= CutConfig.RECO_VTX_ZDIFF_RANGE[1],
+    },
+    
+    "ProtonEnd": {
+        "value_getter": lambda event, nprong: event.MasterAnaDev_proton_endPointZ,
+        "cut_fn": lambda val: val <= CutConfig.RECO_PROTON_END,
     },
     
     #"HasNoMichelElectrons": {
@@ -314,7 +512,11 @@ KINEMATICS_CUT_CONFIGS = {
         "cut_fn": lambda val: CutConfig.RECO_Q3_RANGE[0] <= val < CutConfig.RECO_Q3_RANGE[1],
         "variable_range": [0.1*i for i in range(0,21)]
     },
-
+    "RecoPt": {
+        "value_getter": lambda event,nprong: event.kin_cal.reco_Pt_lep,
+        "cut_fn": lambda val: CutConfig.RECO_PT_RANGE[0] <= val < CutConfig.RECO_PT_RANGE[1],
+        "variable_range": [0.1*i for i in range(0,21)]
+    },
     "TrueLeptonEnergy": {
         "value_getter": lambda event,nprong: event.kin_cal.true_E_lep,
         "cut_fn": lambda val: CutConfig.ELECTRON_ENERGY_RANGE[0] <= val < CutConfig.ELECTRON_ENERGY_RANGE[1],
@@ -334,6 +536,11 @@ KINEMATICS_CUT_CONFIGS = {
         "cut_fn": lambda val: CutConfig.TRUE_Q3_RANGE[0] <= val < CutConfig.TRUE_Q3_RANGE[1],
         "variable_range": [0.1*i for i in range(0,21)]
     },
+    "TruePt": {
+        "value_getter": lambda event,nprong: event.kin_cal.true_Pt_lep,
+        "cut_fn": lambda val: CutConfig.TRUE_PT_RANGE[0] <= val < CutConfig.TRUE_PT_RANGE[1],
+        "variable_range": [0.1*i for i in range(0,21)]
+    },
 }
 
 if CutConfig.HACK_R2:
@@ -345,6 +552,10 @@ if CutConfig.HACK_R2:
         "value_getter": lambda event, nprong: (math.sqrt(event.vtx[0]**2 + event.vtx[1]**2), event.vtx[2]),
         "cut_fn": lambda vals: vals[0] <= 850 and vals[1] > 5990 and vals[1] < 8340,
     }
+    CUT_CONFIGS["ContainedProton"] = {
+        "value_getter": lambda event, nprong: (math.sqrt(event.MasterAnaDev_proton_endPointX**2 + event.MasterAnaDev_proton_endPointY**2), event.MasterAnaDev_proton_endPointZ),
+        "cut_fn": lambda vals: vals[0] <= 850 and vals[1] > 5990 and vals[1] < 8500,
+    }
 
 # make SelectionCut objects now
 
@@ -352,6 +563,7 @@ class Cuts(object):
     def __init__(self):
         self.cutmap = {}
     def __getitem__(self,key):
+        
         if key in self.cutmap:
             return self.cutmap[key]
         elif key in CUT_CONFIGS:
@@ -367,6 +579,7 @@ class Cuts(object):
         else:
             raise KeyError("Cut {} not defined".format(key))
 
+
 CUTS = Cuts()
 # for name, config in CUT_CONFIGS.items():
 #     config["name"] = name
@@ -375,3 +588,4 @@ CUTS = Cuts()
 # for name, config in KINEMATICS_CUT_CONFIGS.items():
 #     config["name"] = name
 #     CUTS[name] = SelectionCut(**config)
+

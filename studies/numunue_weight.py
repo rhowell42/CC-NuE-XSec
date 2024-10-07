@@ -5,25 +5,27 @@ import PlotUtils
 import UnfoldUtils
 from multiprocessing import Process
 from tools import PlotTools,Utilities
-from functools import partial
-
 
 ROOT.TH1.AddDirectory(False)
-numufile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1LMOP_muon_MAD.root"
-nuefile = "/minerva/data/users/hsu/nu_e/kin_dist_mcme1LMOP_electron_MAD.root"
-nuebkgtunedfile =  "/minerva/data/users/hsu/nu_e/kin_dist_mcme1D_nx_electron_MAD.root"
-nuedatafile = "/minerva/data/users/hsu/nu_e/kin_dist_datame1D_nx_electron_MAD.root"
-numuweightedfile =  {
-    "mc":"/minerva/data/users/hsu/nu_e/kin_dist_mcme1LMOP_muon_weighted_MAD.root",
-    "data":"/minerva/data/users/hsu/nu_e/kin_dist_datame1LMOP_muon_weighted_MAD.root"
+numufile = "/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcMuonBigGenie_nx_Muon_BigGenie.root"
+#nuefile = "/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcElectronNoScale_nx_electron_MAD.root"
+nuefile = "/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcElectronBigGenie_nx_Electron_BigGenie.root"
+
+nuebkgtunedfile = "/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcElectronScaled_nx_Electron_scaled_MAD.root"
+nuedatafile =  "/exp/minerva/data/users/rhowell/antinu_e/kin_dist_dataElectronScaled_nx_Electron_scaled_MAD.root"
+
+numuweightedfile = {
+    "mc":"/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcMuonScaled_nx_Muon_scaled_MAD.root",
+    "data":"/exp/minerva/data/users/rhowell/antinu_e/kin_dist_dataMuonScaled_nx_Muon_scaled_MAD.root"
 }
 
 MU_SIGNALS = ["CCQE","CCDelta","CC2p2h","CCDIS","CCOther"]
 E_SIGNALS = ["CCNuEQE","CCNuEDelta","CCNuE2p2h","CCNuEDIS","CCNuE"]
-E_BACKGROUNDS = ["NuEElastic","NonFiducial","NonPhaseSpace","CCNuEAntiNu",
-                 "ExcessModel","CCDIS","CCOther","NCCOH","NCDIS","NCRES","NCOther"]
-MU_BACKGROUNDS = ["NC","CCNuE","CCAntiNuMu","NonFiducial","NonPhaseSpace","Other"]
-PLOTPATH = "/minerva/data/users/hsu/numunueRatioPlots/"
+#E_BACKGROUNDS = ["NuEElastic","NonFiducial","NonPhaseSpace","CCPi0","NCCohPi0","NCPi0","Other","NCDiff"]
+E_BACKGROUNDS = ["NuEElastic","NonFiducial","NonPhaseSpace","CCPi0","NCCohPi0","NCPi0","Other"]
+MU_BACKGROUNDS = ["NC","CCNuE","CCNuMu","NonFiducial","NonPhaseSpace","Other"]
+
+PLOTPATH = "/exp/minerva/data/users/rhowell/anti_numunueRatioPlots/"
 
 SIGNAL_CHANNEL_PAIR = [
     ("CCQE","CCNuEQE"),
@@ -33,6 +35,8 @@ SIGNAL_CHANNEL_PAIR = [
 ]
 
 #E_SIGNALS = MU_SIGNALS
+
+
 
 def SubtractPoissonHistograms(h,h1):
     h.AddMissingErrorBandsAndFillWithCV(h1)
@@ -89,7 +93,7 @@ def MakeScaleFile2():
     ePOT = Utilities.getPOTFromFile(nuefile)
     fmu = ROOT.TFile.Open(numufile)
     muPOT = Utilities.getPOTFromFile(numufile)
-    print(ePOT,muPOT)
+    print(ePOT,muPOT,"ePOT muPOT")
     he = GetSignalHist(fe,E_SIGNALS,"tEnu")
     migration = fmu.Get("Enu_migration").Clone()
     he.Scale(muPOT/ePOT)
@@ -103,7 +107,6 @@ def MakeScaleFile2():
     fe.Close()
     fmu.Close()
     Fout.Close()
-
 
 def FindScale2(target,migration):
     m = ROOT.TMatrixD(migration.GetNbinsY()+2,migration.GetNbinsX()+2)
@@ -135,7 +138,7 @@ def smooth(iput):
 def MakeCompPlot():
     def getFileAndPOT(filename):
         POT = Utilities.getPOTFromFile(filename)
-        f = ROOT.TFile.Open(filename)
+        f = ROOT.TFile.Open(filename)        
         return f,POT
     def Draw(mnvplotter,*args,canvas=PlotTools.CANVAS):
         mc_hist1 = args[0]
@@ -161,31 +164,35 @@ def MakeCompPlot():
             #mc_hist1.SetTitle("nue MC")
             mc_hist1.SetLineColor(ROOT.kRed)
             mc_hist1.Draw("HIST SAME")
+            
             leg.AddEntry(mc_hist1,"nue MC")
         if mc_hist2:
             #mc_hist2.SetTitle("weighted numu MC")
             mc_hist2.SetLineColor(ROOT.kGreen)
             mc_hist2.Draw("HIST SAME")
+            
             leg.AddEntry(mc_hist2,"weighted numu MC")
         leg.Draw()
 
     def DrawRatio(mnvplotter,h1,h2,include_systematics = False):
-        cast = (lambda x:x.GetCVHistoWithError()) if include_systematics else (lambda x:x.GetCVHistoWithStatError()) 
-        mnvplotter.DrawDataMCRatio(cast(h1),cast(h2), 1.0 ,True,0,2)
+        cast = (lambda x:x.GetCVHistoWithError()) if include_systematics else (lambda x:x.GetCVHistoWithStatError())
+        mnvplotter.DrawDataMCRatio(cast(h1),cast(h2), 1.0 ,True,-4,4)
 
-    def DrawDoubleRatio(mnvplotter,h1,h2,h3,h4,include_systematics = False):
+    def DrawDoubleRatio(mnvplotter,h1,h2,h3,h4):
         h_r1 = h1.Clone("{}_ratio1".format(h1.GetName))
         h_r2 = h3.Clone("{}_ratio2".format(h3.GetName))
         h_r1.Divide(h_r1,h2)
         h_r2.Divide(h_r2,h4)
-        DrawRatio(mnvplotter,h_r1,h_r2,include_systematics)
+        mnvplotter.DrawDataMCRatio(h_r1.GetCVHistoWithError(), h_r2.GetCVHistoWithError(), 1.0 ,True,0,2)
 
     nueMCfile,nueMCPOT = getFileAndPOT(nuefile)
     nueBkgfile,nueBkgPOT = getFileAndPOT(nuebkgtunedfile)
     numuMCfile,numuMCPOT = getFileAndPOT(numuweightedfile["mc"])
     numuDatafile,numuDataPOT = getFileAndPOT(numuweightedfile["data"])
     nueDatafile,nueDataPOT = getFileAndPOT(nuedatafile)
-    print (nueMCPOT,numuDataPOT,numuMCPOT,nueDataPOT)
+    nueMCPOT = 4.829e22
+    numuMCPOT = 4.829e22
+    print (nueMCPOT,numuDataPOT,numuMCPOT,nueDataPOT,nueBkgPOT)
 
     for hist_name in [ "Eavail_q3", "Enu" ,"Eavail_Lepton_Pt","Q3","Q0","tQ0","tQ3","tLepton_Pt","tQ0_tQ3","tQ0_tLepton_Pt","Eavail","tEavail","tEavail_tQ3","tEavail_tLepton_Pt","Lepton_Pt","tEnu","Eavail_q3_true_signal", "Eavail_Lepton_Pt_true_signal", "tEnu_true_signal"]:
         try:
@@ -201,10 +208,11 @@ def MakeCompPlot():
         hebkg.Scale(numuDataPOT/nueBkgPOT)
         hmubkg.Scale(numuDataPOT/numuMCPOT)
         hmudata = numuDatafile.Get(hist_name)
+        
         if hmudata:
             SubtractPoissonHistograms(hmudata,hmubkg)
         hedata = nueDatafile.Get(hist_name)
-        hedata.Scale(numuDataPOT/nueDataPOT)
+       
         if hedata:
             SubtractPoissonHistograms(hedata,hebkg)
 
@@ -234,12 +242,13 @@ def MakeCompPlot():
             hmu = GetSignalHist(numuMCfile,[numu_sig],hist_name)
             hmu.Scale(numuDataPOT/numuMCPOT)
             he.Scale(numuDataPOT/nueMCPOT)
-            drawer = partial(DrawRatio, include_systematics=False)
-            PlotTools.MakeGridPlot(Slicer,drawer,[he,hmu],draw_seperate_legend = he.GetDimension()==2)
+            PlotTools.MakeGridPlot(Slicer,Draw,[he,hmu],draw_seperate_legend = he.GetDimension()==2)
+            PlotTools.CANVAS.Print("{}{}_{}MCratioNumDen.png".format(PLOTPATH,hist_name,numu_sig))
+            PlotTools.MakeGridPlot(Slicer,DrawRatio,[he,hmu],draw_seperate_legend = he.GetDimension()==2)
             PlotTools.CANVAS.Print("{}{}_{}MCratio.png".format(PLOTPATH,hist_name,numu_sig))
 
 
 if __name__ == "__main__":
     #MakeCompPlot()
-    # MakeScaleFile(["Enu","tEnu","tEnu_true_signal"])
+    #MakeScaleFile(["Enu","tEnu","tEnu_true_signal"])
     MakeScaleFile2()

@@ -22,7 +22,7 @@ from tools.SystematicsUniverse import GetAllSystematicsUniverses
 from tools.EventClassification import EventClassifier
 from tools.KinematicsCalculator import KinematicsCalculator
 from tools.MyHistograms import MakePlotProcessors
-
+from tools import TruthTools
 
 #def timeout_handler(signum,frame):
 #    print "some steps takes forever to finish, I am not going to wait."
@@ -33,7 +33,7 @@ ROOT.TH1.AddDirectory(False)
 def plotRecoKin(mc, chainwrapper, outfile):
     """ The main code of event selection """
     kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = mc, is_pc = AnalysisConfig.is_pc)
-    eventClassifier = EventClassifier(classifiers=["Truth","Reco"] if mc else ["Reco"], use_kin_cuts=True, use_sideband = AnalysisConfig.sidebands)
+    eventClassifier = EventClassifier(classifiers=["Reco","Truth"] if mc else ["Reco"], use_kin_cuts=True, use_sideband = AnalysisConfig.sidebands)
     universes = GetAllSystematicsUniverses(chainwrapper, not mc, AnalysisConfig.is_pc, AnalysisConfig.exclude_universes)
     for univ in chain.from_iterable(iter(universes.values())):
         univ.LoadTools(kin_cal,eventClassifier)
@@ -61,8 +61,12 @@ def plotRecoKin(mc, chainwrapper, outfile):
             if not universe.IsVerticalOnly():
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
+                #TruthTools.Print(universe)
+                #file1 = open("background_debug.txt","a")
+                #if eventClassifier.side_band == "Signal" and eventClassifier.truth_class in ["CCNuEAntiNu","CCNuEQE","CCNuEDelta","CCNuEDIS","CCNuE2p2h","CCNuE"]:
+                #    file1.write((TruthTools.Print(universe))+"\n")
 
-            if eventClassifier.side_band is not None:
+            if eventClassifier.side_band is not None or eventClassifier.is_true_signal:
                 for entry in Plots:
                     entry.Process(universe)
 
@@ -76,13 +80,13 @@ def plotRecoKin(mc, chainwrapper, outfile):
         #print entry.histwrapper.name
         entry.Finalize()
 
-    eventClassifier.GetStatTree().Write("",ROOT.TObject.kOverwrite)
-    print("counter for reco,truth: ", eventClassifier.counter)
+    #eventClassifier.GetStatTree().Write("",ROOT.TObject.kOverwrite)
+    #print("counter for reco,truth: ", eventClassifier.counter)
 
 def plotTruthKin(chainwrapper,outfile):
     kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = True, calc_reco = False)
     eventClassifier = EventClassifier(classifiers=["Truth"],use_kin_cuts=True, use_sideband=[])
-    universes = GetAllSystematicsUniverses(chainwrapper, False, AnalysisConfig.is_pc, AnalysisConfig.exclude_universes)
+    universes = GetAllSystematicsUniverses(chainwrapper, False)
     for univ in chain.from_iterable(iter(universes.values())):
         univ.LoadTools(kin_cal,eventClassifier)
 
@@ -102,7 +106,16 @@ def plotTruthKin(chainwrapper,outfile):
             #only update kin_cal & eventClassifier when universe in not vertical only.
             if not universe.IsVerticalOnly():
                 kin_cal.CalculateKinematics(universe)
+                
+                reco_before = eventClassifier.counter[0]
+                true_before = eventClassifier.counter[1]
                 eventClassifier.Classify(universe)
+                #if eventClassifier.counter[0] > reco_before:
+                #    print("event %i in reco" % counter)
+                #    TruthTools.Print(universe)
+                #if eventClassifier.counter[1] > true_before:
+                #    print("event %i in truth" % counter)
+                #    TruthTools.Print(universe)
 
             if eventClassifier.is_true_signal:
                 for entry in Plots:
@@ -112,6 +125,7 @@ def plotTruthKin(chainwrapper,outfile):
     for entry in Plots:
         entry.Finalize()
 
+    #print("counter for reco,truth: ", eventClassifier.counter)
 
 def preparePlots(universes,mc):
     # make a bunch of Plot Processor, grouped by signal/sideband
@@ -163,14 +177,19 @@ if __name__ == "__main__":
     POT_cal = AnalysisConfig.POT_cal
     print("playlist %s running ---------" % AnalysisConfig.playlist)
     for st in AnalysisConfig.data_types:
+        print(st)
         outputSelectionHistogram = AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,"data" in st,True)
-        print(outputSelectionHistogram)
+       
         output_file = ROOT.TFile.Open(outputSelectionHistogram,"RECREATE")
+        
         CopyMetaTreeToOutPutFile(output_file)
         if Reco :
+            print("selecting reco")
             #cProfile.run('plotRecoKin(st=="mc", Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,None,AnalysisConfig.count[0],AnalysisConfig.count[1]), output_file)')
             plotRecoKin(st=="mc", Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,None,AnalysisConfig.count[0],AnalysisConfig.count[1]), output_file)
+            print("done selection reco")
         if st=="mc" and Truth:
+            print("selecting truth")
             plotTruthKin(Utilities.fileChain(AnalysisConfig.playlist,"mc",AnalysisConfig.ntuple_tag,"Truth",AnalysisConfig.count[0],AnalysisConfig.count[1]),output_file)
         output_file.Close()
         print("selection is done for ", st, AnalysisConfig.playlist)

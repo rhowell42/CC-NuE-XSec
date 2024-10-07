@@ -264,7 +264,7 @@ def vtxdiff(event):
 def Leakage(event):
     OutsideConeE = event.kin_cal.reco_OutsideCone_E
     trueE = event.kin_cal.true_E_e 
-    recoE = event.kin_cal.reco_E_e
+    recoE = event.kin_cal.reco_E_lep
     trueTh = event.kin_cal.true_theta_e
  
     fraction = OutsideConeE / trueE 
@@ -291,14 +291,14 @@ def VertexR(event):
     return R2/1e3
 
 def Eth2(event):
-    Ee = event.kin_cal.reco_E_e
-    theta = math.radians(event.kin_cal.reco_theta_e)
+    Ee = event.kin_cal.reco_E_lep
+    theta = math.radians(event.kin_cal.reco_theta_lep)
     Eth2 = Ee * (theta * theta) 
     return Eth2
 
 def Eth(event):
-    Ee = event.kin_cal.reco_E_e
-    theta = math.radians(event.kin_cal.reco_theta_e)
+    Ee = event.kin_cal.reco_E_lep
+    theta = math.radians(event.kin_cal.reco_theta_lep)
     Eth = Ee * (theta)   
     return Eth
 
@@ -309,14 +309,14 @@ def tEth(event):
     return tEth
 
 def binEe(event):
-    Ee = event.kin_cal.reco_E_e 
+    Ee = event.kin_cal.reco_E_lep 
     if len(event.prong_MedianPlaneShowerWidth) != 0:
         width = event.prong_MedianPlaneShowerWidth[0] 
         if 4.0 <= Ee < 10.0:   
             return width 
  
 def TransverseShower(event):
-    Ee = event.kin_cal.reco_E_e
+    Ee = event.kin_cal.reco_E_lep
     asymm = {"Numerator": {}, "Denominator": {}}
     for view in ("X","U","V"):
         for frac_part in asymm:
@@ -500,16 +500,31 @@ def Rebin(event):
     else: 
         return event.UpstreamInlineEnergy
 
+def distanceProton(event,n_prong=0):
+    protonZ = event.MasterAnaDev_proton_startPointZ
+    electronZ = event.prong_axis_vertex[n_prong][2]
+    return(protonZ-event.vtx[2])
+
+def distance(event,n_prong=0):
+    #protonX = event.MasterAnaDev_proton_startPointX
+    #protonY = event.MasterAnaDev_proton_startPointY
+    protonZ = event.MasterAnaDev_proton_startPointZ
+    #electronX = event.prong_axis_vertex[n_prong][0]
+    #electronY = event.prong_axis_vertex[n_prong][1]
+    electronZ = event.prong_axis_vertex[n_prong][2]
+    #return(math.sqrt((protonX-electronX)**2 + (protonY-electronY)**2 + (protonZ-electronZ)**2))
+    return(electronZ-event.vtx[2])
+
 def Print(event):
-    if event.prong_dEdXMeanFrontTracker[0] > 2.4 and event.Psi < 0.1 and event.UpstreamInlineEnergy < 10:
-        print(event.UpstreamInlineEnergy, 'inline', event.kin_cal.reco_E_e) 
-        Long(event)
-        VertexDifferenceX(event)
-        VertexDifferenceY(event)
-        VertexDifferenceZ(event)
-        print(event.mc_run,  event.mc_subrun, event.mc_nthEvtInFile+1, event.mc_intType, event.mc_incomingE, event.mc_incoming,event.prong_dEdXMeanFrontTracker[0])
-        print(" ") 
-    return None
+    if event.prong_dEdXMeanFrontTracker:
+        #debug = "run: {}, subrun: {}, event: {}, interaction type: {}, proton PDG: {}, proton-vertex z-distance: {}, electron-vertex z-distance: {}".format(event.mc_run,  event.mc_subrun, event.mc_nthEvtInFile+1, event.mc_intType, event.proton_prong_PDG, distanceProton(event),distance(event))
+        nucleus = str(event.mc_targetNucleus)
+        I = nucleus[-1]
+        A = nucleus[6:9]
+        Z = nucleus[3:6]
+        debug = "target nucleon: {} and target nucleus Z: {}".format(event.mc_targetNucleon,nucleus)
+        return(debug)
+        #return debug
 
 def EvailStudy(event):
     if event.prong_dEdXMeanFrontTracker[0] < 2.4 and abs(event.mc_incoming) == 12: 
@@ -517,7 +532,12 @@ def EvailStudy(event):
         reco = event.kin_cal.reco_visE
         #if true > 1.0:
             #print true, reco, event.mc_run,  event.mc_subrun, event.mc_nthEvtInFile+1, event.mc_incomingE
-    return reco
+    return reco 
+
+def PsiEe(event):
+   Psi = event.Psi
+   Ee = event.kin_cal.reco_E_lep
+   return Psi*Ee
 
 def OverlappingEnergy(event):
     if event.kin_cal.true_visE > 0.8:
@@ -528,5 +548,10 @@ def OverlappingEnergy(event):
             print(pdg, energy, coneE, coneE-energy)
         print(" ")
 
+def DifferenceEavail(event):
+    truevisE = event.kin_cal.true_visE
+    recovisE = event.kin_cal.reco_visE
+    difference = truevisE - recovisE
+    return  difference
 
 

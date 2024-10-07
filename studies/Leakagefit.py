@@ -9,7 +9,6 @@ from config.BackgroundFitConfig import CATEGORY_FACTORS
 from config.SignalDef import SIGNAL_DEFINATION
 from config.DrawingConfig import NuEElasticCategory
 from tools import Utilities,PlotTools
-import ctypes
 ROOT.TH1.AddDirectory(False)
 
 def SubtractPoissonHistograms(h,h1):
@@ -23,39 +22,32 @@ def SubtractPoissonHistograms(h,h1):
 
     return h
 
-def FitLeakage(mnvplotter,data_hist,nue_hist,mc_hist):
-    def getMeanStr(hist,name):
-        hist.GetXaxis().SetRangeUser(0,100)
-        m = hist.GetMean()
-        err = hist.GetMeanError()
-        return "{} mean: {:.2f}\pm{:.2f}".format(name,m,err)
+def FitLeakage(mnvplotter,data_hist,mc_hist):
     mnvplotter.DrawDataMCWithErrorBand(data_hist,mc_hist,1.0,"TR")
     size = 0.05
-    align = ctypes.c_int(1)
-    xLabel = ctypes.c_double(1)
-    yLabel = ctypes.c_double(1)
+    align = ROOT.Long()
+    xLabel = ROOT.Double()
+    yLabel = ROOT.Double()
     mnvplotter.DecodePosition("TR", size, align, xLabel, yLabel )
-    #data_hist.Fit("gaus","M0+","",0,100)
-    #fit = data_hist.GetFunction("gaus")
-    #if not fit:
-    #    return None
-    #fit.Draw("SAME")
-    #u =fit.GetParameter(1)
-    #sig = fit.GetParameter(2)
-    #s = "data: {:.2f}#pm{:.2f}".format(u,sig)
-    s = getMeanStr(data_hist,"data")
-    mnvplotter.AddPlotLabel(s,xLabel.value,yLabel.value,size,4,112,align.value)
-    #mc_hist.Fit("gaus","M0+","",0,100)
-    #fit = mc_hist.GetFunction("gaus")
-    #fit.Draw("SAME")
-    #u =fit.GetParameter(1)
-    #sig = fit.GetParameter(2)
-    s = getMeanStr(mc_hist,"MC")
-    mnvplotter.AddPlotLabel(s,xLabel.value,yLabel.value-0.05,size,4,112,align.value)
-    nue_hist.Draw("HIST SAME")
-    s =  getMeanStr(nue_hist,"nu+e")
-    mnvplotter.AddPlotLabel(s,xLabel.value,yLabel.value-0.1,size,4,112,align.value)
+    data_hist.Fit("gaus","M0+","",0,100)
+    fit = data_hist.GetFunction("gaus")
+    if not fit:
+        return None
+    fit.Draw("SAME")
+    u =fit.GetParameter(1)
+    sig = fit.GetParameter(2)
+    s = "data: {:.2f}#pm{:.2f}".format(u,sig)
+    mnvplotter.AddPlotLabel(s,xLabel,yLabel,size,4,112,align)
+    mc_hist.Fit("gaus","M0+","",0,100)
+    fit = mc_hist.GetFunction("gaus")
+    fit.Draw("SAME")
+    u =fit.GetParameter(1)
+    sig = fit.GetParameter(2)
+    s = "mc: {:.2f}#pm{:.2f}".format(u,sig)
+    mnvplotter.AddPlotLabel(s,xLabel,yLabel-0.05,size,4,112,align)
     
+    
+
 
 if __name__ == "__main__":
     #input knobs
@@ -71,12 +63,11 @@ if __name__ == "__main__":
     mc_ints, color,title = mc_hists.GetCateList(NuEElasticCategory)
     for i,v in enumerate(title):
         if v !="nu+e":
-            continue
             SubtractPoissonHistograms(data_hists.GetHist(),mc_ints[i])
         else:
             MC_NuE = mc_ints[i]
-    slicer =  lambda hist: PlotTools.Make2DSlice(hist)
-    hists = [data_hists.GetHist(),MC_NuE,mc_hists.GetHist()]
+    slicer =  lambda hist: PlotTools.Make2DSlice(hist,interval=5)
+    hists = [data_hists.GetHist(),MC_NuE]
     PlotTools.MakeGridPlot(slicer,FitLeakage,hists,lambda x:True ,True)
     PlotTools.Print(AnalysisConfig.PlotPath(data_hists.plot_name,"Signal","leakage_fit_testing"))
 
