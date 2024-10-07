@@ -249,7 +249,7 @@ if __name__ == "__main__":
         #for i in range(1):
         print(chain.Add("/pnfs/minerva/persistent/users/hsu/NuECCQE-v3-mc/me1B_merged/NuECCQE_mc_AnaTuple_*.root"))
         #print chain.Add("/pnfs/minerva/persistent/users/hsu/short_test/grid/central_value/minerva/ana/v21r1p1/00/11/10/00/*.root")
-        #print chain.Add("/minerva/data/users/hsu/test/nogrid/central_value/minerva/ana/v21r1p1/00/11/10/01/SIM_minerva_00111001_Subruns_0122_NuECCQE_Ana_Tuple_v21r1p1.root")
+        #print chain.Add("/exp/minerva/data/users/hsu/test/nogrid/central_value/minerva/ana/v21r1p1/00/11/10/01/SIM_minerva_00111001_Subruns_0122_NuECCQE_Ana_Tuple_v21r1p1.root")
         kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = True)
         eventClassifier = EventClassifier(classifiers=["Reco"], use_kin_cuts=False,use_sideband=[])
         chain.kin_cal = kin_cal

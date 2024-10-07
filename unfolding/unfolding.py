@@ -11,7 +11,7 @@ from config.BackgroundFitConfig import CATEGORY_FACTORS
 from config.SignalDef import SIGNAL_DEFINATION
 from config import DrawingConfig
 from tools import Utilities,PlotTools
-from config.UnfoldingConfig import HISTOGRAMS_TO_UNFOLD,REGULATION_PARAMETER
+from config.UnfoldingConfig import HISTOGRAMS_TO_UNFOLD,REGULATION_PARAMETERS
 from config.DrawingConfig import Default_Plot_Type,Default_Scale,DefaultPlotters,DefaultSlicer
 from tools.unfoldingwrapper import DeOverflowWrapper,WithBackgroundWrapper,IdentityWrapper
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS,DETAILED_ERROR_GROUPS
@@ -23,7 +23,7 @@ USE_BIGNUE=True
 def SubtractPoissonHistograms(h,h1,pseudo_data=False):
     if pseudo_data:
         h.ClearAllErrorBands ()
-    h.AddMissingErrorBandsAndFillWithCV (h1)
+    h.AddMissingErrorBandsAndFillWithCV(h1)
     errors = []
     for i in range(h.GetSize()):
         errors.append(math.sqrt(h.GetBinError(i)**2 + h1.GetBinError(i)**2))
@@ -91,9 +91,12 @@ def GetMigrationHistograms(mc_file, name):
 def unfolding(hist_to_unfold,migration,mc_reco,true_signal,mc_truth):
     cov = ROOT.TMatrixD(1,1)
     hist_to_unfold.AddMissingErrorBandsAndFillWithCV(mc_reco)
+    migration.AddMissingErrorBandsAndFillWithCV(hist_to_unfold)
+    mc_reco.AddMissingErrorBandsAndFillWithCV(hist_to_unfold)
+    mc_truth.AddMissingErrorBandsAndFillWithCV(hist_to_unfold)
     data = hist_to_unfold.Clone()
     unfolded3 = true_signal.Clone()
-    MNVUNFOLD.UnfoldHistoWithFakes(unfolded3,cov,migration,data,mc_reco,ROOT.nullptr,ROOT.nullptr,REGULATION_PARAMETER,True,True)
+    MNVUNFOLD.UnfoldHistoWithFakes(unfolded3,cov,migration,data,mc_reco,ROOT.nullptr,ROOT.nullptr,REGULATION_PARAMETERS[plot],True,True)
     return unfolded3
 
 def DrawPostUnfolding(data_hist1,data_hist2):
@@ -106,7 +109,7 @@ def DrawPostUnfolding(data_hist1,data_hist2):
 
     PlotTools.MakeGridPlot(slicer,plotfunction,hists,CanvasConfig,draw_seperate_legend)
     PlotTools.Print(AnalysisConfig.PlotPath(data_hists.plot_name,"Signal","comp_unfolded_"+background_scale_tag))
-    plotfunction = lambda mnvplotter,data_hist, mc_hist: mnvplotter.DrawDataMCRatio(data_hist, mc_hist, 1.0 ,True,0,2)
+    plotfunction = lambda mnvplotter,data_hist, mc_hist: mnvplotter.DrawDataMCRatio(data_hist, mc_hist, 1.0 ,True,-5,5)
     PlotTools.MakeGridPlot(slicer,plotfunction,hists,CanvasConfig,draw_seperate_legend)
     PlotTools.Print(AnalysisConfig.PlotPath(data_hists.plot_name,"Signal","ratio_unfolded_"+background_scale_tag))
 
@@ -132,26 +135,28 @@ if __name__ == "__main__":
     data_file,mc_file,pot_scale = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag)
     background_scale_tag = AnalysisConfig.bkgTune_tag
     scale_file=ROOT.TFile.Open(AnalysisConfig.BackgroundFitPath(playlist,background_scale_tag))
-    if not scale_file:
-        scale_file = mc_file
-        print ("Didn't find scale file. using mc file instead")
-    signal_rich_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(re.sub("-tune[0-9]","",playlist)+"-BigNuE",False)) if USE_BIGNUE else None
+    #if not scale_file:
+    scale_file = mc_file
+    #    print ("Didn't find scale file. using mc file instead")
+    #signal_rich_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(re.sub("-tune[0-9]","",playlist)+"-BigNuE",False)) if USE_BIGNUE else None
+    signal_rich_file = ROOT.TFile.Open(AnalysisConfig.SelectionHistoPath(playlist+"-BigNuE",False)) if USE_BIGNUE else None
     if not signal_rich_file:
         signal_rich_file = mc_file
         print ("Didn't find signal rich file, using mc file instead")
     unfolded_file = ROOT.TFile.Open(AnalysisConfig.UnfoldedHistoPath(playlist,background_scale_tag),"RECREATE")
 
-
+    #data_file = mc_file
     for plot in HISTOGRAMS_TO_UNFOLD:
         data_hists= HistHolder(plot,data_file,"Signal",False,1.0)
         #mc_bkg = Utilities.GetHistogram(scale_file,data_hists.plot_name+"_mcbkg")
         mc_hists = HistHolder(plot,scale_file,"Signal",True,pot_scale)
 
         migration_name = plot + " Migration"
-        migration_hists = GetMigrationHistograms(signal_rich_file,migration_name)
+        #migration_hists = GetMigrationHistograms(signal_rich_file,migration_name)
+        migration_hists = GetMigrationHistograms(mc_file,migration_name)
         true_signal = HistHolder("True Signal "+plot,mc_file,"Signal",True,pot_scale)
         signal_background,_,titles = mc_hists.GetCateList(DrawingConfig.SignalBackground)
-
+       
         # at this point, three different normalization histogram could exist:
         # 1. data normalization, 2. standard MC (4x data) normalization, 3. signal rich normalization (back ground prediction is wrong)
         # if background including in unfolding: scale signal rich normaliztion to standard MC POT
@@ -165,7 +170,7 @@ if __name__ == "__main__":
         #migration_hists[1].Add(signal_background[0],Nevent1/Nevent2)
         signal_background[0].Scale(pot_scale)
         data = data_hists.GetHist()
-        SubtractPoissonHistograms(data, signal_background[0],True)
+        SubtractPoissonHistograms(data, signal_background[0], True)
         unfolded = unfolding(data,migration_hists[0],migration_hists[1],true_signal.GetHist(),migration_hists[2])
         #unfolded = unfold(plot,data)
         unfolded_file.cd()

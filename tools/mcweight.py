@@ -120,7 +120,7 @@ def GetLowQ2PiWeight(event,shift=0):
 def GetFluxWeight(event, i_universe = None):
     global flux_reweighter
     if flux_reweighter is None:
-        flux_reweighter =  FluxReweighter(12,False,
+        flux_reweighter =  FluxReweighter(-12,False,
                                           PlaylistLookup(event.mc_run),
                                           FluxReweighter.gen2thin,
                                           FluxReweighter.g4numiv6)

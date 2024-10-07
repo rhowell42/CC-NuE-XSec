@@ -143,7 +143,7 @@ def StatShiftedReco(hist):
 
 
 if __name__ == '__main__':
-    f = ROOT.TFile.Open('/minerva/data/users/hsu/nu_e/kin_dist_mcme1A-D_nx_col4_Sarah.root')
+    f = ROOT.TFile.Open('/exp/minerva/data/users/hsu/nu_e/kin_dist_mcme1A-D_nx_col4_Sarah.root')
     # mig = ROOT.TH2D(f.Get("Eavail_migration"))
     # mc_reco = ROOT.TH1D(f.Get("Eavail"))
     # mc_truth = ROOT.TH1D(f.Get("Eavail_migration").ProjectionY())

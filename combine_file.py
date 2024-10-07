@@ -7,6 +7,7 @@ import ROOT
 import PlotUtils
 from itertools import chain
 from config.AnalysisConfig import AnalysisConfig
+from config.SignalDef import SIGNAL_DEFINATION
 from tools import Utilities
 
 # Get This from Rob. Thanks Rob.
@@ -15,7 +16,7 @@ from tools import Utilities
 ROOT.TH1.AddDirectory(False)
 SelectionFilesRegex = "(kin|truth)_dist_(data|mc)(.+)_"+ AnalysisConfig.selection_tag+"_"+AnalysisConfig.ntuple_tag+"(_[0-9]+)?\.root"
 
-def AddOneFile(input_string,output_string, pot_scale):
+def AddOneFile(input_string,output_string, pot_scale,bigGenie=False):
     input_file = ROOT.TFile.Open(input_string)
     output_file = ROOT.TFile.Open(output_string,"UPDATE")
     keylist = input_file.GetListOfKeys()
@@ -25,7 +26,12 @@ def AddOneFile(input_string,output_string, pot_scale):
             continue
         hist.Scale(pot_scale)
         output_hist = output_file.Get(hist.GetName())
-        if output_hist:
+        if output_hist and not bigGenie:
+            output_hist.Add(hist)
+        elif output_hist and bigGenie and any(signal in key.GetName() for signal in SIGNAL_DEFINATION):
+            print("cloning {} from BigGenie selection".format(key.GetName()))
+            output_hist = hist.Clone()
+        elif output_hist:
             output_hist.Add(hist)
         else:
             output_hist = hist.Clone()
@@ -47,32 +53,39 @@ def MaddWrapper(output_playlist,input_files,is_data):
     #os.system(cmd)
     print(args)
     subprocess.run(args,stdout=subprocess.DEVNULL)
-    print (Utilities.getPOTFromFile(AnalysisConfig.SelectionHistoPath(output_playlist,is_data)))
     print ("done")
 
 def MergeHistograms():
     for sample_type in dict_of_files:
         #smaple_type is data or mc
         if sample_type not in AnalysisConfig.data_types:
-            continue
+           continue
         if sample_type == "data":
             MaddWrapper(AnalysisConfig.playlist,chain.from_iterable(iter(dict_of_files[sample_type]["kin"].values())),True)
         elif sample_type == "mc":
             MaddWrapper(AnalysisConfig.playlist,chain.from_iterable(iter(dict_of_files[sample_type]["kin"].values())),False)
     for special_sample in dict_of_special_mc_samples:
-        MaddWrapper(AnalysisConfig.playlist+str(special_sample),chain.from_iterable(iter(dict_of_special_mc_samples[special_sample].values())),False)
-        MergeTuples(AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,False),AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist+str(special_sample),False))
+        if "BigGenie" in list(dict_of_special_mc_samples[special_sample].keys())[0]:
+            MaddWrapper(AnalysisConfig.playlist+str(special_sample),chain.from_iterable(iter(dict_of_special_mc_samples[special_sample].values())),False)
+            MergeTuples(AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,False),AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist+str(special_sample),False),None,None,True)
+        else:
+            MaddWrapper(AnalysisConfig.playlist+str(special_sample),chain.from_iterable(iter(dict_of_special_mc_samples[special_sample].values())),False)
+            MergeTuples(AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,False),AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist+str(special_sample),False))
 
 
 
-def MergeTuples(tuple1,tuple2,pot1=None,pot2=None):
+def MergeTuples(tuple1,tuple2,pot1=None,pot2=None,bigGenie=False):
     """
     Wanna merge tuple two tuples, by direct merging or scale by reading Meta tree.
     """
+    #tuple2 is special sample
+    #tuple1 is OG mc sample
     pot1 = pot1 or Utilities.getPOTFromFile(tuple1)
-    pot2 = pot2 or Utilities.getPOTFromFile(tuple2)
-    AddOneFile(tuple2,tuple1,pot1/pot2)
-    os.remove(tuple2)
+    pot2 = pot2 or Utilities.getPOTFromFile(tuple2,bigGenie)
+    print("tuple1: ",tuple1," with POT ",pot1)
+    print("tuple2: ",tuple2," with POT ",pot2)
+    print("scaling the special sample with potscale={:.2f}".format(pot1/pot2))
+    AddOneFile(tuple2,tuple1,pot1/pot2,bigGenie)
 
 def AddRegexMatchedFiles(dir_path,f = None):
     if f is None:
@@ -119,6 +132,4 @@ if __name__ == '__main__':
             print("I can't find the directory or file you typed.")
             print(("Your input is {}").format(path))
 
-    #print dict_of_files
-    #print dict_of_special_mc_samples
     MergeHistograms()

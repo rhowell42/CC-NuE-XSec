@@ -10,21 +10,18 @@ CONFIG=os.environ["PYTHONPATH"].split(":")[0].split("/")[-1]
 print(CONFIG)
 
 def createTarball(outDir):
-  print("I'm inside createTarball()")
   found = os.path.isfile(outDir)
   if(not found):
-    cmd = "tar --exclude='.nfs*' -czf %s -C %s %s "%(outDir, baseDir+"../", "{} {}".format(MacroName,MAT))# remove /Ana/CCNuE from baseDir bc want to tar the release.
+    cmd = "tar -czf %s -C %s %s"%(outDir, baseDir+"../", "{} {}".format(MacroName,MAT))# remove /Ana/CCNuE from baseDir bc want to tar the release.
     print(cmd)
     os.system(cmd)
 
-  print("I'm done creating the tarballs")
-
 def unpackTarball( mywrapper):
   # Add lines to wrapper that wil unpack tarball; add additional setup steps here if necessary  
-  mywrapper.write("cd $INPUT_TAR_FILE\n")
+  mywrapper.write("cd $CONDOR_DIR_INPUT\n")
   mywrapper.write("source /cvmfs/larsoft.opensciencegrid.org/products/setup\n")
   mywrapper.write("setup root v6_22_06a -q e19:p383b:prof\n")
-  #mywrapper.write("tar -xvzf {}\n".format(outdir_tarball.split("/")[-1]))
+  mywrapper.write("tar -xvzf {}\n".format(outdir_tarball.split("/")[-1]))
   mywrapper.write("export MINERVA_PREFIX=`pwd`/{}\n".format(MAT))
   # Set up test release
   #mywrapper.write("pushd Tools/ProductionScriptsLite/cmt/\n")#assuming only one test release
@@ -93,16 +90,40 @@ def submitJob( tupleName):
   os.system( "chmod 777 %s" % wrapper_name )
   
   #cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s/testRelease.tar.gz -d HISTS %s -d LOGS %s -r %s -N %d --expected-lifetime=%dh --cmtconfig=%s -i /cvmfs/minerva.opensciencegrid.org/minerva/software_releases/%s/ file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , os.environ["MINERVA_RELEASE"], njobs, 12, os.environ["CMTCONFIG"],os.environ["MINERVA_RELEASE"], os.environ["PWD"] , wrapper_name )
-  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB --tar_file_name dropbox://%s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 18, os.environ["PWD"] , wrapper_name )
+  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 36, os.environ["PWD"] , wrapper_name )
   # Copy local files to PNFS, they aren't there already
   #copyLocalFilesToPNFS(tupleName,outdir_logs) 
+  #print(start,count)
+
+  if playlist == "me1A_swap":
+    cmdname = "jobsub_commands/fhc_nue_swap_wrapper.sh"
+  elif playlist == "me5A_swap":
+    cmdname = "jobsub_commands/rhc_nue_swap_wrapper.sh"
+  elif "me1" in playlist and "thesis_muon" not in argstring:
+    cmdname = "jobsub_commands/fhc_nue_wrapper.sh"
+  elif "me1" in playlist and "thesis_muon" in argstring:
+    cmdname = "jobsub_commands/fhc_numu_wrapper.sh"
+  elif "thesis_muon" not in argstring:
+    cmdname = "jobsub_commands/rhc_nue_wrapper.sh"
+  elif "thesis_muon" in argstring:
+    cmdname = "jobsub_commands/rhc_numu_wrapper.sh"
+  else:
+    cmdname = "jobsub_commands/wrong_wrapper.sh"
+
+  if os.path.isfile(cmdname):
+    jobsubcmd = open(cmdname, 'a')
+  else:
+    jobsubcmd = open(cmdname, "w")
+    jobsubcmd.write("#!/bin/sh\n")
+
+  jobsubcmd.write(cmd+"\n")
+  jobsubcmd.close()
+  os.system( "chmod 777 %s" % cmdname)
+  #os.system(cmd)
  
-  print(cmd)
-  os.system(cmd)
- 
-  sleepTime = 2 
-  print("Sleeping for %i seconds\n" % sleepTime)
-  time.sleep(sleepTime)
+  #sleepTime = 2 
+  #print("Sleeping for %i seconds\n" % sleepTime)
+  #time.sleep(sleepTime)
 
   ## # Clear files from PNFS
   ## clearLocalFilesFromPNFS()
@@ -126,7 +147,7 @@ if __name__ == '__main__':
   outdir_logs = "/pnfs/minerva/%s/users/%s/%s_logs" % (PNFS_switch,os.environ["USER"],processingID)
   os.system( "mkdir -p %s" % outdir_logs )
   os.system( "mkdir -p grid_wrappers/%s" % processingID )
-  outdir_tarball=gridargs.tarball if gridargs.tarball else "/pnfs/minerva/resilient/tarballs/hsu-%s.tar.gz" % (processingID)
+  outdir_tarball=gridargs.tarball if gridargs.tarball else "/pnfs/minerva/resilient/tarballs/rhowell-%s.tar.gz" % (processingID)
   createTarball(outdir_tarball)
 
   for playlist in gridargs.playlists:
@@ -135,12 +156,12 @@ if __name__ == '__main__':
         continue
 
       if gridargs.memory is None:
-        memory = 2000 if dataSwitch == "data" else 4000
+        memory = 1000 if dataSwitch == "data" else 5000
       else:
         memory = gridargs.memory
     
       if gridargs.count is None:
-        count = 1
+        count = 1000 if dataSwitch == "data" else 1
       else:
         count = gridargs.count
 

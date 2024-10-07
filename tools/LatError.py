@@ -8,7 +8,7 @@ import ROOT
 
 import PlotUtils
 
-sys.path.insert(0, '/minerva/app/users/jyhan/cmtuser/anal_flux/reading_file_inc_spline')
+sys.path.insert(0, '/exp/minerva/app/users/jyhan/cmtuser/anal_flux/reading_file_inc_spline')
 from .KinematicsCalculator import KinematicsCalculator
 
 

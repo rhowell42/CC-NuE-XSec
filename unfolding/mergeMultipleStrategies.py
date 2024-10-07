@@ -6,11 +6,11 @@ import UnfoldUtils
 ROOT.TH1.AddDirectory(False)
 
 hist_names = {
-    "Eavail_q3_bkgSubed",
-    "Eavail_Lepton_Pt_bkg_unfolding",
+    #"Eavail_q3_bkgSubed",
+    "Eavail_Lepton_Pt_bkgSubed",
 }
 
-dir_path = "/minerva/data/users/hsu/nu_e/"
+dir_path = "/exp/minerva/data/users/hsu/nu_e/"
 
 file_names = {
     "bkgfit_me_q3_tune_RHC_Scale_Sarah.root",

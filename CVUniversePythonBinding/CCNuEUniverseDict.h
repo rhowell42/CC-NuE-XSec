@@ -58,7 +58,6 @@ template class PlotUtils::Cut<PythonMinervaUniverse>;
 template class reco::HasMINOSMatch<PythonMinervaUniverse>;
 template class reco::ZRange<PythonMinervaUniverse>;
 template class reco::Apothem<PythonMinervaUniverse>;
-
 #endif /* CVUNIVERSEPYTHONBINDING_H */
 
 

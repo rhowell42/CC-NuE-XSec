@@ -21,11 +21,12 @@ import sys
 import pprint
 import re
 
-BLUEARC = "/minerva/data/users/{}/nu_e".format(os.environ["USER"])
+BLUEARC = "/exp/minerva/data/users/{}/nu_e".format(os.environ["USER"])
 GIRDOUTPUT ="/pnfs/minerva/persistent/"
 
 
-SIDEBANDS=["Excess_High_Inline","Excess_Low_Inline","Pi0"]
+#SIDEBANDS=["dEdX","Excess_High_Inline","Excess_Low_Inline","High_PsiEe_and_dEdX"]
+SIDEBANDS = [""]
 
 class _AnalysisConfig(object):
     Defaults = {
@@ -190,7 +191,7 @@ class _AnalysisConfig(object):
                              "bkgfit", playlist, "" , tag+"_"+self.selection_tag+"_"+self.ntuple_tag+".root")
     
     def PlotPath(self, plot_name, sideband,tag=""):
-        return self.FilePath(self.output_dir,"plot/"+plot_name, sideband, "" , self.selection_tag+"_"+tag)
+        return self.FilePath(self.output_dir,"plot/"+plot_name, sideband, "" , self.selection_tag+"_"+tag+"_"+self.plot_tag)
 
 #### entry point ####
 
@@ -243,6 +244,11 @@ parser.add_argument("--pc",
                     default=False,
 )
 
+parser.add_argument("--plot_tag", "--plot-tag",
+                    dest = "plot_tag",
+                    help="Add ending tag for plots to distinguish them.",
+                    default=BLUEARC
+)
 parser.add_argument("--signal",
                     dest="signal",
                     action="store_true",
@@ -314,6 +320,11 @@ parser.add_argument("--skip_2p2h","--skip-2p2h",
 
 parser.add_argument("--truth",
                     help="run truth loop: more correct efficiency demominator",
+                    action="store_true",
+                    default=False)
+
+parser.add_argument("--pseudodata",
+                    help="Use MC predicted pseudodata in signal region.",
                     action="store_true",
                     default=False)
 

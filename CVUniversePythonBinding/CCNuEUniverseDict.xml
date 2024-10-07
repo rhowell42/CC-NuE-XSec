@@ -12,6 +12,7 @@
     <class name="PlotUtils::Universe2p2h<PythonMinervaUniverse>" />
     <class name="PlotUtils::RPAUniverse<PythonMinervaUniverse>" />
     <class name="PlotUtils::LowQ2PionUniverse<PythonMinervaUniverse>" />
+    <class name="PlotUtils::MuonUniverseMinerva<PythonMinervaUniverse>" />
     <class name="PlotUtils::MuonUniverseMinos<PythonMinervaUniverse>" />
     <class name="PlotUtils::Cut<PythonMinervaUniverse,PlotUtils::detail::empty>" />
     <class name="PlotUtils::TargetMassScintillatorUniverse<PythonMinervaUniverse>" />

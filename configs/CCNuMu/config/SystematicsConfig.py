@@ -15,9 +15,10 @@ import math
 #number of random shifted universes
 NUM_UNIVERSE = 100
 #number of flux uniberses
-USE_NUE_CONSTRAINT = True
+USE_NUE_CONSTRAINT = False
 AnaNuPDG=14
-NUM_FLUX_UNIVERSE = 200 if USE_NUE_CONSTRAINT else 100
+USE_SWAPPED=False
+NUM_FLUX_UNIVERSE = 100
 # detector mass uncertainty
 MASS_UNCERTAINTY = 0.014  # = 1.4% (it's fractional).  Laura (Doc7615) says she got this from Ron (Doc6016).
 
@@ -33,7 +34,6 @@ EM_ENERGY_SCALE_UNCERTAINTY = {
 BEAM_ANGLE = math.radians(-3.3)
 BEAM_XANGLE_UNCERTAINTY = 1*1e-3 #radians
 BEAM_YANGLE_UNCERTAINTY = 0.9*1e-3
-
 
 LEAKAGE_CORRECTION = lambda E: 0.008*E
 #LEAKAGE_CORRECTION = lambda E: 0
@@ -78,9 +78,9 @@ GENIE_UNIVERSES = [
     #"MaCCQEshape",
     #"NormCCQE",  these three are taken care by seperate class
     "MaNCEL",
-    "MaRES",
-    "MvRES",
-    "NormCCRES",
+    #"MaRES",
+    #"MvRES",
+    #"NormCCRES", these three are taken care of by seperate class for deuterium and EP updates
     "NormDISCC",
     "NormNCRES",
     "RDecBR1gamma",
@@ -104,9 +104,9 @@ RPA_UNIVERSES = {
 }
 
 NonResPi=True
-LowQ2PiWeightChannel = None
-LowQ2PiWeightSysChannel = ["JOINT","NUPI0"]
-NumZExpansionUniverses = 0 #Means Don't use Zexpansion. 100 is default Z expansion
+LowQ2PiWeightChannel = "MENU1PI"
+LowQ2PiWeightSysChannel = [None]
+NumZExpansionUniverses = 100 #Means Don't use Zexpansion. 100 is default Z expansion
 
 RESPONSE_BRANCHES = [
     "p",
@@ -237,33 +237,51 @@ DETECTOR_RESPONSE_ERROR_GROUPS = {
     "Beam Angle": ["beam_angle",],
     "EM energy scale": ["elE_ECAL","elE_HCAL"],
     "Birk's Constant" : ["birks"],
-    "Particle Response":["response_"+i for i in RESPONSE_BRANCHES]
+    "Particle Response":["response_"+i for i in RESPONSE_BRANCHES],
+    "Leakage Estimation" : ["Leakage_Uncertainty"],
+    "Target Mass" : ["Target_Mass_CH"]
 }
 
 MINERVA_TUNNING_ERROR_GROUPS = {
     "RPA" : ["RPA_"+i for i in RPA_UNIVERSES],
     "Low Recoil 2p2h Tune" : ["Low_Recoil_2p2h_Tune"],
-    #"Low Q2 Pion": ["LowQ2Pi"],
+    "Low Q2 Pion": ["LowQ2Pi"],
+    "FSI bugfix" : ["fsi_weight"],
+    "SuSA 2p2h" : ["SuSA_Valencia_Weight"],
+    "MK model" : ["MK_model"],
 }
 
+MINERVA_TUNNING_ERROR_GROUPS2 = {
+    "MK model" : ["MK_model"],
+    "FSI bugfix" : ["fsi_weight"],
+    "SuSA 2p2h" : ["SuSA_Valencia_Weight"],
+}
+
+
 GENIE_ERROR_GROUPS = {
-    "GENIE" : ["GENIE_"+ i for i in (GENIE_UNIVERSES+["MaCCQE", "Rvn1pi", "Rvp1pi"] ) if not i.startswith("Fr") ]
+    "GENIE" : ["GENIE_"+ i for i in (GENIE_UNIVERSES+["EP_MvRES","MaRES","NormCCRES","D2_MaRES","D2_NormCCRES","MaZExpCCQE","MaCCQE", "Rvn1pi", "Rvp1pi"] ) if not (i.startswith("Fr") or i.startswith("MFP")) ]
 }
 
 FSI_ERROR_GROUPS = {
-    "GENIE-FSI" : ["GENIE_"+ i for i in GENIE_UNIVERSES  if i.startswith("Fr") ]
+    "GENIE-FSI" : ["GENIE_"+ i for i in GENIE_UNIVERSES  if (i.startswith("Fr") or i.startswith("MFP")) ]
 }
 
 GEANT_ERROR_GROUPS = {
     "GEANT" : ["GEANT_" +i for i in ("Neutron","Pion","Proton")]
 }
 
+BKG_TUNNING_ERROR_GROUPS = {
+    "BKG_TUNNING" : ["bkg_tune"]
+}
+
 
 CONSOLIDATED_ERROR_GROUPS_CONFIG = {
- 	"Detector model": [DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS],
- 	"Interaction model": [GENIE_ERROR_GROUPS],
-    "FSI": [FSI_ERROR_GROUPS],
+    "Detector model": [DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS],
+    "Interaction model": [GENIE_ERROR_GROUPS,FSI_ERROR_GROUPS],
     "MnvTunes" :[MINERVA_TUNNING_ERROR_GROUPS],
+    "Muon Reconstruction" :[{"Muon Energy":["MuonAngleXResolution","MINOS_Reconstruction_Efficiency","Muon_Energy_Resolution","MuonAngleYResolution","Muon_Energy_MINERvA","Muon_Energy_MINOS"]}],
+    "Alternative Tunning methods" : [BKG_TUNNING_ERROR_GROUPS]
+   # "Others":[DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS,GENIE_ERROR_GROUPS,FSI_ERROR_GROUPS,MINERVA_TUNNING_ERROR_GROUPS],
 }
 
 
@@ -275,8 +293,9 @@ CONSOLIDATED_ERROR_GROUPS = {
 
 DETAILED_ERROR_GROUPS = DETECTOR_RESPONSE_ERROR_GROUPS.copy()
 DETAILED_ERROR_GROUPS.update(GENIE_ERROR_GROUPS)
+DETAILED_ERROR_GROUPS.update(FSI_ERROR_GROUPS)
 DETAILED_ERROR_GROUPS.update(GEANT_ERROR_GROUPS)
-DETAILED_ERROR_GROUPS.update(MINERVA_TUNNING_ERROR_GROUPS)
+#DETAILED_ERROR_GROUPS["MnvTunes"]=CONSOLIDATED_ERROR_GROUPS["MnvTunes"]
 
 
 # ERROR_SUBGROUPS = {

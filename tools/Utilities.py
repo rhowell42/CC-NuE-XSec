@@ -7,7 +7,7 @@ import inspect
 MACRO_ROOT = os.path.dirname(os.path.abspath(__file__))+"/../"
 POT_FILE = MACRO_ROOT+"configs/POT.json"
 #SCALE_FILE = MACRO_ROOT+"background_fit/scale.json"
-DEFAULT_TREE="MasterAnaDev"
+
 
 def loadJSON(path):
     with open(path,"r") as pl:
@@ -44,7 +44,7 @@ def composeTChain(input_txt,tree, start=None, count=None):
 
 def findPlaylistFile(playlist,st,nickname):
     data = loadJSON(POT_FILE)
-    tree = DEFAULT_TREE
+    tree = "NuECCQE"
     try:
         input_txt= data[playlist][st][nickname]["playlist_location"]
         if "tree" in data[playlist][st][nickname]:
@@ -53,14 +53,11 @@ def findPlaylistFile(playlist,st,nickname):
         print(("Requested ntuple not found: ",playlist, st, nickname))
         guessing = guessPlaylistName(playlist,st,nickname)
         data.setdefault(playlist,{}).setdefault(st,{})[nickname]={
-            "playlist_location" : guessing,
+            "playlist_location" : guessing
         }
         if os.path.isfile(MACRO_ROOT+guessing):
             print(("I guess the playlist file located at {}".format(guessing)))
-            try:
-                writeJSON(POT_FILE,data)
-            except OSError:
-                pass
+            writeJSON(POT_FILE,data)
             return MACRO_ROOT+guessing,tree
         else:
             raise KeyError
@@ -106,10 +103,13 @@ def getPOT(playlists,st,nickname, start = None, count=None, cal_POT=False):
         playlists_used_POT+=float(used_POT)
     return playlists_used_POT
 
-def getPOTFromFile(filename):
+def getPOTFromFile(filename,bigGenie=False):
     metatree = ROOT.TChain("Meta")
     if metatree.Add(filename,-1):
-        return ROOT.PlotUtils.POTCounter().getPOTfromTChain(metatree)
+        if not bigGenie:
+            return ROOT.PlotUtils.POTCounter().getPOTfromTChain(metatree)
+        else:
+            return 2e17 * ROOT.PlotUtils.POTCounter().getPOTfromTChain(metatree)
     else:
         return None
 
@@ -201,8 +201,17 @@ def PlaylistLookup(run):
     elif run>=122880 and run<=122999:
         return "minervame6f"
 
-    elif run>=123100 and run<=123249:
+    elif run>=123100 and run<=123141:
         return "minervame6g"
+
+    elif run>=123250 and run<=123300:
+        return "minervame6h"
+
+    elif run>=123425 and run<=123465:
+        return "minervame6i"
+
+    elif run>=123467 and run<=123606:
+        return "minervame6J"
 
     elif run>=131000 and run<=131019:
         return "minervame3a"
@@ -223,8 +232,9 @@ def DelNestedIterable(inobject):
 
 def GetHistogram(ifile,plot):
     hist = ifile.Get(plot)
+    ROOT.SetOwnership(hist,True)
     if not hist:
-        #print ("histogram not found: "+plot)
+        print ("histogram not found: "+plot)
         return None
     return hist
 
@@ -275,7 +285,7 @@ def PopulateTH2DByTH1D(hist_out,hist_in,populateXAxis = None):
 def decorator_PrintNReturn(func):
     def f(*args,**kwargs):
         r = func(*args,**kwargs)
-        print("returning: {}".format(r))
+        #print("returning: {}".format(r))
         return r
     return f
 
@@ -300,14 +310,11 @@ def getFilesAndPOTScale(playlist, type_path_map, ntuple_tag,raw_pot = False):
             path = type_path_map[t]
         except KeyError:
             continue
-        try:
-            pots[i]= getPOTFromFile(path) or getPOT(playlist,t,ntuple_tag)
-        except KeyError:
-            pots[i]=None
-        files[i]=ROOT.TFile.Open(path) or None
-
+        pots[i]= getPOTFromFile(path) or getPOT(playlist,t,ntuple_tag)
+        files[i]=ROOT.TFile(path) or None
+    print(pots[0], pots[1], 'Data MC ') 
     pot_scale = pots[0]/pots[1] if pots.count(None) == 0 else 1.0
-    print(pots[0],pots[1])
+    
     if raw_pot:
         return files[0],files[1],pot_scale,pots[0],pots[1]
     else:
