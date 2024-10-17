@@ -1,0 +1,5 @@
+/pnfs/minerva/persistent/users/rhowell/production_test/nogrid/flavor_swap_Signal/minerva/ana/v22r1p1/00/12/22/40/SIM_minerva_00122240_Subruns_0001_NuECCQE_Ana_Tuple_v22r1p1.root
+/pnfs/minerva/persistent/users/rhowell/production_test/nogrid/flavor_swap_Signal/minerva/ana/v22r1p1/00/12/22/40/SIM_minerva_00122240_Subruns_0002_NuECCQE_Ana_Tuple_v22r1p1.root
+/pnfs/minerva/persistent/users/rhowell/production_test/nogrid/flavor_swap_Signal/minerva/ana/v22r1p1/00/12/22/40/SIM_minerva_00122240_Subruns_0003_NuECCQE_Ana_Tuple_v22r1p1.root
+/pnfs/minerva/persistent/users/rhowell/production_test/nogrid/flavor_swap_Signal/minerva/ana/v22r1p1/00/12/22/40/SIM_minerva_00122240_Subruns_0004_NuECCQE_Ana_Tuple_v22r1p1.root
+/pnfs/minerva/persistent/users/rhowell/production_test/nogrid/flavor_swap_Signal/minerva/ana/v22r1p1/00/12/22/40/SIM_minerva_00122240_Subruns_0005_NuECCQE_Ana_Tuple_v22r1p1.root
