@@ -94,27 +94,9 @@ def submitJob( tupleName):
   # Copy local files to PNFS, they aren't there already
   #copyLocalFilesToPNFS(tupleName,outdir_logs) 
   #print(start,count)
-
-  if playlist == "me1A_swap":
-    cmdname = "jobsub_commands/fhc_nue_swap_wrapper.sh"
-  elif playlist == "me5A_swap":
-    cmdname = "jobsub_commands/rhc_nue_swap_wrapper.sh"
-  elif "me1" in playlist and "thesis_muon" not in argstring:
-    cmdname = "jobsub_commands/fhc_nue_wrapper.sh"
-  elif "me1" in playlist and "thesis_muon" in argstring:
-    cmdname = "jobsub_commands/fhc_numu_wrapper.sh"
-  elif "thesis_muon" not in argstring:
-    cmdname = "jobsub_commands/rhc_nue_wrapper.sh"
-  elif "thesis_muon" in argstring:
-    cmdname = "jobsub_commands/rhc_numu_wrapper.sh"
-  else:
-    cmdname = "jobsub_commands/wrong_wrapper.sh"
-
-  if os.path.isfile(cmdname):
-    jobsubcmd = open(cmdname, 'a')
-  else:
-    jobsubcmd = open(cmdname, "w")
-    jobsubcmd.write("#!/bin/sh\n")
+  cmdname = "jobsub_commands/submit_wrapper.sh"
+  jobsubcmd = open(cmdname, "w")
+  jobsubcmd.write("#!/bin/sh\n")
 
   jobsubcmd.write(cmd+"\n")
   jobsubcmd.close()
@@ -147,7 +129,7 @@ if __name__ == '__main__':
   outdir_logs = "/pnfs/minerva/%s/users/%s/%s_logs" % (PNFS_switch,os.environ["USER"],processingID)
   os.system( "mkdir -p %s" % outdir_logs )
   os.system( "mkdir -p grid_wrappers/%s" % processingID )
-  outdir_tarball=gridargs.tarball if gridargs.tarball else "/pnfs/minerva/resilient/tarballs/rhowell-%s.tar.gz" % (processingID)
+  outdir_tarball=gridargs.tarball if gridargs.tarball else "/pnfs/minerva/resilient/tarballs/%s-%s.tar.gz" % (os.environ["USER"],processingID)
   createTarball(outdir_tarball)
 
   for playlist in gridargs.playlists:
