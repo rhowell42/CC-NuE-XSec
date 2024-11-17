@@ -4,8 +4,8 @@ import argparse
 import logging, sys
 import ROOT
 import PlotUtils
-from fit_tools.FitTools import *
-from fit_tools.PlotTools import *
+from Tools.FitTools import *
+from Tools.PlotTools import *
 import numpy as np
 #np.random.seed(0)
 #np.set_printoptions(precision=3)
@@ -55,6 +55,9 @@ MNVPLOTTER.axis_draw_grid_y = True
 # Specifically, w/o this, this script seg faults in the case where I try to instantiate FluxReweighterWithWiggleFit w/ nuE constraint set to False for more than one playlist
 ROOT.TH1.AddDirectory(False)
 minBinCont = 1
+muonList =  ["Muon_Energy_Resolution","Muon_Energy_MINOS","Muon_Energy_MINERvA"]
+v_muonList =  ["v_Muon_Energy_Resolution","v_Muon_Energy_MINOS","v_Muon_Energy_MINERvA"]
+h_muonList =  ["h_Muon_Energy_Resolution","h_Muon_Energy_MINOS","h_Muon_Energy_MINERvA"]
 
 def SyncErrorBandsv2(hists):
     for _h1 in range(len(hists)):
@@ -63,38 +66,67 @@ def SyncErrorBandsv2(hists):
             h2 = hists[_h2]
             if h1 == h2:
                 continue
+
             for name in h1.GetVertErrorBandNames():
                 if name == "Flux":
-                    n_universes = 100
-                elif name in ["Muon_Energy_Resolution","Muon_Energy_MINOS","Muon_Energy_MINERvA"]:
-                    continue
+                    if h1.GetVertErrorBand(name).GetNHists() > 100:
+                        h1_hists = h1.GetVertErrorBand(name).GetHists()
+                        h1_hists = [h1_hists[i] for i in range(100)]
+                        h1.PopVertErrorBand(name)
+                        h1.AddVertErrorBand(name,h1_hists)
+                elif name in muonList:
+                    h1_hists = h1.GetVertErrorBand(name).GetHists()
+                    h1.PopVertErrorBand(name)
+                    newname = "v_{}".format(name)
+                    if newname not in h1.GetVertErrorBandNames():
+                        h1.AddVertErrorBand(newname,h1_hists)
+                    if newname not in h2.GetVertErrorBandNames():
+                        h2.AddVertErrorBandAndFillWithCV(newname,2)
                 elif(name not in h2.GetVertErrorBandNames()):
                     n_universes = h1.GetVertErrorBand(name).GetNHists()
                     h2.AddVertErrorBandAndFillWithCV(name, n_universes)
 
             for name in h1.GetLatErrorBandNames():
-                if name == "Flux":
-                    n_universes = 100
-                elif name in ["Muon_Energy_Resolution","Muon_Energy_MINOS","Muon_Energy_MINERvA"]:
-                    continue
+                if name in muonList:
+                    h1_hists = h1.GetLatErrorBand(name).GetHists()
+                    h1.PopLatErrorBand(name)
+                    newname = "h_{}".format(name)
+                    if newname not in h1.GetLatErrorBandNames():
+                        h1.AddLatErrorBand(newname,h1_hists)
+                    if newname not in h2.GetLatErrorBandNames():
+                        h2.AddLatErrorBandAndFillWithCV(newname,2)
                 elif(name not in h2.GetLatErrorBandNames()):
                     n_universes = h1.GetLatErrorBand(name).GetNHists()
                     h2.AddLatErrorBandAndFillWithCV(name, n_universes)
 
             for name in h2.GetVertErrorBandNames():
                 if name == "Flux":
-                    n_universes = 100
-                elif name in ["Muon_Energy_Resolution","Muon_Energy_MINOS","Muon_Energy_MINERvA"]:
-                    continue
+                    if h2.GetVertErrorBand(name).GetNHists() > 100:
+                        h2_hists = h2.GetVertErrorBand(name).GetHists()
+                        h2_hists = [h2_hists[i] for i in range(100)]
+                        h2.PopVertErrorBand(name)
+                        h2.AddVertErrorBand(name,h2_hists)
+                elif name in muonList:
+                    h2_hists = h2.GetVertErrorBand(name).GetHists()
+                    h2.PopVertErrorBand(name)
+                    newname = "v_{}".format(name)
+                    if newname not in h2.GetVertErrorBandNames():
+                        h2.AddVertErrorBand(newname,h2_hists)
+                    if newname not in h1.GetVertErrorBandNames():
+                        h1.AddVertErrorBandAndFillWithCV(newname,2)
                 elif(name not in h1.GetVertErrorBandNames()):
                     n_universes = h2.GetVertErrorBand(name).GetNHists()
                     h1.AddVertErrorBandAndFillWithCV(name, n_universes)
 
             for name in h2.GetLatErrorBandNames():
-                if name == "Flux":
-                    n_universes = 100
-                elif name in ["Muon_Energy_Resolution","Muon_Energy_MINOS","Muon_Energy_MINERvA"]:
-                    continue
+                if name in muonList:
+                    h2_hists = h2.GetLatErrorBand(name).GetHists()
+                    h2.PopLatErrorBand(name)
+                    newname = "h_{}".format(name)
+                    if newname not in h2.GetLatErrorBandNames():
+                        h2.AddLatErrorBand(newname,h2_hists)
+                    if newname not in h1.GetLatErrorBandNames():
+                        h1.AddLatErrorBandAndFillWithCV(newname,2)
                 elif(name not in h1.GetLatErrorBandNames()):
                     n_universes = h2.GetLatErrorBand(name).GetNHists()
                     h1.AddLatErrorBandAndFillWithCV(name, n_universes)
@@ -111,10 +143,7 @@ def FillErrorBandfromHist2(h_new,h_olds,mchists = None, isData=False):
         sys_bc = 0.0
 
         for error_band in errorband_names_vert:
-            #print("looping over vert error ", error_band)
-            if error_band == 'Flux' and isData:# and h_old.GetVertErrorBand(error_band).GetNHists() < 1000:            #hacked for the flux since fhc files have 100 and rhc have 1000 n_universes
-                n_univ = 100
-            elif error_band == 'Flux':
+            if error_band == 'Flux':
                 n_univ = 100
             else:
                 n_univ = h_old.GetVertErrorBand(error_band).GetNHists()
@@ -123,10 +152,7 @@ def FillErrorBandfromHist2(h_new,h_olds,mchists = None, isData=False):
                 elif error_band == "GENIE_MaCCQE":
                     n_univ = 2
 
-            if error_band == "Muon_Energy_MINERvA" or error_band == "Muon_Energy_MINOS" or error_band == "Muon_Energy_Resolution":
-                new_band = "v_{}".format(error_band)
-            else:
-                new_band = error_band
+            new_band = error_band
 
             if not h_new.HasVertErrorBand( new_band ) and h_old.HasVertErrorBand( error_band ):
                 h_new.AddVertErrorBandAndFillWithCV( new_band, n_univ )
@@ -146,11 +172,7 @@ def FillErrorBandfromHist2(h_new,h_olds,mchists = None, isData=False):
                     h_new.GetVertErrorBand(new_band).GetHist(universe).SetBinContent( bin_new, sys_bc )
 
         for error_band in errorband_names_lat:
-            if error_band == "Muon_Energy_MINERvA" or error_band == "Muon_Energy_MINOS" or error_band == "Muon_Energy_Resolution":
-                new_band = "h_{}".format(error_band)
-            else:
-                new_band = error_band
-            #print("looping over lat error ", error_band)
+            new_band = error_band
             if not h_new.HasLatErrorBand(new_band) and h_old.HasLatErrorBand(error_band):
                 n_univ = h_old.GetLatErrorBand(error_band).GetNHists()
             else:
@@ -303,12 +325,35 @@ if __name__ == "__main__":
         rhc_cv = "/exp/minerva/data/users/rhowell/antinu_e/bkgfit_RHC_Selection_100Univ_N4_tune_thesis_MAD.root"
         h_rhc_selection_mc   = ROOT.TFile.Open(rhc_cv).Get("EN4_predicted_Signal")
         h_rhc_selection_data = ROOT.TFile.Open(rhc_cv).Get("EN4_data_bkgSubbed")
-        
-        err_names = h_rhc_selection_mc.GetVertErrorBandNames()
 
+        # ---------------------- Add Electron Energy Scale Systematic to Selection -----------------------------
+        fhc_scale_CV = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Electron_Scale_electron_scale_MAD.root").Get("EN4")
+        fhc_scale_p1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_p1sig")
+        fhc_scale_m1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_m1sig")
+        fhc_scale_p1sig = fhc_scale_p1sig/fhc_scale_CV
+        fhc_scale_m1sig = fhc_scale_m1sig/fhc_scale_CV
+        rhc_scale_CV = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Electron_Scale_electron_scale_MAD.root").Get("EN4")
+        rhc_scale_p1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_p1sig")
+        rhc_scale_m1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_m1sig")
+        rhc_scale_p1sig = rhc_scale_p1sig/rhc_scale_CV
+        rhc_scale_m1sig = rhc_scale_m1sig/rhc_scale_CV
+
+        h_fhc_selection_mc.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
+        for i in range(h_fhc_selection_mc.GetNbinsX()+1):
+            h_fhc_selection_mc.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_fhc_selection_mc.GetBinContent(i) * fhc_scale_m1sig.GetBinContent(i))
+            h_fhc_selection_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_fhc_selection_mc.GetBinContent(i) * fhc_scale_p1sig.GetBinContent(i))
+
+        h_rhc_selection_mc.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
+        for i in range(h_rhc_selection_mc.GetNbinsX()+1):
+            h_rhc_selection_mc.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_rhc_selection_mc.GetBinContent(i) * rhc_scale_m1sig.GetBinContent(i))
+            h_rhc_selection_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_rhc_selection_mc.GetBinContent(i) * rhc_scale_p1sig.GetBinContent(i))
+        
         #Make all hist have the same errorbands. Filled with CV if they don't have it.
-        SyncErrorBandsv2([h_fhc_imd_mc,h_rhc_imd_mc,h_fhc_nueel_mc,h_rhc_nueel_mc,h_fhc_selection_mc,h_rhc_selection_mc,h_fhc_muselection_mc,h_rhc_muselection_mc])
-        SyncErrorBandsv2([h_fhc_imd_data,h_rhc_imd_data,h_fhc_nueel_data,h_rhc_nueel_data,h_fhc_selection_data,h_rhc_selection_data,h_fhc_muselection_data,h_rhc_muselection_data])
+        SyncErrorBandsv2([h_fhc_imd_mc,h_rhc_imd_mc,h_fhc_nueel_mc,h_rhc_nueel_mc,h_fhc_selection_mc,h_rhc_selection_mc,h_fhc_muselection_mc,
+            h_rhc_muselection_mc,h_fhc_imd_data,h_rhc_imd_data,h_fhc_nueel_data,h_rhc_nueel_data,h_fhc_selection_data,h_rhc_selection_data,
+            h_fhc_muselection_data,h_rhc_muselection_data])
+
+        err_names = h_rhc_selection_mc.GetVertErrorBandNames()
         
         mc_cvToStitch = OrderedDict()
         mc_cvToStitch['fhc_nueel'] = h_fhc_nueel_mc
@@ -400,13 +445,36 @@ if __name__ == "__main__":
             print("loading {} errorband that has {} n_universes".format(err,n_universes))
             chi2s = []
             for univ in range(n_universes):
-                # ---------------------- NuE Universe Selection Block -----------------------------
-                h_fhc_universe_mc   = ROOT.TFile.Open(fhc_universe).Get("EN4_predicted_Signal_{}_{}".format(err,univ))
-                h_fhc_universe_data = ROOT.TFile.Open(fhc_universe).Get("EN4_data_bkgSubbed_{}_{}".format(err,univ))
+                if err != "ElectronScale" and err in rhc_scale_CV.GetVertErrorBandNames():
+                    # ---------------------- NuE Universe Selection Block -----------------------------
+                    h_fhc_universe_mc   = ROOT.TFile.Open(fhc_universe).Get("EN4_predicted_Signal_{}_{}".format(err,univ))
+                    h_fhc_universe_data = ROOT.TFile.Open(fhc_universe).Get("EN4_data_bkgSubbed_{}_{}".format(err,univ))
 
-                h_rhc_universe_mc   = ROOT.TFile.Open(rhc_universe).Get("EN4_predicted_Signal_{}_{}".format(err,univ))
-                h_rhc_universe_data = ROOT.TFile.Open(rhc_universe).Get("EN4_data_bkgSubbed_{}_{}".format(err,univ))
-                
+                    h_rhc_universe_mc   = ROOT.TFile.Open(rhc_universe).Get("EN4_predicted_Signal_{}_{}".format(err,univ))
+                    h_rhc_universe_data = ROOT.TFile.Open(rhc_universe).Get("EN4_data_bkgSubbed_{}_{}".format(err,univ))
+                    h_fhc_universe_mc.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
+                    for i in range(h_fhc_universe_mc.GetNbinsX()+1):
+                        h_fhc_universe_mc.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_fhc_universe_mc.GetBinContent(i) * fhc_scale_m1sig.GetBinContent(i))
+                        h_fhc_universe_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_fhc_universe_mc.GetBinContent(i) * fhc_scale_p1sig.GetBinContent(i))
+
+                    h_rhc_universe_mc.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
+                    for i in range(h_rhc_universe_mc.GetNbinsX()+1):
+                        h_rhc_universe_mc.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_rhc_universe_mc.GetBinContent(i) * rhc_scale_m1sig.GetBinContent(i))
+                        h_rhc_universe_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_rhc_universe_mc.GetBinContent(i) * rhc_scale_p1sig.GetBinContent(i))
+                elif err in v_muonList or err in h_muonList:
+                    h_fhc_universe_mc = h_fhc_selection_mc.Clone()
+                    h_rhc_universe_mc = h_rhc_selection_mc.Clone()
+                    h_fhc_universe_data = h_fhc_selection_data.Clone()
+                    h_rhc_universe_data = h_rhc_selection_data.Clone()
+                else:
+                    h_fhc_universe_mc = h_fhc_selection_mc.Clone()
+                    h_rhc_universe_mc = h_rhc_selection_mc.Clone()
+                    h_fhc_universe_data = h_fhc_selection_data.Clone()
+                    h_rhc_universe_data = h_rhc_selection_data.Clone()
+
+                    h_fhc_universe_mc = SwapUniverseCV(h_fhc_universe_mc,err,univ)
+                    h_rhc_universe_mc = SwapUniverseCV(h_rhc_universe_mc,err,univ)
+
                 # ---------------------- NuMu Universe Selection Block -----------------------------
                 h_fhc_mu_universe_mc = h_fhc_muselection_mc.Clone()
                 h_rhc_mu_universe_mc = h_rhc_muselection_mc.Clone()
@@ -423,8 +491,10 @@ if __name__ == "__main__":
                 h_rhc_imd_universe_data = h_rhc_imd_data.Clone()
                 
                 #Make all hist have the same errorbands. Filled with CV if they don't have it.
-                SyncErrorBandsv2([h_fhc_imd_universe_mc,h_rhc_imd_universe_mc,h_fhc_nueel_universe_mc,h_rhc_nueel_universe_mc,h_fhc_universe_mc,h_rhc_universe_mc,h_fhc_mu_universe_mc,h_rhc_mu_universe_mc])
-                SyncErrorBandsv2([h_fhc_imd_universe_data,h_rhc_imd_universe_data,h_fhc_nueel_universe_data,h_rhc_nueel_universe_data,h_fhc_universe_data,h_rhc_universe_data,h_fhc_muselection_data,h_rhc_muselection_data])
+                SyncErrorBandsv2([h_fhc_imd_universe_mc,h_rhc_imd_universe_mc,h_fhc_nueel_universe_mc,h_rhc_nueel_universe_mc,
+                    h_fhc_universe_mc,h_rhc_universe_mc,h_fhc_mu_universe_mc,h_rhc_mu_universe_mc,h_fhc_imd_universe_data,
+                    h_rhc_imd_universe_data,h_fhc_nueel_universe_data,h_rhc_nueel_universe_data,h_fhc_universe_data,
+                    h_rhc_universe_data,h_fhc_muselection_data,h_rhc_muselection_data])
                
                 # ---------------------- Swap Each Systematic Universe with the CV -----------------------------
                 # Do monte carlo histograms
@@ -518,11 +588,9 @@ if __name__ == "__main__":
 
                 FillErrorBandfromHist2( mnv_universe_data, data_histsToStitch, mc_cvToStitch, isData=True)
                 FillErrorBandfromHist2( mnv_universe_mc, mc_histsToStitch, mc_cvToStitch, isData=False)
-                
                 chi2 = Chi2DataMC(mnv_universe_data,mnv_universe_mc)
                 chi2s.append(chi2)
-                DataMCPlot(mnv_universe_data,mnv_universe_mc,mnv_cv_data.Clone(),mnv_cv_mc.Clone())
-
+                #DataMCPlot(mnv_universe_data,mnv_universe_mc,mnv_cv_data.Clone(),mnv_cv_mc.Clone())
             file.write(err)
             for i in range(0,n_universes):
                 print("writing {}th universe for {} errorband".format(i,err))

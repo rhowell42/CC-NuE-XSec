@@ -20,9 +20,9 @@ from array import array
 
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
-from fit_tools.FitTools import *
+from Tools.FitTools import *
 
-logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+#logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 MNVPLOTTER = PlotUtils.MnvPlotter()
 #config MNVPLOTTER:
@@ -76,6 +76,12 @@ if __name__ == "__main__":
                         type=float,
                         default=0
     )
+    parser.add_argument("-Ue4", "--U_e4",
+                        dest = "U_e4",
+                        help="U_e4 parameter to probe.",
+                        type=float,
+                        default=0
+    )
     parser.add_argument("--pseudodata",
                         dest = "pseudodata",
                         default = False,
@@ -87,6 +93,7 @@ if __name__ == "__main__":
     delta_m = args.delta_m
     runongrid = args.grid
     U_tau4 = args.U_tau4
+    U_e4 = args.U_e4
     pseudodata = args.pseudodata
 
     filename = ""
@@ -107,6 +114,7 @@ if __name__ == "__main__":
     stitched_nutau_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nutau')
     stitched_nueselection_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nueselection')
     stitched_ratio_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_ratio')
+    stitched_fhc_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_fhc')
     stitched_swap_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_swap')
 
     templates = {
@@ -116,6 +124,7 @@ if __name__ == "__main__":
             "nue_energy":stitched_nue_energy,
             "numu_energy":stitched_numu_energy,
             "nutau_energy":stitched_nutau_energy,
+            "fhc_energy":stitched_nutau_energy,
             "swap_energy":stitched_swap_energy,
             "ratio_energy":stitched_ratio_energy,
             "nueselection_energy":stitched_nueselection_energy,
@@ -123,9 +132,10 @@ if __name__ == "__main__":
 
     dodelta = False
     if not runongrid: # surface plot
-        for m in range(1,200):
-            makeChi2Surface(templates,stitched_data,stitched_mc,outdir_surface,dodelta,m/2,U_tau4)
-            logging.info("completed delta m2 = {:.1f} run".format(m/2))
+        m_toloop = np.logspace(0,2,60)
+        for m in m_toloop:
+            makeChi2Surface(templates,stitched_data,stitched_mc,outdir_surface,dodelta,m,U_e4,U_tau4)
+            #logging.info("completed delta m2 = {:.2f} run".format(m))
             #t1 = multiprocessing.Process(target=makeChi2Surface, args=(templates,stitched_data,stitched_mc,outdir_surface,dodelta,dm,U_tau4), name='t1')
             #t2 = multiprocessing.Process(target=makeChi2Surface, args=(templates,stitched_data,stitched_mc,outdir_surface,dodelta,dm+0.5,U_tau4), name='t2')
             #t3 = multiprocessing.Process(target=makeChi2Surface, args=(templates,stitched_data,stitched_mc,outdir_surface,dodelta,dm+1,U_tau4), name='t3')
@@ -145,4 +155,4 @@ if __name__ == "__main__":
         exit()
     else:
         print("******* {} *******".format(U_tau4))
-        makeChi2Surface(templates,stitched_data,stitched_mc,dodelta,delta_m/2,U_tau4)
+        makeChi2Surface(templates,stitched_data,stitched_mc,outdir_surface,dodelta,delta_m,U_e4,U_tau4)

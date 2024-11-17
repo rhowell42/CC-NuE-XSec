@@ -22,7 +22,6 @@ from array import array
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
 from Tools.FitTools import *
-from Tools.PlotTools import *
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
@@ -54,60 +53,23 @@ ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 
 def FitToyExperiments(stitched_mc,stitched_data,experiments,templates):#,procnum,return_dict):
     results = []
-    for toy in experiments:
+    for toy in experiments[100:150]:
         weights = stitched_data.Clone().GetCVHistoWithStatError()
         for i in range(1,weights.GetNbinsX()+1):
+            # each toy experiment is thrown around the best fit model, reweight data to this experiment
             weight = stitched_data.GetBinContent(i) / toy[i-1] if toy[i-1] != 0 else stitched_data.GetBinContent(i)
             weights.SetBinContent(i,weight)
             weights.SetBinError(i,0)
 
         histogram = stitched_data.Clone()
-        histogram.DivideSingle(histogram,weights)
+        histogram.DivideSingle(histogram,weights) # reweight data to thrown experiment
 
-        chi2_fit, res = doFit(histogram, templates, stitched_mc)
+        chi2_fit, res = doFit(histogram, templates, stitched_mc) # fit MC to thrown experiment
         chi2_mod = Chi2DataMC(histogram,stitched_mc)
-        if chi2_mod == -1:
-            Nbins = stitched_mc.GetNbinsX()
-            #get the covariance matrix
-            covMatrix = np.zeros(shape=[Nbins,Nbins],dtype='f')
-            useOnlyShapeErrors = False
-            includeStatError   = True
-            errorAsFraction    = False
-            covMatrixTmp  =   stitched_mc.GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
-            covMatrixTmp += histogram.GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
-
-            for i in range(0,Nbins):
-                for j in range(0,Nbins):
-                    covMatrix[i][j] = covMatrixTmp[i+1][j+1]
-
-            errorMatrix = np.linalg.inv(covMatrix)
-            np.savetxt("{}/err_inverse_{}.csv".format(outdir_surface,len(results)),errorMatrix,delimiter=',')
-            np.savetxt("{}/err_{}.csv".format(outdir_surface,len(results)),covMatrix,delimiter=',')
-            for name in stitched_mc.GetVertErrorBandNames():
-                print(name)
-                for n in range(stitched_mc.GetVertErrorBand(name).GetNHists()):
-                    mc_vals = []
-                    as_vals = []
-                    for m in range(1,stitched_mc.GetNbinsX()+1):
-                        mc_vals.append(stitched_mc.GetVertErrorBand(name).GetHist(n).GetBinContent(m))
-                        as_vals.append(histogram.GetVertErrorBand(name).GetHist(n).GetBinContent(m))
-                    print(mc_vals)
-                    print(as_vals)
-            DataMCCVPlot(histogram,stitched_mc,"{}/pseudo_experiment_{}.png".format(outdir_surface,len(results)))
-            exit()
-
-        elif chi2_fit > chi2_mod:
-            logging.error("Negative chi2")
-            chi2_fit = chi2_mod
-
-        if chi2_fit == -1:
-            logging.error("Fit returned -1 Chi2")
-        elif chi2_fit < 0:
-            logging.error("Fit returned negative Chi2")
-
         results.append(chi2_mod-chi2_fit)
 
     results = np.array(results)
+    #return_dict[procnum] = results
     return(results)
 
 def SplitList(alist,wanted_parts=1):
@@ -159,7 +121,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--experiments",
                         dest = "experiments",
-                        default = "samples/samples_0.txt",
+                        default = "samples_fit/samples_fit_0.txt",
     )
 
     args = parser.parse_args()
@@ -175,12 +137,13 @@ if __name__ == "__main__":
 
     filename = ""
     if pseudodata:
-        filename = "NuE_stitched_hists_pseudo.root"
+        filename = "Fit_stitched_hists_pseudo.root"
     else:
-        filename = "NuE_stitched_hists.root"
+        filename = "Fit_stitched_hists.root"
 
     stitched_data = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('data_stitched')
     stitched_mc = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched')
+    stitched_fit = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('fit_mc_stitched')
     
     stitched_nueTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_nue')
     stitched_numuTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_numu')
@@ -205,6 +168,9 @@ if __name__ == "__main__":
             "nueselection_energy":stitched_nueselection_energy,
     }
 
+    #numjobs = 2
+    #experiments = experiments[:numjobs,:] #DEBUG
+    #split_experiments = SplitList(experiments,numjobs)
     dchi2s = FitToyExperiments(stitched_mc,stitched_data,experiments,templates)
     ids = ''.join([i for i in experiments_file if i.isdigit()])
     np.savetxt('{}/sample_dchi2s_{}.csv'.format(outdir_surface,ids),dchi2s,delimiter=',')
