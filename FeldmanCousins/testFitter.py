@@ -13,16 +13,16 @@ ccnueroot = os.environ.get('CCNUEROOT')
 
 import math
 import psutil
-import multiprocessing
+#import multiprocessing
 import time
-import threading
-nthreads = 4
+#import threading
+#nthreads = 4
 from array import array
 
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
-from fit_tools.FitTools import *
-from fit_tools.PlotTools import *
+from Tools.FitTools import *
+from Tools.PlotTools import *
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 

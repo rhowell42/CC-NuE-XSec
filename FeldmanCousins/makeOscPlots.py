@@ -20,7 +20,7 @@ from array import array
 
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
-from fit_tools.FitTools import *
+from Tools.FitTools import *
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
@@ -36,7 +36,6 @@ MNVPLOTTER.legend_n_columns = 3
 #MNVPLOTTER.mc_line_width = 0
 MNVPLOTTER.data_bkgd_color = 12 #gray
 MNVPLOTTER.data_bkgd_style = 24 #circle  
-MNVPLOTTER.axis_maximum = 500 #circle  
 
 #legend entries are closer
 MNVPLOTTER.height_nspaces_per_hist = 1.2
@@ -127,7 +126,7 @@ if __name__ == "__main__":
     #bestFit = {"m":[10,10],"ue4":[.02,.1],"umu4":[.005,0.005]} # Ue4 effects
     #bestFit = {"m":[10,10],"ue4":[.03,.03],"umu4":[.073,.173]} # tau/Umu4 effects
     #bestFit = {"m":[10,10],"ue4":[.03,.03],"umu4":[.073,.173]} # tau/Umu4 effects
-    bestFit = {"m":[3,3],"ue4":[.1,.02],"umu4":[.013,.073]} # tau/Umu4 effects
+    bestFit = {"m":[5.15,28.68,14.21,28.68,28.68,4.76],"ue4":[.002,.002,0,.002,.003,.004],"umu4":[0.014,.028,.031,.028,.025,.02]} # tau/Umu4 effects
 
     if True:
         for fit in range(len(bestFit["m"])):
@@ -135,7 +134,7 @@ if __name__ == "__main__":
             chi2_model = Chi2DataMC(stitched_data,fitHist)
             chi2_null = Chi2DataMC(stitched_data,stitched_mc)
 
-            print(bestFit["m"][fit], bestFit["ue4"][fit], bestFit["umu4"][fit],chi2_model-chi2_null)
+            print(bestFit["m"][fit], bestFit["ue4"][fit], bestFit["umu4"][fit],chi2_model,chi2_null,chi2_model-chi2_null)
 
             c1 = ROOT.TCanvas()
             margin = .12
