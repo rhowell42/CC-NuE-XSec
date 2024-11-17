@@ -1,0 +1,1 @@
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/zdar/Merged_mc_ana_me6D_DualVertex_p4_NUEELSignal/MasterAnaDev_mc_AnaTuple_run00122565_Playlist.root
