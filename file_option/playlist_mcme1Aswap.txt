@@ -1,0 +1,17 @@
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110005.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110006.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110007.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110008.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110009.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110010.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110011.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110012.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110013.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110014.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110015.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110016.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110017.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110018.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110019.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110020.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/users/rhowell/ME1A_Merged/Merged_Run00110021.root
