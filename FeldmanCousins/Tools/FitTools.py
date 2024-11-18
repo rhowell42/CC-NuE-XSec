@@ -6,7 +6,8 @@ import math
 import psutil
 from array import array
 import numpy as np
-from scipy import optimize
+
+from scipy import optimize,linalg
 np.random.seed(0)
 ccnueroot = os.environ.get('CCNUEROOT')
 
@@ -67,13 +68,13 @@ def doFit(stitched_data, templates, stitched_mc, makePlot = False, plotArgs = []
     data = stitched_data.Clone()
 
     #minimizer_kwargs = {"bounds":bounds, "tol":1e-12, "options":{"maxiter":1000},"constraints":cons, "method":"SLSQP","args":(mc,templates,data)}
-    minimizer_kwargs = {"tol":1e-12,"options":{"maxiter":1000},"constraints":cons, "method":"SLSQP"}
     #res = optimize.basinhopping(CalChi2, x0,interval=5, niter = 60,disp=True,minimizer_kwargs=minimizer_kwargs)
-    #res = optimize.shgo(lambda x, m=mc,temp=templates,d=data: CalChi2(x,m,temp,d), bounds,iters=3,sampling_method="simplicial",n=200,options={"f_tol":1e-12,"disp":True})
-    #res = optimize.shgo(CalChi2, bounds,iters=2,sampling_method="halton",n=500,options={"f_tol":1e-12,"disp":True},args=(mc,templates,data))
-    res = optimize.differential_evolution(CalChi2, bounds, args=(mc,templates,data),maxiter=30,disp=True,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
+    #minimizer_kwargs = {"tol":1e-12,"options":{"maxiter":1000},"constraints":cons, "method":"SLSQP"}
+
+    res = optimize.differential_evolution(func=CalChi2,bounds=bounds,polish=False,x0=x0,args=(mc,templates,data),maxiter=30,disp=True,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
+    new_x0 = res.x
+    res = optimize.minimize(fun=CalChi2,x0=new_x0,tol=1e-4,options={"maxiter":20},args=(mc,templates,data),method="L-BFGS-B",bounds=bounds,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
     chi2 = float(res.fun)
-    logging.error(res)
     return(chi2,{"m":res.x[0]*100,"ue4":res.x[1],"umu4":res.x[2],"utau4":res.x[3]})
 
 def fitNorm(stitched_data, templates, stitched_mc):
@@ -276,10 +277,7 @@ def Chi2DataMC(dataHist,mcHist):
         logging.error("MnvPlotter::Chi2DataMC", "The number of bins from Data and MC histograms differ. Returning -1.")
         return(-1)
 
-    Nbins = dataHist.GetNbinsX()
-
     #get the covariance matrix
-    #covMatrix = np.zeros(shape=[Nbins,Nbins],dtype='f')
     useOnlyShapeErrors = False
     includeStatError   = True
     errorAsFraction    = False
@@ -316,183 +314,6 @@ def CalChi2(x,stitched_mc,templates,stitched_data):
         logging.error("bad umu4: {}".format(U_mu4))
         logging.error("bad utau4: {}".format(U_tau4))
     return(chi2)
-
-def GetOscillatedHistogramCategories(histogram,data_histogram,templates, m, U_e4, U_mu4,U_tau4,plotArgs = []):
-    stitched_nueTemp = templates["nue"]
-    stitched_numuTemp = templates["numu"]
-
-    stitched_nue_energy = templates["nue_energy"]
-    stitched_numu_energy = templates["numu_energy"]
-    stitched_nutau_energy = templates["nutau_energy"]
-    stitched_nueselection_energy = templates["nueselection_energy"]
-
-    hist = histogram.Clone()
-
-    nueCat = hist.Clone()
-    numuCat = hist.Clone()
-    nueswapCat = hist.Clone()
-    nutauswapCat = hist.Clone()
-
-    # stitched_nueselection_energy is 1 for every sample except the nueselection
-    # stitched_nutau_energy is 1 only for the nueel selection
-    # if 0 is False, if 1 is True
-
-    for q in range(0,hist.GetNbinsX()+1):
-        nue_sin = sin_average(q,m,stitched_nueTemp)
-        numu_sin = sin_average(q,m,stitched_numuTemp)
-        
-        P_ee = 1 - 4*U_e4*(1-U_e4)*nue_sin
-        eeCont = P_ee * stitched_nue_energy.GetBinContent(q)
-
-        P_mue = 4*U_e4*U_mu4*numu_sin
-        mueCont = P_mue * stitched_numu_energy.GetBinContent(q)
-        if stitched_nueselection_energy.GetBinContent(q) == 1 and stitched_nutau_energy.GetBinContent(q) != 1:
-            mueCont = 0
-
-        P_mumu = 1 - 4*U_mu4*(1-U_mu4)*numu_sin
-        mumuCont = P_mumu * stitched_numu_energy.GetBinContent(q)
-        mumuCont*=stitched_nueselection_energy.GetBinContent(q)
-
-        P_mutau = 4*U_tau4*U_mu4*numu_sin
-        mutauCont = P_mutau * stitched_numu_energy.GetBinContent(q)
-
-        P_etau = 4*U_e4*U_tau4*nue_sin
-        etauCont = P_etau * stitched_nue_energy.GetBinContent(q)
-
-        nueCat.SetBinContent(q,eeCont)
-        numuCat.SetBinContent(q,mumuCont)
-        nueswapCat.SetBinContent(q,mueCont)
-        tauCont = (etauCont + mutauCont) * stitched_nutau_energy.GetBinContent(q)
-        nutauswapCat.SetBinContent(q,tauCont)
-
-        totCont = eeCont+mumuCont+mueCont+tauCont
-        weight = totCont/hist.GetBinContent(q) if hist.GetBinContent(q) > 0 else 0
-
-        hist.SetBinContent(q,totCont)
-
-
-        ### oscillate CV bin content along with systematic universe contents ###
-        errorband_names_vert = hist.GetVertErrorBandNames()
-        errorband_names_lat = hist.GetLatErrorBandNames()
-        for error_band in errorband_names_vert:
-            errorband = hist.GetVertErrorBand(error_band)
-            errorband.SetBinContent(q,errorband.GetBinContent(q)*weight)
-            n_univ = hist.GetVertErrorBand(error_band).GetNHists()
-            for universe in range(0, n_univ):
-                sys_bc = hist.GetVertErrorBand(error_band).GetHist(universe).GetBinContent(q)
-                hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(q, sys_bc*weight)
-
-        for error_band in errorband_names_lat:
-            errorband = hist.GetLatErrorBand(error_band)
-            errorband.SetBinContent(q,errorband.GetBinContent(q)*weight)
-            n_univ = hist.GetLatErrorBand(error_band).GetNHists()
-            for universe in range(0,  n_univ):
-                sys_bc = hist.GetLatErrorBand(error_band).GetHist(universe).GetBinContent(q)
-                hist.GetLatErrorBand(error_band).GetHist(universe).SetBinContent(q, sys_bc*weight)
-
-    mc_hists = [nueCat,numuCat,nueswapCat,nutauswapCat]
-    title = ["remaining #nu_{e}","remaining #nu_{#mu}","appeared #nu_{e}","appeared #nu_{#tau}"]
-    color = [ROOT.kRed,ROOT.kBlue,ROOT.kTeal,ROOT.kGray]
-    TArray = ROOT.TObjArray()
-    for i in range(len(mc_hists)):
-        if color is not None:
-            mc_hists[i].SetFillColor(color[i])
-        if title is not None:
-            mc_hists[i].SetTitle(title[i])
-        TArray.Add(mc_hists[i])
-
-    margin = .12
-    bottomFraction = .2
-    overall = ROOT.TCanvas("Data/MC")
-    top = ROOT.TPad("DATAMC", "DATAMC", 0, bottomFraction, 1, 1)
-    bottom = ROOT.TPad("Ratio", "Ratio", 0, 0, 1, bottomFraction+margin)
-
-    top.Draw()
-    bottom.Draw()
-
-    top.cd()
-
-    ratio =  hist.Clone()
-    if len(plotArgs) > 0:
-        oscdata = GetOscillatedHistogram(data_histogram,templates,plotArgs[0],plotArgs[1],plotArgs[2],plotArgs[3])
-        MNVPLOTTER.DrawDataStackedMC(oscdata,TArray,1,"TR","Data",0,0,1001)
-        MNVPLOTTER.AddChi2Label(oscdata,hist,1,"BC",.04,.15)
-        ratio.Divide(oscdata,ratio)
-    else:
-        MNVPLOTTER.DrawDataStackedMC(histogram,TArray,1,"TR","Data",0,0,1001)
-        MNVPLOTTER.AddChi2Label(histogram,hist,1,"BC",.04,.15)
-        ratio.Divide(histogram,ratio)
-    top.SetLogy()
-
-    bottom.cd()
-    bottom.SetTopMargin(0)
-    bottom.SetBottomMargin(0.3)
-
-    #Now fill mcRatio with 1 for bin content and fractional error
-    mcRatio = hist.GetTotalError(False, True, False) #The second "true" makes this fractional error
-    for whichBin in range(1, mcRatio.GetXaxis().GetNbins()+1): 
-        mcRatio.SetBinError(whichBin, max(mcRatio.GetBinContent(whichBin), 1e-9))
-        mcRatio.SetBinContent(whichBin, 1)
-
-    ratio.SetTitle("")
-    ratio.SetLineColor(ROOT.kBlack)
-    ratio.SetLineWidth(3)
-    ratio.SetTitleSize(0)
-
-    ratio.GetYaxis().SetTitle("Data / MC")
-    ratio.GetYaxis().SetLabelSize(.15)
-    ratio.GetYaxis().SetTitleSize(0.16)
-    ratio.GetYaxis().SetTitleOffset(0.4)
-    ratio.GetYaxis().SetNdivisions(505) #5 minor divisions between 5 major divisions.  I'm trying to match a specific paper here.
-
-    ratio.GetXaxis().SetTitleSize(0.16)
-    ratio.GetXaxis().SetTitleOffset(0.9)
-    ratio.GetXaxis().SetLabelSize(.15)
-
-    ratio.SetMinimum(0.5)
-    ratio.SetMaximum(1.5)
-    ratio.Draw()
-
-    #Error envelope for the MC
-    mcRatio.SetLineColor(ROOT.kRed)
-    mcRatio.SetLineWidth(3)
-    mcRatio.SetMarkerStyle(0)
-    mcRatio.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
-    mcRatio.Draw("E2 SAME")
-
-    #Draw a flat line at 1 for ratio of MC to itself
-    straightLine = mcRatio.Clone()
-    straightLine.SetFillStyle(0)
-    straightLine.Draw("HIST L SAME")
-    top.cd()
-    title = ROOT.TPaveText(0.3, 0.91, 0.7, 1.0, "nbNDC") #no border and use Normalized Device Coordinates to place it
-    title.SetFillStyle(0)
-    title.SetLineColor(ROOT.kWhite)
-    title.AddText("Pseudo Data Oscillation")
-    title.Draw("SAME")
-    
-    title = ROOT.TPaveText(0.35, 0.54, 0.65, 0.72, "nbNDC") #no border and use Normalized Device Coordinates to place it
-    title.SetFillStyle(0)
-    title.SetLineColor(ROOT.kWhite)
-    if len(plotArgs) > 0:
-        title.AddText("#Delta m^{2}: "+"{:.3f}".format(plotArgs[0])+" -> "+"{:.3f}".format(m))
-        title.AddText("U_{e4}: "+"{:.3f}".format(plotArgs[1])+" -> "+"{:.3f}".format(U_e4))
-        title.AddText("U_{#mu 4}: "+"{:.3f}".format(plotArgs[2])+" -> "+"{:.3f}".format(U_mu4))
-        title.AddText("U_{#tau 4}: "+"{:.3f}".format(plotArgs[3])+" -> "+"{:.3f}".format(U_tau4))
-    else:
-        title.AddText("#Delta m^{2}: "+"{:.3f}".format(m))
-        title.AddText("U_{e4}: "+"{:.3f}".format(U_e4))
-        title.AddText("U_{#mu 4}: "+"{:.3f}".format(U_mu4))
-        title.AddText("U_{#tau 4}: "+"{:.3f}".format(U_tau4))
-    title.Draw("SAME")
-
-    MNVPLOTTER.WritePreliminary(0.4, 0.05, 5e-2, True)
-    if len(plotArgs) > 0:
-        overall.Print("categories_dm_{:.1f}_Ue4_{:.3f}_Umu4_{:.3f}_Utau4_{:.3f}.png".format(plotArgs[0],plotArgs[1],plotArgs[2],plotArgs[3]))
-    else:
-        overall.Print("categories_dm_{}_Ue4_{}_Umu4_{}_Utau4_{}.png".format('result','result','result','result'))
-
-    return
 
 def InvertID(hist):
     for i in range(hist.GetNbinsX()+1):
@@ -576,7 +397,6 @@ def GetOscillatedHistogram(histogram, templates, m, U_e4, U_mu4, U_tau4,doSys = 
 
     nuenutau  = stitched_nue_energy.Clone()
     nuenutau.MultiplySingle(nuenutau,nuenutau_weights)
-    
     nutau = numunutau.Clone()
     nutau.Add(nuenutau)
     nutau.MultiplySingle(nutau,stitched_nutau_id)
