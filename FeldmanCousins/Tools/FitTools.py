@@ -73,7 +73,7 @@ def doFit(stitched_data, templates, stitched_mc, makePlot = False, plotArgs = []
 
     res = optimize.differential_evolution(func=CalChi2,bounds=bounds,polish=False,x0=x0,args=(mc,templates,data),maxiter=30,disp=True,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
     new_x0 = res.x
-    res = optimize.minimize(fun=CalChi2,x0=new_x0,tol=1e-4,options={"maxiter":20},args=(mc,templates,data),method="L-BFGS-B",bounds=bounds,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
+    res = optimize.minimize(fun=CalChi2,x0=new_x0,tol=1e-4,options={"maxiter":20},args=(mc,templates,data),method="SLSQP",bounds=bounds,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
     chi2 = float(res.fun)
     return(chi2,{"m":res.x[0]*100,"ue4":res.x[1],"umu4":res.x[2],"utau4":res.x[3]})
 
