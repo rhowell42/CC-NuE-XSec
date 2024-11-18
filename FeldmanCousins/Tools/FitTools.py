@@ -1,24 +1,18 @@
 import os
 import time
 import logging, sys
-import ROOT
-import PlotUtils
-import numpy as np
-np.random.seed(0)
-np.set_printoptions(precision=4)
-#np.set_printoptions(linewidth=1520)
-#np.set_printoptions(threshold=sys.maxsize)
-from scipy import optimize, integrate
 import argparse
-ccnueroot = os.environ.get('CCNUEROOT')
-
 import math
 import psutil
-import multiprocessing
-import threading
-nthreads = 4
 from array import array
+import numpy as np
+from scipy import optimize
+np.random.seed(0)
+ccnueroot = os.environ.get('CCNUEROOT')
 
+import ROOT
+from root_numpy import matrix
+import PlotUtils
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS 
@@ -285,20 +279,15 @@ def Chi2DataMC(dataHist,mcHist):
     Nbins = dataHist.GetNbinsX()
 
     #get the covariance matrix
-    covMatrix = np.zeros(shape=[Nbins,Nbins],dtype='f')
+    #covMatrix = np.zeros(shape=[Nbins,Nbins],dtype='f')
     useOnlyShapeErrors = False
     includeStatError   = True
     errorAsFraction    = False
 
+    # ----- Get covariance matrix for chi2 calculation ----- #
     covMatrixTmp  =   mcHist.GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
     covMatrixTmp += dataHist.GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
-
-    for i in range(0,Nbins):
-        for j in range(0,Nbins):
-            if errorAsFraction:
-                covMatrix[i][j] = covMatrixTmp[i+1][j+1] * (dataHist.GetBinContent(i+1)*dataHist.GetBinContent(j+1))
-            else:
-                covMatrix[i][j] = covMatrixTmp[i+1][j+1]
+    covMatrix = np.asarray(matrix(covMatrixTmp))[1:-1,1:-1] # convert TMatrixD to numpy array, exclude under/overflow bins
 
     try:
         errorMatrix = np.linalg.inv(covMatrix)
@@ -306,29 +295,12 @@ def Chi2DataMC(dataHist,mcHist):
         logging.error("Matrix couldn't be inverted. Returning -1")
         return(-1)
 
-    chi2 = 0.
-    # under/overflow bins not taken into account in the chi2 calculation
-    for i in range(0,errorMatrix.shape[0]):
-        x_data_i = dataHist.GetBinContent(i+1);
-        x_mc_i   = mcHist.GetBinContent(i+1);
+    mc = np.array(mcHist)[1:-1] # store MC bin contents excluding over/underflow bins
+    data = np.array(dataHist)[1:-1] # store data bin contents excluding over/underflow bins 
 
-        for j in range(0,errorMatrix.shape[0]):
-            x_data_j = dataHist.GetBinContent(j+1)
-            x_mc_j   = mcHist.GetBinContent(j+1)
-            chi2_ij = (x_data_i - x_mc_i) * errorMatrix[i][j] * (x_data_j - x_mc_j)
-            if np.isnan(chi2_ij) or np.isinf(chi2_ij):
-                logging.error("Bad value in chi2_ij: {}".format(chi2_ij))
-                logging.error("errorMatrix[i][j]: {}".format(errorMatrix[i][j]))
-                logging.error("x_data_i: {}, x_data_j: {}, x_mc_i: {}, x_mc_j: {}".format(x_data_i,x_data_j,x_mc_i,x_mc_j))
-                logging.error("inverse cov matrix: ")
-                logging.error(errorMatrix)
-                logging.error("cov matrix: ")
-                logging.error(covMatrix)
-                return(-1)
-            else:
-                chi2 += chi2_ij 
-
-
+    # ----- Calculate chi2 value ----= #
+    diff = mc - data
+    chi2 = diff.T @ errorMatrix @ diff # @ is numpy efficient matrix multiplication
     return(chi2)
 
 def CalChi2(x,stitched_mc,templates,stitched_data):
