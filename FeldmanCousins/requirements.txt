@@ -6,3 +6,4 @@ psycopg2==2.8.5
 Pympler==1.0.1  
 scipy==1.9.2  
 setuptools==41.2.0 
+root_numpy==4.8.0
