@@ -3,20 +3,17 @@ import logging, sys
 import ROOT
 import PlotUtils
 import numpy as np
-np.random.seed(0)
+from root_numpy import matrix
 np.set_printoptions(precision=1)
 np.set_printoptions(linewidth=1520)
 np.set_printoptions(threshold=sys.maxsize)
 from scipy import optimize, integrate
+from scipy.stats import multivariate_normal
 import argparse
 ccnueroot = os.environ.get('CCNUEROOT')
+process = os.environ.get('PROCESS')
 
 import math
-import psutil
-import multiprocessing
-import time
-import threading
-nthreads = 4
 from array import array
 
 #insert path for modules of this package.
@@ -52,7 +49,36 @@ MNVPLOTTER.legend_offset_x           = .15
 ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 
-def FitToyExperiments(stitched_mc,stitched_data,experiments,templates):#,procnum,return_dict):
+def ThrowSystematics(stitched_mc,stitched_data,n_samples=50):
+    includeStatError = False
+    errorAsFraction  = True
+    useOnlyShapeErrors = False
+
+    covMatrixTmp  = stitched_mc.GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
+    covMatrixTmp += stitched_data.GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
+    for i in range(stitched_mc.GetNbinsX()+1):
+        for j in range(i,stitched_mc.GetNbinsX()+1):
+            covMatrixTmp[i][j] = covMatrixTmp[i][j] * stitched_mc.GetBinContent(i) * stitched_mc.GetBinContent(j)
+            covMatrixTmp[j][i] = covMatrixTmp[i][j]
+
+    covMatrix = np.asarray(matrix(covMatrixTmp))[1:-1,1:-1] # convert to numpy array, exclude over/underflow bins
+    pred_vals = np.array(stitched_mc)[1:-1] # store MC bin contents excluding over/underflow bins
+
+    sys_throws = multivariate_normal.rvs(mean=pred_vals,cov=covMatrix,size=n_samples)
+    return(sys_throws)
+
+def ThrowPoissons(lambdas):
+    throws = []
+    for lam in lambdas:
+        while lam[lam<0].any():
+            logging.error("Negative value in sys throws, rerunning this throw...")
+            lam = ThrowSystematics(stitched_mc,stitched_data,1) 
+        throw = np.random.poisson(lam)
+        throws.append(throw)
+    throws = np.array(throws)
+    return(throws)
+
+def FitToyExperiments(stitched_mc,stitched_data,experiments,templates):
     results = []
     for toy in experiments:
         weights = stitched_data.Clone().GetCVHistoWithStatError()
@@ -157,10 +183,6 @@ if __name__ == "__main__":
                         default = False,
                         action="store_true",
     )
-    parser.add_argument("--experiments",
-                        dest = "experiments",
-                        default = "samples/samples_0.txt",
-    )
 
     args = parser.parse_args()
     outdir_surface = args.output_dir
@@ -170,8 +192,6 @@ if __name__ == "__main__":
     U_mu4 = args.U_mu4
     U_tau4 = args.U_tau4
     pseudodata = args.pseudodata
-    experiments_file = args.experiments
-    experiments = np.loadtxt(experiments_file,delimiter=',')
 
     filename = ""
     if pseudodata:
@@ -205,24 +225,8 @@ if __name__ == "__main__":
             "nueselection_energy":stitched_nueselection_energy,
     }
 
+    sys_throws  = ThrowSystematics(stitched_mc,stitched_data,50)
+    experiments = ThrowPoissons(sys_throws)
+
     dchi2s = FitToyExperiments(stitched_mc,stitched_data,experiments,templates)
-    ids = ''.join([i for i in experiments_file if i.isdigit()])
-    np.savetxt('{}/sample_dchi2s_{}.csv'.format(outdir_surface,ids),dchi2s,delimiter=',')
-
-    if False:
-        os.system("taskset -p 0xff %d" % os.getpid())
-
-        manager = multiprocessing.Manager()
-        return_dict = manager.dict()
-        
-        jobs = []
-        for i in range(numjobs):
-            exp = split_experiments[i]
-            p = multiprocessing.Process(target=FitToyExperiments, args=(stitched_mc,stitched_data,exp,templates,i,return_dict), name='p{}'.format(i))
-            jobs.append(p)
-            p.start()
-
-        for proc in jobs:
-            proc.join()
-
-        print(return_dict.values())
+    np.savetxt('{}/sample_dchi2s_{}.csv'.format(outdir_surface,process),dchi2s,delimiter=',')

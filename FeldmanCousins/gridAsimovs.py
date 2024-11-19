@@ -62,7 +62,7 @@ def addBashLine( wrapper , command ):
   wrapper.write("echo '---------------'\n")
 
 
-def submitJob(tupleName,i):
+def submitJob(tupleName):
 
   # Create wrapper
   wrapper_name = "grid_wrappers/%s/%s_wrapper.sh" % ( processingID , tupleName) 
@@ -76,7 +76,7 @@ def submitJob(tupleName,i):
   my_wrapper.write( "export USER=$(whoami)\n")
   #my_wrapper.write( "export XRD_LOGLEVEL=\"Debug\"\n")
   my_wrapper.write( "source py3env/bin/activate\n")
-  my_wrapper.write( 'py3env/bin/python3 fitAsimovs.py --grid --experiments samples_%s/samples_${PROCESS}.txt --output $CONDOR_DIR_HISTS %s 2>> $CONDOR_DIR_LOGS/%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-${PROCESS}.log\n' % (i,argstring,tupleName,tupleName))
+  my_wrapper.write( 'py3env/bin/python3 fitAsimovs.py --grid --output $CONDOR_DIR_HISTS %s 2>> $CONDOR_DIR_LOGS/%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-${PROCESS}.log\n' % (argstring,tupleName,tupleName))
   my_wrapper.write("exit $?\n")
 
   my_wrapper.close()
