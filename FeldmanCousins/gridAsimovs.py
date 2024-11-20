@@ -147,4 +147,4 @@ if __name__ == '__main__':
     outdir_logs = "/pnfs/minerva/scratch/users/%s/%s_%s_Asimov_dchi2s_logs" % (os.environ["USER"],str(i),processingID)
     os.system( "mkdir -p %s" % outdir_logs )
     cmdString = "Asimovs_{}".format(i)
-    submitJob(cmdString,str(i))
+    submitJob(cmdString)
