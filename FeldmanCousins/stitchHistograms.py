@@ -17,7 +17,7 @@ from config.SignalDef import SWAP_SIGNAL_DEFINATION, SIGNAL_DEFINATION
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS 
 from tools import Utilities
 from tools.PlotLibrary import HistHolder
-
+ccnueroot = os.environ.get('CCNUEROOT')
 MNVPLOTTER = PlotUtils.MnvPlotter()
 MNVPLOTTER.error_summary_group_map.clear();
 for k,v in CONSOLIDATED_ERROR_GROUPS.items():
@@ -619,11 +619,12 @@ if __name__ == "__main__":
     FillErrorBandfromHist2(mnv_mc_numu, numu_histsToStitch, mc_histsToStitch)
     FillErrorBandfromHist2(mnv_mc_swap, swap_histsToStitch, mc_histsToStitch)
 
-    mnv_mc.PopVertErrorBand("LowQ2Pi")
-    mnv_mc_nue.PopVertErrorBand("LowQ2Pi")
-    mnv_mc_numu.PopVertErrorBand("LowQ2Pi")
-    mnv_mc_swap.PopVertErrorBand("LowQ2Pi")
-    mnv_data.PopVertErrorBand("LowQ2Pi")
+    # ----- remove errorbands from MnvH1Ds and convert systematics to errorbands to save time in chi2 calculation ----- #
+    #ConsolidateErrorMatrices(mnv_data)
+    #ConsolidateErrorMatrices(mnv_mc)
+    #ConsolidateErrorMatrices(mnv_mc_nue)
+    #ConsolidateErrorMatrices(mnv_mc_numu)
+    #ConsolidateErrorMatrices(mnv_mc_swap)
 
     mnv_mc.SetLineColor(ROOT.kRed)
     mc = mnv_mc.GetCVHistoWithError()
@@ -672,9 +673,9 @@ if __name__ == "__main__":
     GetCovarianceMatrix(mnv_mc,mnv_data,ftag)
 
     if pseudodata:
-        f = ROOT.TFile("/exp/minerva/app/users/rhowell/cmtuser/CCNue/FeldmanCousins/NuE_stitched_hists_pseudo.root","RECREATE")
+        f = ROOT.TFile("{}/FeldmanCousins/NuE_stitched_hists_pseudo.root".format(ccnueroot),"RECREATE")
     else:
-        f = ROOT.TFile("/exp/minerva/app/users/rhowell/cmtuser/CCNue/FeldmanCousins/NuE_stitched_hists.root","RECREATE")
+        f = ROOT.TFile("{}/FeldmanCousins/NuE_stitched_hists.root".format(ccnueroot),"RECREATE")
 
     mnv_data.Write()
     mnv_mc.Write()

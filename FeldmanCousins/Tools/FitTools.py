@@ -8,7 +8,6 @@ from array import array
 import numpy as np
 
 from scipy import optimize,linalg
-np.random.seed(0)
 ccnueroot = os.environ.get('CCNUEROOT')
 
 import ROOT
@@ -60,16 +59,19 @@ def constraint(t):
     U_tau4= t[3]
     return 1-(U_e4 + U_mu4 + U_tau4)
 
+class MinimizeStopper(object):
+    def __init__(self):
+        self.start = time.time()
+    def __call__(self, xk=None):
+        elapsed = time.time() - self.start
+        print("Elapsed: %.3f sec" % elapsed)
+
 def doFit(stitched_data, templates, stitched_mc, makePlot = False, plotArgs = []):
     x0 = [0.0,0.0,0.0,0.0]
     bounds = np.array([[0.0,1.0],[0.0,0.15],[0.0,0.41],[0,0.66]], dtype = float)
     cons = [{"type":"ineq","fun":constraint}]
     mc = stitched_mc.Clone()
     data = stitched_data.Clone()
-
-    #minimizer_kwargs = {"bounds":bounds, "tol":1e-12, "options":{"maxiter":1000},"constraints":cons, "method":"SLSQP","args":(mc,templates,data)}
-    #res = optimize.basinhopping(CalChi2, x0,interval=5, niter = 60,disp=True,minimizer_kwargs=minimizer_kwargs)
-    #minimizer_kwargs = {"tol":1e-12,"options":{"maxiter":1000},"constraints":cons, "method":"SLSQP"}
 
     res = optimize.differential_evolution(func=CalChi2,bounds=bounds,polish=False,x0=x0,args=(mc,templates,data),maxiter=30,disp=True,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
     new_x0 = res.x
@@ -270,7 +272,7 @@ def MuonNorm(stitched_mc,templates,fhc_norm,rhc_norm,fhc_nue_norm,rhc_nue_norm):
     hist.Add(ratio)
     return(hist)
 
-def Chi2DataMC(dataHist,mcHist):
+def Chi2DataMC(dataHist,mcHist,data_cov=None,mc_cov=None):
     #We get the number of bins and make sure it's compatible with the NxN matrix given
     if dataHist.GetNbinsX() != mcHist.GetNbinsX():
         logging.error("breaking error in Chi2DataMC")
@@ -283,9 +285,14 @@ def Chi2DataMC(dataHist,mcHist):
     errorAsFraction    = False
 
     # ----- Get covariance matrix for chi2 calculation ----- #
-    covMatrixTmp  =   mcHist.GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
-    covMatrixTmp += dataHist.GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
-    covMatrix = np.asarray(matrix(covMatrixTmp))[1:-1,1:-1] # convert TMatrixD to numpy array, exclude under/overflow bins
+    if mc_cov is None:
+        mc_cov = mcHist.GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
+        mc_cov = np.asarray(matrix(mc_cov))[1:-1,1:-1]
+    if data_cov is None:
+        data_cov = dataHist.GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
+        data_cov = np.asarray(matrix(data_cov))[1:-1,1:-1]
+
+    covMatrix = mc_cov + data_cov
 
     try:
         errorMatrix = np.linalg.inv(covMatrix)
@@ -307,7 +314,7 @@ def CalChi2(x,stitched_mc,templates,stitched_data):
     U_mu4 = x[2]
     U_tau4 = x[3]
     oscillated = GetOscillatedHistogram(stitched_mc,templates,ms,U_e4,U_mu4,U_tau4)
-    chi2 = Chi2DataMC(stitched_data,oscillated)
+    chi2 = Chi2DataMC(stitched_data,oscillated,data_cov=templates["data_cov"])
     if chi2 == -1:
         logging.error("bad m: {}".format(ms))
         logging.error("bad ue4: {}".format(U_e4))
@@ -428,12 +435,12 @@ def makeChi2Surface(templates,stitched_data,stitched_mc,outdir_surface,dodeltach
         if dodeltachi2:
             testHist = GetOscillatedHistogram(stitched_data, templates, deltam, U_e4, U_mu4, U_tau4)
             minchi2,_ = doFit(testHist,templates,stitched_mc)
-            chi2_null = Chi2DataMC(stitched_data,stitched_mc)
+            chi2_null = Chi2DataMC(stitched_data,stitched_mc,data_cov=templates['data_cov'])
             surface[i] = minchi2 - chi2_null
             fits[i] = minchi2
         else:
             testHist = GetOscillatedHistogram(stitched_mc, templates, deltam, U_e4, U_mu4, U_tau4)
-            chi2_model = Chi2DataMC(stitched_data,testHist)
+            chi2_model = Chi2DataMC(stitched_data,testHist,data_cov=templates['data_cov'])
             #minchi2,_  = doFit(testHist,templates,stitched_mc)
             surface[i] = chi2_model
             #fits[i] = minchi2
