@@ -89,6 +89,8 @@ def FitToyExperiments(stitched_mc,stitched_data,experiments,templates):
 
         histogram = stitched_data.Clone()
         histogram.DivideSingle(histogram,weights)
+        data_cov = np.asarray(matrix(histogram.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
+        templates["data_cov"] = data_cov
 
         chi2_fit, res = doFit(histogram, templates, stitched_mc)
         chi2_mod = Chi2DataMC(histogram,stitched_mc)
@@ -213,14 +215,19 @@ if __name__ == "__main__":
     stitched_ratio_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_ratio')
     stitched_swap_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_swap')
 
+    mc_cov = np.asarray(matrix(stitched_mc.GetTotalErrorMatrix(True, True, False)))[1:-1,1:-1]
+    data_cov = np.asarray(matrix(stitched_data.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
+
     templates = {
             "nue":stitched_nueTemp,
             "numu":stitched_numuTemp,
             "swap":stitched_swapTemp,
             "nue_energy":stitched_nue_energy,
             "numu_energy":stitched_numu_energy,
-            "nutau_energy":stitched_nutau_energy,
             "swap_energy":stitched_swap_energy,
+            "mc_cov":mc_cov,
+            "data_cov":data_cov,
+            "nutau_energy":stitched_nutau_energy,
             "ratio_energy":stitched_ratio_energy,
             "nueselection_energy":stitched_nueselection_energy,
     }

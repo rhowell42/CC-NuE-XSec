@@ -6,7 +6,6 @@ import logging, sys
 import ROOT
 import PlotUtils
 import numpy as np
-np.random.seed(0)
 from scipy import optimize,integrate
 
 import math
