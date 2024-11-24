@@ -79,6 +79,7 @@ IsUnknown  = lambda event : event.mc_intType == 10
 
 
 IsNuE = lambda event: event.mc_incoming == -12
+IsAntiNuE = lambda event: event.mc_incoming == 12
 IsNuMu = lambda event: abs(event.mc_incoming) == 14
 IsAntiNu = lambda event: event.mc_incoming < 0 # assuming only neutrino incomes
 IsNu = lambda event: event.mc_incoming > 0
@@ -125,28 +126,66 @@ TRUTH_CATEGORIES["NCPi"] = lambda event: IsNC(event) and IsChargedPionInFinalSta
 TRUTH_CATEGORIES["CCOther"] = lambda event: IsCC(event)
 TRUTH_CATEGORIES["NCOther"] = lambda event: IsNC(event)
 
-#TRUTH_CATEGORIES = OrderedDict()
-#TRUTH_CATEGORIES["CCQE"] = lambda event: Is2DSignal(event) and IsFiducial(event)
-#TRUTH_CATEGORIES["SinglePion"] = lambda event: IsAaronSignal(event) and IsFiducial(event)
+TRUTH_CATEGORIES = OrderedDict()
+TRUTH_CATEGORIES["NuEPi+"] = lambda event:  IsNuE(event) and event.mc_fr_nuParentID(event) == 211
+TRUTH_CATEGORIES["NuEPi-"] = lambda event:  IsNuE(event) and event.mc_fr_nuParentID(event) == -211
+TRUTH_CATEGORIES["NuEK+"] = lambda event:  IsNuE(event) and event.mc_fr_nuParentID(event) == 321
+TRUTH_CATEGORIES["NuEK-"] = lambda event:  IsNuE(event) and event.mc_fr_nuParentID(event) == -321
+TRUTH_CATEGORIES["NuEK0L"] = lambda event:  IsNuE(event) and event.mc_fr_nuParentID(event) == 130
+TRUTH_CATEGORIES["NuEK0"] = lambda event:  IsNuE(event) and event.mc_fr_nuParentID(event) == 310
+TRUTH_CATEGORIES["NuEK0S"] = lambda event:  IsNuE(event) and event.mc_fr_nuParentID(event) == 311
+TRUTH_CATEGORIES["NuEMu-"] = lambda event:  IsNuE(event) and event.mc_fr_nuParentID(event) == 13
+TRUTH_CATEGORIES["NuEMu+"] = lambda event:  IsNuE(event) and event.mc_fr_nuParentID(event) == -13
+TRUTH_CATEGORIES["AntiNuEPi+"] = lambda event:  IsAntiNuE(event) and event.mc_fr_nuParentID(event) == 211
+TRUTH_CATEGORIES["AntiNuEPi-"] = lambda event:  IsAntiNuE(event) and event.mc_fr_nuParentID(event) == -211
+TRUTH_CATEGORIES["AntiNuEK+"] = lambda event:  IsAntiNuE(event) and event.mc_fr_nuParentID(event) == 321
+TRUTH_CATEGORIES["AntiNuEK-"] = lambda event:  IsAntiNuE(event) and event.mc_fr_nuParentID(event) == -321
+TRUTH_CATEGORIES["AntiNuEK0L"] = lambda event:  IsAntiNuE(event) and event.mc_fr_nuParentID(event) == 130
+TRUTH_CATEGORIES["AntiNuEK0"] = lambda event:  IsAntiNuE(event) and event.mc_fr_nuParentID(event) == 310
+TRUTH_CATEGORIES["AntiNuEK0S"] = lambda event:  IsAntiNuE(event) and event.mc_fr_nuParentID(event) == 311
+TRUTH_CATEGORIES["AntiNuEMu-"] = lambda event:  IsAntiNuE(event) and event.mc_fr_nuParentID(event) == 13
+TRUTH_CATEGORIES["AntiNuEMu+"] = lambda event:  IsAntiNuE(event) and event.mc_fr_nuParentID(event) == -13
 
 # My signal is one or more of the listed categories.
 SIGNAL_DEFINATION = [
-    "CCNuEQE",
-    "CCNuEDelta",
-    "CCNuEDIS",
-    "CCNuE",
-    "CCNuE2p2h",
-    "CCNuEWrongSign"
+    "NuEPi+",
+    "NuEPi-",
+    "NuEK+",
+    "NuEK-",
+    "NuEK0L",
+    "NuEK0",
+    "NuEK0S",
+    "NuEMu-"
+    "NuEMu+"
+    "AntiNuEPi+",
+    "AntiNuEPi-",
+    "AntiNuEK+",
+    "AntiNuEK-",
+    "AntiNuEK0L",
+    "AntiNuEK0",
+    "AntiNuEK0S",
+    "AntiNuEMu-"
+    "AntiNuEMu+"
 ]
-SWAP_SIGNAL_DEFINATION = [
-    "CCNu",
-    "CCNuEQE",
-    "CCNuEDelta",
-    "CCNuEDIS",
-    "CCNuE",
-    "CCNuE2p2h",
-    "CCNuEAntiNu",
-]
+
+# My signal is one or more of the listed categories.
+#SIGNAL_DEFINATION = [
+#    "CCNuEQE",
+#    "CCNuEDelta",
+#    "CCNuEDIS",
+#    "CCNuE",
+#    "CCNuE2p2h",
+#    "CCNuEWrongSign"
+#]
+#SWAP_SIGNAL_DEFINATION = [
+#    "CCNu",
+#    "CCNuEQE",
+#    "CCNuEDelta",
+#    "CCNuEDIS",
+#    "CCNuE",
+#    "CCNuE2p2h",
+#    "CCNuEAntiNu",
+#]
 
 #SIGNAL_DEFINATION = [
 #    "CCQE",

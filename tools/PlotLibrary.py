@@ -215,6 +215,13 @@ VARIABLE_DICT = {
         "binning" : PlotConfig.PT_BINNING,
         "value_getter" : lambda event: event.kin_cal.reco_P_lep*math.sin(event.kin_cal.reco_theta_lep_rad),
     },
+    "Nu Parent Energy":
+    {
+        "name" : "nuParent_energy",
+        "title" : "Parent Energy (GeV); NEvents",
+        "binning" : PlotConfig.NEUTRINO4_EE_BINNING,
+        "value_getter" : lambda event: event.mc_fr_nuParentProdP[3]/1000,
+    },
 
 }
 
@@ -454,14 +461,44 @@ PLOT_SETTINGS= {
                           lambda event: event.mc_incomingE/1000],
         "tags": truth_tags   
     },
-    "Pion Energy vs Length Travelled":
+    "Nu Parent Energy vs Length Travelled":
     {
-        "name" : "PiEnergy_Length",
+        "name" : "nuParent_energy_vs_Length",
         "title": "True E v.s. True Length; Length (km); True E (GeV); NEvents",
         "binning" : [PlotConfig.NEUTRINO4_LENGTH_BINNING,
                      PlotConfig.NEUTRINO4_EE_BINNING],
         "value_getter" : [lambda event: .9825+event.mc_vtx[2]/1e6 - event.mc_fr_nuParentDecVtx[2]/1e6,
                           lambda event: event.mc_fr_nuParentProdP[3]/1000],
+        "tags": truth_tags   
+    },
+    "Nu Parent Energy vs Nu Energy":
+    {
+        "name" : "nuParent_energy_vs_nuEnergy",
+        "title": "True Parent Energy vs True Neutrino Energy; Nu Parent Energy (GeV); Nu Energy (GeV); NEvents",
+        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING,
+                     PlotConfig.NEUTRINO4_EE_BINNING],
+        "value_getter" : [lambda event: event.mc_incomingE/1000,
+                          lambda event: event.mc_fr_nuParentProdP[3]/1000],
+        "tags": truth_tags   
+    },
+    "Reco Energy vs Longitudinal Distance":
+    {
+        "name" : "recoE_vs_longDist",
+        "title": "Energy Estimator vs Longitudinal Distance; E_{avail}+E_{lep} (GeV); Distance (cm); NEvents",
+        "binning" : [[i for i in range(0,500,500)],
+                     PlotConfig.NEUTRINO4_EE_BINNING],
+        "value_getter" : [lambda event: event.vtx[2]/1e1,
+                          lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
+        "tags": truth_tags   
+    },
+    "Reco Energy vs Transverse Distance":
+    {
+        "name" : "recoE_vs_transDist",
+        "title": "Energy Estimator vs Transverse Distance; E_{avail}+E_{lep} (GeV); Distance (cm); NEvents",
+        "binning" : [[i for i in range(0,400,400)],
+                     PlotConfig.NEUTRINO4_EE_BINNING],
+        "value_getter" : [lambda event: math.sqrt((event.vtx[0]/1e1)**2+(event.vtx[1]/1e1)**2),
+                          lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
         "tags": truth_tags   
     },
     "True Energy vs Neutrino Length Travelled":
