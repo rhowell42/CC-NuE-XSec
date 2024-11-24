@@ -520,12 +520,17 @@ HISTS_TO_MAKE = [
     #"nue_EL",
     #"electron_energy",
 
+    "Nu Parent Energy vs Length Travelled",
+    "Nu Parent Energy vs Nu Energy",
+    "Reco Energy vs Longitudinal Distance",
+    "Reco Energy vs Transverse Distance",
+
+    #"Reco Energy vs L/E",
+    #"True Energy vs Biased Neutrino Energy",
+    #"Estimator vs Front dEdX",
+    #"Biased Neutrino Energy",
 
 
-    "Reco Energy vs L/E",
-    "True Energy vs Biased Neutrino Energy",
-    "Estimator vs Front dEdX",
-    "Biased Neutrino Energy",
     #"Q2",
     #"Available Energy vs True W",
     #"Available Energy vs Lepton Pt",
