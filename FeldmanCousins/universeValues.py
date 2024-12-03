@@ -6,6 +6,7 @@ import ROOT
 import PlotUtils
 from Tools.FitTools import *
 from Tools.PlotTools import *
+from Tools.StitchTools import *
 import numpy as np
 #np.random.seed(0)
 #np.set_printoptions(precision=3)
@@ -19,7 +20,7 @@ from array import array
 #from config import PlotConfig
 #from config.AnalysisConfig import AnalysisConfig
 #from config.DrawingConfig import PLOTS_TO_MAKE,Default_Plot_Type,Default_Scale,DefaultPlotters,DefaultSlicer
-from config.SignalDef import SWAP_SIGNAL_DEFINATION, SIGNAL_DEFINATION
+from config.SignalDef import SWAP_SIGNAL_DEFINITION, SIGNAL_DEFINITION
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS 
 from tools import Utilities
 from tools.PlotLibrary import HistHolder
@@ -55,166 +56,8 @@ MNVPLOTTER.axis_draw_grid_y = True
 # Specifically, w/o this, this script seg faults in the case where I try to instantiate FluxReweighterWithWiggleFit w/ nuE constraint set to False for more than one playlist
 ROOT.TH1.AddDirectory(False)
 minBinCont = 1
+
 muonList =  ["Muon_Energy_Resolution","Muon_Energy_MINOS","Muon_Energy_MINERvA"]
-v_muonList =  ["v_Muon_Energy_Resolution","v_Muon_Energy_MINOS","v_Muon_Energy_MINERvA"]
-h_muonList =  ["h_Muon_Energy_Resolution","h_Muon_Energy_MINOS","h_Muon_Energy_MINERvA"]
-
-def SyncErrorBandsv2(hists):
-    for _h1 in range(len(hists)):
-        for _h2 in range(len(hists)):
-            h1 = hists[_h1]
-            h2 = hists[_h2]
-            if h1 == h2:
-                continue
-
-            for name in h1.GetVertErrorBandNames():
-                if name == "Flux":
-                    if h1.GetVertErrorBand(name).GetNHists() > 100:
-                        h1_hists = h1.GetVertErrorBand(name).GetHists()
-                        h1_hists = [h1_hists[i] for i in range(100)]
-                        h1.PopVertErrorBand(name)
-                        h1.AddVertErrorBand(name,h1_hists)
-                elif name in muonList:
-                    h1_hists = h1.GetVertErrorBand(name).GetHists()
-                    h1.PopVertErrorBand(name)
-                    newname = "v_{}".format(name)
-                    if newname not in h1.GetVertErrorBandNames():
-                        h1.AddVertErrorBand(newname,h1_hists)
-                    if newname not in h2.GetVertErrorBandNames():
-                        h2.AddVertErrorBandAndFillWithCV(newname,2)
-                elif(name not in h2.GetVertErrorBandNames()):
-                    n_universes = h1.GetVertErrorBand(name).GetNHists()
-                    h2.AddVertErrorBandAndFillWithCV(name, n_universes)
-
-            for name in h1.GetLatErrorBandNames():
-                if name in muonList:
-                    h1_hists = h1.GetLatErrorBand(name).GetHists()
-                    h1.PopLatErrorBand(name)
-                    newname = "h_{}".format(name)
-                    if newname not in h1.GetLatErrorBandNames():
-                        h1.AddLatErrorBand(newname,h1_hists)
-                    if newname not in h2.GetLatErrorBandNames():
-                        h2.AddLatErrorBandAndFillWithCV(newname,2)
-                elif(name not in h2.GetLatErrorBandNames()):
-                    n_universes = h1.GetLatErrorBand(name).GetNHists()
-                    h2.AddLatErrorBandAndFillWithCV(name, n_universes)
-
-            for name in h2.GetVertErrorBandNames():
-                if name == "Flux":
-                    if h2.GetVertErrorBand(name).GetNHists() > 100:
-                        h2_hists = h2.GetVertErrorBand(name).GetHists()
-                        h2_hists = [h2_hists[i] for i in range(100)]
-                        h2.PopVertErrorBand(name)
-                        h2.AddVertErrorBand(name,h2_hists)
-                elif name in muonList:
-                    h2_hists = h2.GetVertErrorBand(name).GetHists()
-                    h2.PopVertErrorBand(name)
-                    newname = "v_{}".format(name)
-                    if newname not in h2.GetVertErrorBandNames():
-                        h2.AddVertErrorBand(newname,h2_hists)
-                    if newname not in h1.GetVertErrorBandNames():
-                        h1.AddVertErrorBandAndFillWithCV(newname,2)
-                elif(name not in h1.GetVertErrorBandNames()):
-                    n_universes = h2.GetVertErrorBand(name).GetNHists()
-                    h1.AddVertErrorBandAndFillWithCV(name, n_universes)
-
-            for name in h2.GetLatErrorBandNames():
-                if name in muonList:
-                    h2_hists = h2.GetLatErrorBand(name).GetHists()
-                    h2.PopLatErrorBand(name)
-                    newname = "h_{}".format(name)
-                    if newname not in h2.GetLatErrorBandNames():
-                        h2.AddLatErrorBand(newname,h2_hists)
-                    if newname not in h1.GetLatErrorBandNames():
-                        h1.AddLatErrorBandAndFillWithCV(newname,2)
-                elif(name not in h1.GetLatErrorBandNames()):
-                    n_universes = h2.GetLatErrorBand(name).GetNHists()
-                    h1.AddLatErrorBandAndFillWithCV(name, n_universes)
-
-def FillErrorBandfromHist2(h_new,h_olds,mchists = None, isData=False):
-    offset = 1
-    for h in h_olds:
-        h_old = h_olds[h]
-        Nbins = h_old.GetNbinsX()+1 if not mchists else mchists[h].GetNbinsX()+1
-
-        errorband_names_vert = h_old.GetVertErrorBandNames()
-        errorband_names_lat = h_old.GetLatErrorBandNames()
-        n_univ = 0
-        sys_bc = 0.0
-
-        for error_band in errorband_names_vert:
-            if error_band == 'Flux':
-                n_univ = 100
-            else:
-                n_univ = h_old.GetVertErrorBand(error_band).GetNHists()
-                if error_band == "GENIE_MaZExpCCQE":
-                    n_univ = 100
-                elif error_band == "GENIE_MaCCQE":
-                    n_univ = 2
-
-            new_band = error_band
-
-            if not h_new.HasVertErrorBand( new_band ) and h_old.HasVertErrorBand( error_band ):
-                h_new.AddVertErrorBandAndFillWithCV( new_band, n_univ )
-                h_new.GetVertErrorBand(new_band).SetUseSpreadError( h_old.GetVertErrorBand(error_band).GetUseSpreadError())
-
-            for universe in range(0, n_univ):
-                bin_offset = offset
-                for b in range(1, Nbins):
-                    bin_c = h_old.GetBinContent(b)
-                    mcbin_c = mchists[h].GetBinContent(b)
-                    sys_bc = h_old.GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
-                    ratio = sys_bc/bin_c if bin_c != 0 else 0
-                    if mcbin_c <= minBinCont:
-                        bin_offset += -1
-                        continue
-                    bin_new = b + bin_offset - 1
-                    h_new.GetVertErrorBand(new_band).GetHist(universe).SetBinContent( bin_new, sys_bc )
-
-        for error_band in errorband_names_lat:
-            new_band = error_band
-            if not h_new.HasLatErrorBand(new_band) and h_old.HasLatErrorBand(error_band):
-                n_univ = h_old.GetLatErrorBand(error_band).GetNHists()
-            else:
-                continue
-            if not h_new.HasLatErrorBand( new_band ):
-                h_new.AddLatErrorBandAndFillWithCV( new_band , n_univ )
-                h_new.GetLatErrorBand(new_band).SetUseSpreadError( h_old.GetLatErrorBand(error_band).GetUseSpreadError())
-            for universe in range(0, n_univ):
-                bin_offset = offset
-                for b in range(1, Nbins):  #bin 0 and 1 have no entries. Bin seven is the last bin
-                    bin_c = h_old.GetBinContent(b)
-                    mcbin_c = mchists[h].GetBinContent(b)
-                    sys_bc = h_old.GetLatErrorBand(error_band).GetHist(universe).GetBinContent(b)
-                    ratio = sys_bc/bin_c if bin_c !=0 else 0
-                    if mcbin_c <= minBinCont:
-                        bin_offset += -1
-                        continue
-                    bin_new = b  + bin_offset - 1
-                    h_new.GetLatErrorBand(new_band).GetHist(universe).SetBinContent( bin_new, sys_bc )
-        for i in range(1,Nbins):
-            if mchists[h].GetBinContent(i) <= minBinCont:
-                continue
-            offset+=1
-
-def StitchThis(h_new,h_olds,sample="",mchists=None):
-    i_new = 0
-    for h in h_olds:
-        h_old = h_olds[h]
-        for i in range(1,h_old.GetNbinsX()+1):
-            bin_c = h_old.GetBinContent(i)
-            
-            if mchists[h].GetBinContent(i) <= minBinCont:
-                continue
-            i_new += 1
-
-            h_new.SetBinContent(i_new,bin_c)
-            if sample=="data":
-                continue
-
-            # no statistical error on elastic scattering special production
-            if 'nueel' in h:
-                h_new.SetBinError(i_new,0)
 
 def SwapUniverseCV(h_in,err,univ):
     try:
@@ -245,10 +88,16 @@ if __name__ == "__main__":
                         default = False,
                         action = "store_true",
     )
+    parser.add_argument("--fit_muons",
+                        dest ="fit_muons",
+                        default = False,
+                        action = "store_true",
+    )
 
     args = parser.parse_args()
     exclude = str(args.exclude).lower()
     doratio = args.ratio
+    fit_muons = args.fit_muons
     if doratio:
         ftag = "ratio"
     else:
@@ -347,6 +196,12 @@ if __name__ == "__main__":
         for i in range(h_rhc_selection_mc.GetNbinsX()+1):
             h_rhc_selection_mc.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_rhc_selection_mc.GetBinContent(i) * rhc_scale_m1sig.GetBinContent(i))
             h_rhc_selection_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_rhc_selection_mc.GetBinContent(i) * rhc_scale_p1sig.GetBinContent(i))
+
+        #Lateral errorbands are deprecated, convert to vertical in all histograms that have them
+        LateralToVertical([h_fhc_nueel_data,h_rhc_nueel_data,h_fhc_imd_mc,h_rhc_imd_mc,h_fhc_imd_data,h_rhc_imd_data])
+        #Replace beam angle systematic with 4 shifts for x and y, +-1sigma, with two errorbands for each position
+        SeparateBeamAngle([h_fhc_selection_mc,h_fhc_muselection_mc,h_fhc_selection_data,
+            h_rhc_selection_mc,h_rhc_muselection_mc,h_rhc_selection_data])
         
         #Make all hist have the same errorbands. Filled with CV if they don't have it.
         SyncErrorBandsv2([h_fhc_imd_mc,h_rhc_imd_mc,h_fhc_nueel_mc,h_rhc_nueel_mc,h_fhc_selection_mc,h_rhc_selection_mc,h_fhc_muselection_mc,
@@ -403,9 +258,21 @@ if __name__ == "__main__":
 
         if doratio:
             for h in list(mc_cvToStitch.keys()):
-                if "selection" in h:
-                    del(mc_cvToStitch[h])
-                    del(data_cvToStitch[h])
+                if not fit_muons:
+                    if "selection" in h:
+                        del(mc_cvToStitch[h])
+                        #del(nue_templates[h])
+                        #del(numu_templates[h])
+                        #del(swap_templates[h])
+                        del(data_cvToStitch[h])
+                else:
+                    if "_selection" in h:
+                        del(mc_cvToStitch[h])
+                        #del(nue_templates[h])
+                        #del(numu_templates[h])
+                        #del(swap_templates[h])
+                        del(data_cvToStitch[h])
+
             if "fhc" not in exclude:
                 toClone = h_fhc_muselection_mc.Clone()
                 toClone.Divide(toClone,h_fhc_selection_mc)
@@ -430,8 +297,8 @@ if __name__ == "__main__":
         htemp_mc = ROOT.TH1D('mc_stitched', 'mc_stitched', n_bins_new, 0,  n_bins_new )
         htemp_data = ROOT.TH1D('data_stitched', 'data_stitched', n_bins_new, 0,  n_bins_new )
 
-        StitchThis(htemp_mc, mc_cvToStitch,"",mc_cvToStitch)
-        StitchThis(htemp_data, data_cvToStitch,"data",mc_cvToStitch)
+        StitchThis(htemp_mc, mc_cvToStitch,mc_cvToStitch)
+        StitchThis(htemp_data, data_cvToStitch,mc_cvToStitch)
 
         mnv_cv_data = PlotUtils.MnvH1D( htemp_data )
         mnv_cv_mc   = PlotUtils.MnvH1D( htemp_mc )
@@ -461,7 +328,8 @@ if __name__ == "__main__":
                     for i in range(h_rhc_universe_mc.GetNbinsX()+1):
                         h_rhc_universe_mc.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_rhc_universe_mc.GetBinContent(i) * rhc_scale_m1sig.GetBinContent(i))
                         h_rhc_universe_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_rhc_universe_mc.GetBinContent(i) * rhc_scale_p1sig.GetBinContent(i))
-                elif err in v_muonList or err in h_muonList:
+
+                elif err in muonList:
                     h_fhc_universe_mc = h_fhc_selection_mc.Clone()
                     h_rhc_universe_mc = h_rhc_selection_mc.Clone()
                     h_fhc_universe_data = h_fhc_selection_data.Clone()
@@ -559,9 +427,15 @@ if __name__ == "__main__":
 
                 if doratio:
                     for h in list(mc_histsToStitch.keys()):
-                        if "selection" in h:
-                            del(mc_histsToStitch[h])
-                            del(data_histsToStitch[h])
+                        if not fit_muons:
+                            if "selection" in h:
+                                del(mc_histsToStitch[h])
+                                del(data_histsToStitch[h])
+                        else:
+                            if "_selection" in h:
+                                del(mc_histsToStitch[h])
+                                del(data_histsToStitch[h])
+
                     if "fhc" not in exclude:
                         toClone = h_fhc_mu_universe_mc.Clone()
                         toClone.Divide(toClone,h_fhc_universe_mc)
@@ -580,8 +454,8 @@ if __name__ == "__main__":
                 huniverse_mc = ROOT.TH1D('mc_stitched_{}_{}'.format(err,univ), 'mc_stitched_{}_{}'.format(err,univ), n_bins_new, 0,  n_bins_new )
                 huniverse_data = ROOT.TH1D('data_stitched_{}_{}'.format(err,univ), 'data_stitched_{}_{}'.format(err,univ), n_bins_new, 0,  n_bins_new )
 
-                StitchThis(huniverse_mc, mc_histsToStitch,"",mc_cvToStitch)
-                StitchThis(huniverse_data, data_histsToStitch,"data",mc_cvToStitch)
+                StitchThis(huniverse_mc, mc_histsToStitch,mc_cvToStitch)
+                StitchThis(huniverse_data, data_histsToStitch,mc_cvToStitch)
 
                 mnv_universe_data = PlotUtils.MnvH1D( huniverse_data )
                 mnv_universe_mc   = PlotUtils.MnvH1D( huniverse_mc )
