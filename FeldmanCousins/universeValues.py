@@ -7,6 +7,8 @@ import PlotUtils
 from Tools.FitTools import *
 from Tools.PlotTools import *
 from Tools.StitchTools import *
+from Tools.OscHistogram import *
+
 import numpy as np
 #np.random.seed(0)
 #np.set_printoptions(precision=3)
@@ -44,26 +46,26 @@ MNVPLOTTER.legend_n_columns        = 1
 MNVPLOTTER.axis_draw_grid_x = True
 MNVPLOTTER.axis_draw_grid_y = True
 
-#MNVPLOTTER.error_summary_group_map.clear();
-#for k,v in CONSOLIDATED_ERROR_GROUPS.items():
-#    vec = ROOT.vector("std::string")()
-#    for vs in v :
-#        vec.push_back(vs)
-#    MNVPLOTTER.error_summary_group_map[k]= vec
+MNVPLOTTER.error_summary_group_map.clear();
+for k,v in CONSOLIDATED_ERROR_GROUPS.items():
+    vec = ROOT.vector("std::string")()
+    for vs in v :
+        vec.push_back(vs)
+    MNVPLOTTER.error_summary_group_map[k]= vec
 
 # Get This from Rob. Thanks Rob.
 # This helps python and ROOT not fight over deleting something, by stopping ROOT from trying to own the histogram. Thanks, Phil!
 # Specifically, w/o this, this script seg faults in the case where I try to instantiate FluxReweighterWithWiggleFit w/ nuE constraint set to False for more than one playlist
 ROOT.TH1.AddDirectory(False)
-minBinCont = 1
 
 muonList =  ["Muon_Energy_Resolution","Muon_Energy_MINOS","Muon_Energy_MINERvA"]
+errsToRemove = ["LowQ2Pi"]
 
 def SwapUniverseCV(h_in,err,univ):
-    try:
+    if err in h_in.GetVertErrorBandNames():
         ratio = h_in.GetVertErrorBand(err).GetHist(univ).Clone()
-    except:
-        print("Histogram doesn't have systematic errorband {}, skipping.".format(err))
+    else:
+        print("Histogram doesn't have {} universe in errorband {}, skipping...".format(univ,err))
         return(h_in)
 
     CV = h_in.GetCVHistoWithStatError().Clone()
@@ -197,278 +199,193 @@ if __name__ == "__main__":
             h_rhc_selection_mc.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_rhc_selection_mc.GetBinContent(i) * rhc_scale_m1sig.GetBinContent(i))
             h_rhc_selection_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_rhc_selection_mc.GetBinContent(i) * rhc_scale_p1sig.GetBinContent(i))
 
-        #Lateral errorbands are deprecated, convert to vertical in all histograms that have them
-        LateralToVertical([h_fhc_nueel_data,h_rhc_nueel_data,h_fhc_imd_mc,h_rhc_imd_mc,h_fhc_imd_data,h_rhc_imd_data])
-        #Replace beam angle systematic with 4 shifts for x and y, +-1sigma, with two errorbands for each position
-        SeparateBeamAngle([h_fhc_selection_mc,h_fhc_muselection_mc,h_fhc_selection_data,
-            h_rhc_selection_mc,h_rhc_muselection_mc,h_rhc_selection_data])
-        
-        #Make all hist have the same errorbands. Filled with CV if they don't have it.
-        SyncErrorBandsv2([h_fhc_imd_mc,h_rhc_imd_mc,h_fhc_nueel_mc,h_rhc_nueel_mc,h_fhc_selection_mc,h_rhc_selection_mc,h_fhc_muselection_mc,
-            h_rhc_muselection_mc,h_fhc_imd_data,h_rhc_imd_data,h_fhc_nueel_data,h_rhc_nueel_data,h_fhc_selection_data,h_rhc_selection_data,
-            h_fhc_muselection_data,h_rhc_muselection_data])
+        # ---------------------- Create Stitched CV Histograms -----------------------------
+        mc_cv = StitchedHistogram("cv_histogram",True)
+        data_cv = StitchedHistogram("data_histogram",False)
 
+        # ----- Initialize histogram objects with all samples ----- #
+        mc_cv.AddHistogram('fhc_nueel',h_fhc_nueel_mc,h_fhc_nueel_mc)
+        mc_cv.AddHistogram('fhc_imd',h_fhc_imd_mc,h_fhc_imd_mc)
+        mc_cv.AddHistogram('fhc_muselection',h_fhc_muselection_mc,h_fhc_muselection_mc)
+        mc_cv.AddHistogram('fhc_selection',h_fhc_selection_mc,h_fhc_selection_mc)
+        mc_cv.AddHistogram('rhc_nueel',h_rhc_nueel_mc,h_rhc_nueel_mc)
+        mc_cv.AddHistogram('rhc_imd',h_rhc_imd_mc,h_rhc_imd_mc)
+        mc_cv.AddHistogram('rhc_muselection',h_rhc_muselection_mc,h_rhc_muselection_mc)
+        mc_cv.AddHistogram('rhc_selection',h_rhc_selection_mc,h_rhc_selection_mc)
+
+        data_cv.AddHistogram('fhc_nueel',h_fhc_nueel_data,h_fhc_nueel_mc)
+        data_cv.AddHistogram('fhc_imd',h_fhc_imd_data,h_fhc_imd_mc)
+        data_cv.AddHistogram('fhc_muselection',h_fhc_muselection_data,h_fhc_muselection_mc)
+        data_cv.AddHistogram('fhc_selection',h_fhc_selection_data,h_fhc_selection_mc)
+        data_cv.AddHistogram('rhc_nueel',h_rhc_nueel_data,h_rhc_nueel_mc)
+        data_cv.AddHistogram('rhc_imd',h_rhc_imd_data,h_rhc_imd_mc)
+        data_cv.AddHistogram('rhc_muselection',h_rhc_muselection_data,h_rhc_muselection_mc)
+        data_cv.AddHistogram('rhc_selection',h_rhc_selection_data,h_rhc_selection_mc)
+
+        # ----- Remove samples that we want to exclude from analysis ----- #
+        mc_cv.ApplyExclusion(exclude)
+        data_cv.ApplyExclusion(exclude)
+
+        # ----- Process Systematics and Synchronize across histograms ----- #
+        mc_cv.CleanErrorBands(errsToRemove)
+        data_cv.CleanErrorBands(errsToRemove)
+
+        if doratio: # do we want to replace selection samples with flavor ratios
+            if "fhc" not in exclude: # do we care about the fhc component
+                mc_cv.MakeRatio('fhc')
+                data_cv.MakeRatio('fhc')
+            if "rhc" not in exclude: # do we care about the rhc component
+                mc_cv.MakeRatio('rhc')
+                data_cv.MakeRatio('rhc')
+            if not fit_muons: # do we want to keep the muon selections in addition to flavor ratios
+                mc_cv.RemoveHistogram('fhc_muselection')
+                mc_cv.RemoveHistogram('rhc_muselection')
+                data_cv.RemoveHistogram('fhc_muselection')
+                data_cv.RemoveHistogram('rhc_muselection')
+
+        # ----- Stitch histograms together ----- #
+        mc_cv.Stitch()
+        data_cv.Stitch()
+
+        # ---------------------- Start Swapping Universes -----------------------------
         err_names = h_rhc_selection_mc.GetVertErrorBandNames()
-        
-        mc_cvToStitch = OrderedDict()
-        mc_cvToStitch['fhc_nueel'] = h_fhc_nueel_mc
-        mc_cvToStitch['fhc_imd'] = h_fhc_imd_mc
-        mc_cvToStitch['fhc_muselection']=h_fhc_muselection_mc
-        mc_cvToStitch['fhc_selection']=h_fhc_selection_mc
-        mc_cvToStitch['rhc_nueel'] = h_rhc_nueel_mc
-        mc_cvToStitch['rhc_imd'] = h_rhc_imd_mc
-        mc_cvToStitch['rhc_muselection']=h_rhc_muselection_mc
-        mc_cvToStitch['rhc_selection']=h_rhc_selection_mc
-
-        data_cvToStitch = OrderedDict()
-        data_cvToStitch['fhc_nueel'] = h_fhc_nueel_data
-        data_cvToStitch['fhc_imd'] = h_fhc_imd_data
-        data_cvToStitch['fhc_muselection']=h_fhc_muselection_data
-        data_cvToStitch['fhc_selection']=h_fhc_selection_data
-        data_cvToStitch['rhc_nueel'] = h_rhc_nueel_data
-        data_cvToStitch['rhc_imd'] = h_rhc_imd_data
-        data_cvToStitch['rhc_muselection']=h_rhc_muselection_data
-        data_cvToStitch['rhc_selection']=h_rhc_selection_data
-
-        for h in list(mc_cvToStitch.keys()):
-            if "fhc" in exclude and "selection" in h and "fhc" in h:
-                del(mc_cvToStitch[h])
-                del(data_cvToStitch[h])
-                continue
-            if "rhc" in exclude and "selection" in h and "rhc" in h:
-                del(mc_cvToStitch[h])
-                del(data_cvToStitch[h])
-                continue
-            if "numu" in exclude and "muselection" in h:
-                del(mc_cvToStitch[h])
-                del(data_cvToStitch[h])
-                continue
-            if "nue" in exclude and "_selection" in h:
-                del(mc_cvToStitch[h])
-                del(data_cvToStitch[h])
-                continue
-            if "elastic" in exclude and "nueel" in h:
-                del(mc_cvToStitch[h])
-                del(data_cvToStitch[h])
-                continue
-            if "imd" in exclude and "imd" in h:
-                del(mc_cvToStitch[h])
-                del(data_cvToStitch[h])
-                continue
-
-        if doratio:
-            for h in list(mc_cvToStitch.keys()):
-                if not fit_muons:
-                    if "selection" in h:
-                        del(mc_cvToStitch[h])
-                        #del(nue_templates[h])
-                        #del(numu_templates[h])
-                        #del(swap_templates[h])
-                        del(data_cvToStitch[h])
-                else:
-                    if "_selection" in h:
-                        del(mc_cvToStitch[h])
-                        #del(nue_templates[h])
-                        #del(numu_templates[h])
-                        #del(swap_templates[h])
-                        del(data_cvToStitch[h])
-
-            if "fhc" not in exclude:
-                toClone = h_fhc_muselection_mc.Clone()
-                toClone.Divide(toClone,h_fhc_selection_mc)
-                mc_cvToStitch['fhc_ratio']=toClone
-                toClone = h_fhc_muselection_data.Clone()
-                toClone.Divide(toClone,h_fhc_selection_data)
-                data_cvToStitch['fhc_ratio']=toClone
-            if "rhc" not in exclude:
-                toClone = h_rhc_muselection_mc.Clone()
-                toClone.Divide(toClone,h_rhc_selection_mc)
-                mc_cvToStitch['rhc_ratio']=toClone
-                toClone = h_rhc_muselection_data.Clone()
-                toClone.Divide(toClone,h_rhc_selection_data)
-                data_cvToStitch['rhc_ratio']=toClone
-
-        n_bins_new = 0
-        for h in mc_cvToStitch:
-            for i in range(0,mc_cvToStitch[h].GetNbinsX()+1):
-                if mc_cvToStitch[h].GetBinContent(i) > minBinCont:
-                    n_bins_new+=1
-
-        htemp_mc = ROOT.TH1D('mc_stitched', 'mc_stitched', n_bins_new, 0,  n_bins_new )
-        htemp_data = ROOT.TH1D('data_stitched', 'data_stitched', n_bins_new, 0,  n_bins_new )
-
-        StitchThis(htemp_mc, mc_cvToStitch,mc_cvToStitch)
-        StitchThis(htemp_data, data_cvToStitch,mc_cvToStitch)
-
-        mnv_cv_data = PlotUtils.MnvH1D( htemp_data )
-        mnv_cv_mc   = PlotUtils.MnvH1D( htemp_mc )
-
-        FillErrorBandfromHist2( mnv_cv_data, data_cvToStitch, mc_cvToStitch, isData=True)
-        FillErrorBandfromHist2( mnv_cv_mc, mc_cvToStitch, mc_cvToStitch, isData=False)
-        
         for err in err_names:
             err = str(err)
-            n_universes = mnv_cv_mc.GetVertErrorBand(err).GetNHists()
+            n_universes = mc_cv.hist.GetVertErrorBand(err).GetNHists()
             print("loading {} errorband that has {} n_universes".format(err,n_universes))
             chi2s = []
             for univ in range(n_universes):
                 if err != "ElectronScale" and err in rhc_scale_CV.GetVertErrorBandNames():
                     # ---------------------- NuE Universe Selection Block -----------------------------
-                    h_fhc_universe_mc   = ROOT.TFile.Open(fhc_universe).Get("EN4_predicted_Signal_{}_{}".format(err,univ))
-                    h_fhc_universe_data = ROOT.TFile.Open(fhc_universe).Get("EN4_data_bkgSubbed_{}_{}".format(err,univ))
+                    h_fhc_selection_mc_universe   = ROOT.TFile.Open(fhc_universe).Get("EN4_predicted_Signal_{}_{}".format(err,univ))
+                    h_fhc_selection_data_universe = ROOT.TFile.Open(fhc_universe).Get("EN4_data_bkgSubbed_{}_{}".format(err,univ))
 
-                    h_rhc_universe_mc   = ROOT.TFile.Open(rhc_universe).Get("EN4_predicted_Signal_{}_{}".format(err,univ))
-                    h_rhc_universe_data = ROOT.TFile.Open(rhc_universe).Get("EN4_data_bkgSubbed_{}_{}".format(err,univ))
-                    h_fhc_universe_mc.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
-                    for i in range(h_fhc_universe_mc.GetNbinsX()+1):
-                        h_fhc_universe_mc.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_fhc_universe_mc.GetBinContent(i) * fhc_scale_m1sig.GetBinContent(i))
-                        h_fhc_universe_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_fhc_universe_mc.GetBinContent(i) * fhc_scale_p1sig.GetBinContent(i))
+                    h_rhc_selection_mc_universe   = ROOT.TFile.Open(rhc_universe).Get("EN4_predicted_Signal_{}_{}".format(err,univ))
+                    h_rhc_selection_data_universe = ROOT.TFile.Open(rhc_universe).Get("EN4_data_bkgSubbed_{}_{}".format(err,univ))
 
-                    h_rhc_universe_mc.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
-                    for i in range(h_rhc_universe_mc.GetNbinsX()+1):
-                        h_rhc_universe_mc.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_rhc_universe_mc.GetBinContent(i) * rhc_scale_m1sig.GetBinContent(i))
-                        h_rhc_universe_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_rhc_universe_mc.GetBinContent(i) * rhc_scale_p1sig.GetBinContent(i))
+                    h_fhc_selection_mc_universe.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
+                    for i in range(h_fhc_selection_mc_universe.GetNbinsX()+1):
+                        h_fhc_selection_mc_universe.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_fhc_selection_mc_universe.GetBinContent(i) * fhc_scale_m1sig.GetBinContent(i))
+                        h_fhc_selection_mc_universe.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_fhc_selection_mc_universe.GetBinContent(i) * fhc_scale_p1sig.GetBinContent(i))
+
+                    h_rhc_selection_mc_universe.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
+                    for i in range(h_rhc_selection_mc_universe.GetNbinsX()+1):
+                        h_rhc_selection_mc_universe.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_rhc_selection_mc_universe.GetBinContent(i) * rhc_scale_m1sig.GetBinContent(i))
+                        h_rhc_selection_mc_universe.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_rhc_selection_mc_universe.GetBinContent(i) * rhc_scale_p1sig.GetBinContent(i))
 
                 elif err in muonList:
-                    h_fhc_universe_mc = h_fhc_selection_mc.Clone()
-                    h_rhc_universe_mc = h_rhc_selection_mc.Clone()
-                    h_fhc_universe_data = h_fhc_selection_data.Clone()
-                    h_rhc_universe_data = h_rhc_selection_data.Clone()
+                    h_fhc_selection_mc_universe = h_fhc_selection_mc.Clone()
+                    h_rhc_selection_mc_universe = h_rhc_selection_mc.Clone()
+                    h_fhc_selection_data_universe = h_fhc_selection_data.Clone()
+                    h_rhc_selection_data_universe = h_rhc_selection_data.Clone()
                 else:
-                    h_fhc_universe_mc = h_fhc_selection_mc.Clone()
-                    h_rhc_universe_mc = h_rhc_selection_mc.Clone()
-                    h_fhc_universe_data = h_fhc_selection_data.Clone()
-                    h_rhc_universe_data = h_rhc_selection_data.Clone()
-
-                    h_fhc_universe_mc = SwapUniverseCV(h_fhc_universe_mc,err,univ)
-                    h_rhc_universe_mc = SwapUniverseCV(h_rhc_universe_mc,err,univ)
+                    h_fhc_selection_mc_universe = h_fhc_selection_mc.Clone()
+                    h_rhc_selection_mc_universe = h_rhc_selection_mc.Clone()
+                    h_fhc_selection_data_universe = h_fhc_selection_data.Clone()
+                    h_rhc_selection_data_universe = h_rhc_selection_data.Clone()
+                    h_fhc_selection_mc_universe = SwapUniverseCV(h_fhc_selection_mc_universe,err,univ)
+                    h_rhc_selection_mc_universe = SwapUniverseCV(h_rhc_selection_mc_universe,err,univ)
 
                 # ---------------------- NuMu Universe Selection Block -----------------------------
-                h_fhc_mu_universe_mc = h_fhc_muselection_mc.Clone()
-                h_rhc_mu_universe_mc = h_rhc_muselection_mc.Clone()
+                h_fhc_muselection_mc_universe = h_fhc_muselection_mc.Clone()
+                h_rhc_muselection_mc_universe = h_rhc_muselection_mc.Clone()
+                h_fhc_muselection_data_universe = h_fhc_muselection_data.Clone()
+                h_rhc_muselection_data_universe = h_rhc_muselection_data.Clone()
 
                 # ---------------------- Scattering Universe Selection Block -----------------------------
-                h_fhc_nueel_universe_mc = h_fhc_nueel_mc.Clone()
-                h_rhc_nueel_universe_mc = h_rhc_nueel_mc.Clone()
-                h_fhc_imd_universe_mc = h_fhc_imd_mc.Clone()
-                h_rhc_imd_universe_mc = h_rhc_imd_mc.Clone()
+                h_fhc_nueel_mc_universe = h_fhc_nueel_mc.Clone()
+                h_rhc_nueel_mc_universe = h_rhc_nueel_mc.Clone()
+                h_fhc_imd_mc_universe = h_fhc_imd_mc.Clone()
+                h_rhc_imd_mc_universe = h_rhc_imd_mc.Clone()
 
-                h_fhc_nueel_universe_data = h_fhc_nueel_data.Clone()
-                h_rhc_nueel_universe_data = h_rhc_nueel_data.Clone()
-                h_fhc_imd_universe_data = h_fhc_imd_data.Clone()
-                h_rhc_imd_universe_data = h_rhc_imd_data.Clone()
-                
-                #Make all hist have the same errorbands. Filled with CV if they don't have it.
-                SyncErrorBandsv2([h_fhc_imd_universe_mc,h_rhc_imd_universe_mc,h_fhc_nueel_universe_mc,h_rhc_nueel_universe_mc,
-                    h_fhc_universe_mc,h_rhc_universe_mc,h_fhc_mu_universe_mc,h_rhc_mu_universe_mc,h_fhc_imd_universe_data,
-                    h_rhc_imd_universe_data,h_fhc_nueel_universe_data,h_rhc_nueel_universe_data,h_fhc_universe_data,
-                    h_rhc_universe_data,h_fhc_muselection_data,h_rhc_muselection_data])
+                h_fhc_nueel_data_universe = h_fhc_nueel_data.Clone()
+                h_rhc_nueel_data_universe = h_rhc_nueel_data.Clone()
+                h_fhc_imd_data_universe = h_fhc_imd_data.Clone()
+                h_rhc_imd_data_universe = h_rhc_imd_data.Clone()
                
                 # ---------------------- Swap Each Systematic Universe with the CV -----------------------------
                 # Do monte carlo histograms
-                h_fhc_mu_universe_mc = SwapUniverseCV(h_fhc_mu_universe_mc,err,univ)
-                h_rhc_mu_universe_mc = SwapUniverseCV(h_rhc_mu_universe_mc,err,univ)
-                h_fhc_nueel_universe_mc = SwapUniverseCV(h_fhc_nueel_universe_mc,err,univ)
-                h_rhc_nueel_universe_mc = SwapUniverseCV(h_rhc_nueel_universe_mc,err,univ)
-                h_fhc_imd_universe_mc = SwapUniverseCV(h_fhc_imd_universe_mc,err,univ)
-                h_rhc_imd_universe_mc = SwapUniverseCV(h_rhc_imd_universe_mc,err,univ)
+                h_fhc_muselection_mc_universe = SwapUniverseCV(h_fhc_muselection_mc_universe,err,univ)
+                h_rhc_muselection_mc_universe = SwapUniverseCV(h_rhc_muselection_mc_universe,err,univ)
+                h_fhc_nueel_mc_universe = SwapUniverseCV(h_fhc_nueel_mc_universe,err,univ)
+                h_rhc_nueel_mc_universe = SwapUniverseCV(h_rhc_nueel_mc_universe,err,univ)
+                h_fhc_imd_mc_universe = SwapUniverseCV(h_fhc_imd_mc_universe,err,univ)
+                h_rhc_imd_mc_universe = SwapUniverseCV(h_rhc_imd_mc_universe,err,univ)
 
-                # Do data histograms to mimic background subtraction effect
-                h_fhc_nueel_universe_data = SwapUniverseCV(h_fhc_nueel_universe_data,err,univ)
-                h_rhc_nueel_universe_data = SwapUniverseCV(h_rhc_nueel_universe_data,err,univ)
-                h_fhc_imd_universe_data = SwapUniverseCV(h_fhc_imd_universe_data,err,univ)
-                h_rhc_imd_universe_data = SwapUniverseCV(h_rhc_imd_universe_data,err,univ)
+                # Do data histograms to mimic background subtraction effect, muon selections have no data systematics
+                h_fhc_nueel_data_universe = SwapUniverseCV(h_fhc_nueel_data_universe,err,univ)
+                h_rhc_nueel_data_universe = SwapUniverseCV(h_rhc_nueel_data_universe,err,univ)
+                h_fhc_imd_data_universe = SwapUniverseCV(h_fhc_imd_data_universe,err,univ)
+                h_rhc_imd_data_universe = SwapUniverseCV(h_rhc_imd_data_universe,err,univ)
 
-                mc_histsToStitch = OrderedDict()
-                mc_histsToStitch['fhc_nueel'] = h_fhc_nueel_universe_mc
-                mc_histsToStitch['fhc_imd'] = h_fhc_imd_universe_mc
-                mc_histsToStitch['fhc_muselection']=h_fhc_mu_universe_mc
-                mc_histsToStitch['fhc_selection']=h_fhc_universe_mc
-                mc_histsToStitch['rhc_nueel'] = h_rhc_nueel_universe_mc
-                mc_histsToStitch['rhc_imd'] = h_rhc_imd_universe_mc
-                mc_histsToStitch['rhc_muselection']=h_rhc_mu_universe_mc
-                mc_histsToStitch['rhc_selection']=h_rhc_universe_mc
+                # ---------------------- Create Stitched Universe Histograms -----------------------------
+                mc_universe = StitchedHistogram(err+"_{}".format(univ),True)
+                data_universe = StitchedHistogram(err+"_{}".format(univ),False)
 
-                data_histsToStitch = OrderedDict()
-                data_histsToStitch['fhc_nueel'] = h_fhc_nueel_universe_data
-                data_histsToStitch['fhc_imd'] = h_fhc_imd_universe_data
-                data_histsToStitch['fhc_muselection']=h_fhc_muselection_data
-                data_histsToStitch['fhc_selection']=h_fhc_universe_data
-                data_histsToStitch['rhc_nueel'] = h_rhc_nueel_universe_data
-                data_histsToStitch['rhc_imd'] = h_rhc_imd_universe_data
-                data_histsToStitch['rhc_muselection']=h_rhc_muselection_data
-                data_histsToStitch['rhc_selection']=h_rhc_universe_data
+                # ----- Initialize histogram objects with all samples ----- #
+                mc_universe.AddHistogram('fhc_nueel',h_fhc_nueel_mc_universe,h_fhc_nueel_mc_universe)
+                mc_universe.AddHistogram('fhc_imd',h_fhc_imd_mc_universe,h_fhc_imd_mc_universe)
+                mc_universe.AddHistogram('fhc_muselection',h_fhc_muselection_mc_universe,h_fhc_muselection_mc_universe)
+                mc_universe.AddHistogram('fhc_selection',h_fhc_selection_mc_universe,h_fhc_selection_mc_universe)
+                mc_universe.AddHistogram('rhc_nueel',h_rhc_nueel_mc_universe,h_rhc_nueel_mc_universe)
+                mc_universe.AddHistogram('rhc_imd',h_rhc_imd_mc_universe,h_rhc_imd_mc_universe)
+                mc_universe.AddHistogram('rhc_muselection',h_rhc_muselection_mc_universe,h_rhc_muselection_mc_universe)
+                mc_universe.AddHistogram('rhc_selection',h_rhc_selection_mc_universe,h_rhc_selection_mc_universe)
 
-                for h in list(mc_histsToStitch.keys()):
-                    if "fhc" in exclude and "selection" in h and "fhc" in h:
-                        del(mc_histsToStitch[h])
-                        del(data_histsToStitch[h])
-                        continue
-                    if "rhc" in exclude and "selection" in h and "rhc" in h:
-                        del(mc_histsToStitch[h])
-                        del(data_histsToStitch[h])
-                        continue
-                    if "numu" in exclude and "muselection" in h:
-                        del(mc_histsToStitch[h])
-                        del(data_histsToStitch[h])
-                        continue
-                    if "nue" in exclude and "_selection" in h:
-                        del(mc_histsToStitch[h])
-                        del(data_histsToStitch[h])
-                        continue
-                    if "elastic" in exclude and "nueel" in h:
-                        del(mc_histsToStitch[h])
-                        del(data_histsToStitch[h])
-                        continue
-                    if "imd" in exclude and "imd" in h:
-                        del(mc_histsToStitch[h])
-                        del(data_histsToStitch[h])
-                        continue
+                data_universe.AddHistogram('fhc_nueel',h_fhc_nueel_data_universe,h_fhc_nueel_mc_universe)
+                data_universe.AddHistogram('fhc_imd',h_fhc_imd_data_universe,h_fhc_imd_mc_universe)
+                data_universe.AddHistogram('fhc_muselection',h_fhc_muselection_data_universe,h_fhc_muselection_mc_universe)
+                data_universe.AddHistogram('fhc_selection',h_fhc_selection_data_universe,h_fhc_selection_mc_universe)
+                data_universe.AddHistogram('rhc_nueel',h_rhc_nueel_data_universe,h_rhc_nueel_mc_universe)
+                data_universe.AddHistogram('rhc_imd',h_rhc_imd_data_universe,h_rhc_imd_mc_universe)
+                data_universe.AddHistogram('rhc_muselection',h_rhc_muselection_data_universe,h_rhc_muselection_mc_universe)
+                data_universe.AddHistogram('rhc_selection',h_rhc_selection_data_universe,h_rhc_selection_mc_universe)
 
-                if doratio:
-                    for h in list(mc_histsToStitch.keys()):
-                        if not fit_muons:
-                            if "selection" in h:
-                                del(mc_histsToStitch[h])
-                                del(data_histsToStitch[h])
-                        else:
-                            if "_selection" in h:
-                                del(mc_histsToStitch[h])
-                                del(data_histsToStitch[h])
+                # ----- Remove samples that we want to exclude from analysis ----- #
+                mc_universe.ApplyExclusion(exclude)
+                data_universe.ApplyExclusion(exclude)
 
-                    if "fhc" not in exclude:
-                        toClone = h_fhc_mu_universe_mc.Clone()
-                        toClone.Divide(toClone,h_fhc_universe_mc)
-                        mc_histsToStitch['fhc_ratio']=toClone
-                        toClone = h_fhc_muselection_data.Clone()
-                        toClone.Divide(toClone,h_fhc_universe_data)
-                        data_histsToStitch['fhc_ratio']=toClone
-                    if "rhc" not in exclude:
-                        toClone = h_rhc_mu_universe_mc.Clone()
-                        toClone.Divide(toClone,h_rhc_universe_mc)
-                        mc_histsToStitch['rhc_ratio']=toClone
-                        toClone = h_rhc_muselection_data.Clone()
-                        toClone.Divide(toClone,h_rhc_universe_data)
-                        data_histsToStitch['rhc_ratio']=toClone
+                # ----- Process Systematics and Synchronize across histograms ----- #
+                mc_universe.CleanErrorBands(errsToRemove)
+                data_universe.CleanErrorBands(errsToRemove)
 
-                huniverse_mc = ROOT.TH1D('mc_stitched_{}_{}'.format(err,univ), 'mc_stitched_{}_{}'.format(err,univ), n_bins_new, 0,  n_bins_new )
-                huniverse_data = ROOT.TH1D('data_stitched_{}_{}'.format(err,univ), 'data_stitched_{}_{}'.format(err,univ), n_bins_new, 0,  n_bins_new )
+                if doratio: # do we want to replace selection samples with flavor ratios
+                    if "fhc" not in exclude: # do we care about the fhc component
+                        mc_universe.MakeRatio('fhc')
+                        data_universe.MakeRatio('fhc')
+                    if "rhc" not in exclude: # do we care about the rhc component
+                        mc_universe.MakeRatio('rhc')
+                        data_universe.MakeRatio('rhc')
 
-                StitchThis(huniverse_mc, mc_histsToStitch,mc_cvToStitch)
-                StitchThis(huniverse_data, data_histsToStitch,mc_cvToStitch)
+                    if not fit_muons: # do we want to keep the muon selections in addition to flavor ratios
+                        mc_universe.RemoveHistogram('fhc_muselection')
+                        mc_universe.RemoveHistogram('rhc_muselection')
+                        data_universe.RemoveHistogram('fhc_muselection')
+                        data_universe.RemoveHistogram('rhc_muselection')
 
-                mnv_universe_data = PlotUtils.MnvH1D( huniverse_data )
-                mnv_universe_mc   = PlotUtils.MnvH1D( huniverse_mc )
+                # ----- Stitch histograms together ----- #
+                mc_universe.Stitch()
+                data_universe.Stitch()
+                
+                mc_universe.SyncHistograms(data_universe)
+                mc_universe.SyncHistograms(mc_cv)
+                mc_universe.SyncHistograms(data_cv)
 
-                FillErrorBandfromHist2( mnv_universe_data, data_histsToStitch, mc_cvToStitch, isData=True)
-                FillErrorBandfromHist2( mnv_universe_mc, mc_histsToStitch, mc_cvToStitch, isData=False)
-                chi2 = Chi2DataMC(mnv_universe_data,mnv_universe_mc)
+                chi2 = Chi2DataMC(data_universe.hist,mc_universe.hist)
                 chi2s.append(chi2)
-                #DataMCPlot(mnv_universe_data,mnv_universe_mc,mnv_cv_data.Clone(),mnv_cv_mc.Clone())
+                if err == "ElectronScale":
+                    DataMCPlot(data_universe.hist,mc_universe.hist,data_cv.hist,mc_cv.hist)
+                    c1 = ROOT.TCanvas()
+                    MNVPLOTTER.DrawErrorSummary(mc_universe.hist,"TR",True,True,0)
+                    c1.Print('plots/'+mc_universe.name+"_mc_summary.png")
+                    MNVPLOTTER.DrawErrorSummary(data_universe.hist,"TR",True,True,0)
+                    c1.Print('plots'+mc_universe.name+"_data_summary.png")
+
+            print("writing {} universe for {} errorband".format(n_universes,err))
             file.write(err)
             for i in range(0,n_universes):
-                print("writing {}th universe for {} errorband".format(i,err))
                 file.write(", {}".format(chi2s[i]))
+
             file.write("\n")
-    print("dnof: ",mnv_cv_data.GetNbinsX()," chi2: ",Chi2DataMC(mnv_cv_data,mnv_cv_mc))
+    print("dnof: ",data_cv.hist.GetNbinsX()," chi2: ",Chi2DataMC(data_cv.hist,mc_cv.hist))
 
