@@ -200,58 +200,41 @@ if __name__ == "__main__":
             h_rhc_selection_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_rhc_selection_mc.GetBinContent(i) * rhc_scale_p1sig.GetBinContent(i))
 
         # ---------------------- Create Stitched CV Histograms -----------------------------
-        mc_cv = StitchedHistogram("cv_histogram",True)
-        data_cv = StitchedHistogram("data_histogram",False)
+        cv_histogram = StitchedHistogram("cv_histogram")
 
         # ----- Initialize histogram objects with all samples ----- #
-        mc_cv.AddHistogram('fhc_nueel',h_fhc_nueel_mc,h_fhc_nueel_mc)
-        mc_cv.AddHistogram('fhc_imd',h_fhc_imd_mc,h_fhc_imd_mc)
-        mc_cv.AddHistogram('fhc_muselection',h_fhc_muselection_mc,h_fhc_muselection_mc)
-        mc_cv.AddHistogram('fhc_selection',h_fhc_selection_mc,h_fhc_selection_mc)
-        mc_cv.AddHistogram('rhc_nueel',h_rhc_nueel_mc,h_rhc_nueel_mc)
-        mc_cv.AddHistogram('rhc_imd',h_rhc_imd_mc,h_rhc_imd_mc)
-        mc_cv.AddHistogram('rhc_muselection',h_rhc_muselection_mc,h_rhc_muselection_mc)
-        mc_cv.AddHistogram('rhc_selection',h_rhc_selection_mc,h_rhc_selection_mc)
-
-        data_cv.AddHistogram('fhc_nueel',h_fhc_nueel_data,h_fhc_nueel_mc)
-        data_cv.AddHistogram('fhc_imd',h_fhc_imd_data,h_fhc_imd_mc)
-        data_cv.AddHistogram('fhc_muselection',h_fhc_muselection_data,h_fhc_muselection_mc)
-        data_cv.AddHistogram('fhc_selection',h_fhc_selection_data,h_fhc_selection_mc)
-        data_cv.AddHistogram('rhc_nueel',h_rhc_nueel_data,h_rhc_nueel_mc)
-        data_cv.AddHistogram('rhc_imd',h_rhc_imd_data,h_rhc_imd_mc)
-        data_cv.AddHistogram('rhc_muselection',h_rhc_muselection_data,h_rhc_muselection_mc)
-        data_cv.AddHistogram('rhc_selection',h_rhc_selection_data,h_rhc_selection_mc)
+        cv_histogram.AddHistogram('fhc_nueel',h_fhc_nueel_mc,h_fhc_nueel_data)
+        cv_histogram.AddHistogram('fhc_imd',h_fhc_imd_mc,h_fhc_imd_data)
+        cv_histogram.AddHistogram('fhc_muselection',h_fhc_muselection_mc,h_fhc_muselection_data)
+        cv_histogram.AddHistogram('fhc_selection',h_fhc_selection_mc,h_fhc_selection_data)
+        cv_histogram.AddHistogram('rhc_nueel',h_rhc_nueel_mc,h_rhc_nueel_data)
+        cv_histogram.AddHistogram('rhc_imd',h_rhc_imd_mc,h_rhc_imd_data)
+        cv_histogram.AddHistogram('rhc_muselection',h_rhc_muselection_mc,h_rhc_muselection_data)
+        cv_histogram.AddHistogram('rhc_selection',h_rhc_selection_mc,h_rhc_selection_data)
 
         # ----- Remove samples that we want to exclude from analysis ----- #
-        mc_cv.ApplyExclusion(exclude)
-        data_cv.ApplyExclusion(exclude)
+        cv_histogram.ApplyExclusion(exclude)
 
         # ----- Process Systematics and Synchronize across histograms ----- #
-        mc_cv.CleanErrorBands(errsToRemove)
-        data_cv.CleanErrorBands(errsToRemove)
+        cv_histogram.CleanErrorBands(errsToRemove)
 
         if doratio: # do we want to replace selection samples with flavor ratios
             if "fhc" not in exclude: # do we care about the fhc component
-                mc_cv.MakeRatio('fhc')
-                data_cv.MakeRatio('fhc')
+                cv_histogram.MakeRatio('fhc')
             if "rhc" not in exclude: # do we care about the rhc component
-                mc_cv.MakeRatio('rhc')
-                data_cv.MakeRatio('rhc')
+                cv_histogram.MakeRatio('rhc')
             if not fit_muons: # do we want to keep the muon selections in addition to flavor ratios
-                mc_cv.RemoveHistogram('fhc_muselection')
-                mc_cv.RemoveHistogram('rhc_muselection')
-                data_cv.RemoveHistogram('fhc_muselection')
-                data_cv.RemoveHistogram('rhc_muselection')
+                cv_histogram.RemoveHistogram('fhc_muselection')
+                cv_histogram.RemoveHistogram('rhc_muselection')
 
         # ----- Stitch histograms together ----- #
-        mc_cv.Stitch()
-        data_cv.Stitch()
+        cv_histogram.Stitch()
 
         # ---------------------- Start Swapping Universes -----------------------------
         err_names = h_rhc_selection_mc.GetVertErrorBandNames()
         for err in err_names:
             err = str(err)
-            n_universes = mc_cv.hist.GetVertErrorBand(err).GetNHists()
+            n_universes = cv_histogram.mc_hist.GetVertErrorBand(err).GetNHists()
             print("loading {} errorband that has {} n_universes".format(err,n_universes))
             chi2s = []
             for univ in range(n_universes):
@@ -319,67 +302,48 @@ if __name__ == "__main__":
                 h_rhc_imd_data_universe = SwapUniverseCV(h_rhc_imd_data_universe,err,univ)
 
                 # ---------------------- Create Stitched Universe Histograms -----------------------------
-                mc_universe = StitchedHistogram(err+"_{}".format(univ),True)
-                data_universe = StitchedHistogram(err+"_{}".format(univ),False)
+                universe_histogram = StitchedHistogram(err+"_{}".format(univ))
 
                 # ----- Initialize histogram objects with all samples ----- #
-                mc_universe.AddHistogram('fhc_nueel',h_fhc_nueel_mc_universe,h_fhc_nueel_mc_universe)
-                mc_universe.AddHistogram('fhc_imd',h_fhc_imd_mc_universe,h_fhc_imd_mc_universe)
-                mc_universe.AddHistogram('fhc_muselection',h_fhc_muselection_mc_universe,h_fhc_muselection_mc_universe)
-                mc_universe.AddHistogram('fhc_selection',h_fhc_selection_mc_universe,h_fhc_selection_mc_universe)
-                mc_universe.AddHistogram('rhc_nueel',h_rhc_nueel_mc_universe,h_rhc_nueel_mc_universe)
-                mc_universe.AddHistogram('rhc_imd',h_rhc_imd_mc_universe,h_rhc_imd_mc_universe)
-                mc_universe.AddHistogram('rhc_muselection',h_rhc_muselection_mc_universe,h_rhc_muselection_mc_universe)
-                mc_universe.AddHistogram('rhc_selection',h_rhc_selection_mc_universe,h_rhc_selection_mc_universe)
-
-                data_universe.AddHistogram('fhc_nueel',h_fhc_nueel_data_universe,h_fhc_nueel_mc_universe)
-                data_universe.AddHistogram('fhc_imd',h_fhc_imd_data_universe,h_fhc_imd_mc_universe)
-                data_universe.AddHistogram('fhc_muselection',h_fhc_muselection_data_universe,h_fhc_muselection_mc_universe)
-                data_universe.AddHistogram('fhc_selection',h_fhc_selection_data_universe,h_fhc_selection_mc_universe)
-                data_universe.AddHistogram('rhc_nueel',h_rhc_nueel_data_universe,h_rhc_nueel_mc_universe)
-                data_universe.AddHistogram('rhc_imd',h_rhc_imd_data_universe,h_rhc_imd_mc_universe)
-                data_universe.AddHistogram('rhc_muselection',h_rhc_muselection_data_universe,h_rhc_muselection_mc_universe)
-                data_universe.AddHistogram('rhc_selection',h_rhc_selection_data_universe,h_rhc_selection_mc_universe)
-
+                universe_histogram.AddHistogram('fhc_nueel',h_fhc_nueel_mc_universe,h_fhc_nueel_data_universe)
+                universe_histogram.AddHistogram('fhc_imd',h_fhc_imd_mc_universe,h_fhc_imd_data_universe)
+                universe_histogram.AddHistogram('fhc_muselection',h_fhc_muselection_mc_universe,h_fhc_muselection_data_universe)
+                universe_histogram.AddHistogram('fhc_selection',h_fhc_selection_mc_universe,h_fhc_selection_data_universe)
+                universe_histogram.AddHistogram('rhc_nueel',h_rhc_nueel_mc_universe,h_rhc_nueel_data_universe)
+                universe_histogram.AddHistogram('rhc_imd',h_rhc_imd_mc_universe,h_rhc_imd_data_universe)
+                universe_histogram.AddHistogram('rhc_muselection',h_rhc_muselection_mc_universe,h_rhc_muselection_data_universe)
+                universe_histogram.AddHistogram('rhc_selection',h_rhc_selection_mc_universe,h_rhc_selection_data_universe)
+                
                 # ----- Remove samples that we want to exclude from analysis ----- #
-                mc_universe.ApplyExclusion(exclude)
-                data_universe.ApplyExclusion(exclude)
+                universe_histogram.ApplyExclusion(exclude)
 
                 # ----- Process Systematics and Synchronize across histograms ----- #
-                mc_universe.CleanErrorBands(errsToRemove)
-                data_universe.CleanErrorBands(errsToRemove)
+                universe_histogram.CleanErrorBands(errsToRemove)
 
                 if doratio: # do we want to replace selection samples with flavor ratios
                     if "fhc" not in exclude: # do we care about the fhc component
-                        mc_universe.MakeRatio('fhc')
-                        data_universe.MakeRatio('fhc')
+                        universe_histogram.MakeRatio('fhc')
                     if "rhc" not in exclude: # do we care about the rhc component
-                        mc_universe.MakeRatio('rhc')
-                        data_universe.MakeRatio('rhc')
+                        universe_histogram.MakeRatio('rhc')
 
                     if not fit_muons: # do we want to keep the muon selections in addition to flavor ratios
-                        mc_universe.RemoveHistogram('fhc_muselection')
-                        mc_universe.RemoveHistogram('rhc_muselection')
-                        data_universe.RemoveHistogram('fhc_muselection')
-                        data_universe.RemoveHistogram('rhc_muselection')
+                        universe_histogram.RemoveHistogram('fhc_muselection')
+                        universe_histogram.RemoveHistogram('rhc_muselection')
 
                 # ----- Stitch histograms together ----- #
-                mc_universe.Stitch()
-                data_universe.Stitch()
-                
-                mc_universe.SyncHistograms(data_universe)
-                mc_universe.SyncHistograms(mc_cv)
-                mc_universe.SyncHistograms(data_cv)
+                universe_histogram.Stitch()
+                universe_histogram.SyncHistograms(cv_histogram)
 
-                chi2 = Chi2DataMC(data_universe.hist,mc_universe.hist)
+                chi2 = Chi2DataMC(universe_histogram.data_hist,universe_histogram.mc_hist)
                 chi2s.append(chi2)
-                if err == "ElectronScale":
-                    DataMCPlot(data_universe.hist,mc_universe.hist,data_cv.hist,mc_cv.hist)
-                    c1 = ROOT.TCanvas()
-                    MNVPLOTTER.DrawErrorSummary(mc_universe.hist,"TR",True,True,0)
-                    c1.Print('plots/'+mc_universe.name+"_mc_summary.png")
-                    MNVPLOTTER.DrawErrorSummary(data_universe.hist,"TR",True,True,0)
-                    c1.Print('plots'+mc_universe.name+"_data_summary.png")
+                print("universe chi2: ",chi2)
+
+                DataMCPlot(universe_histogram.data_hist,universe_histogram.mc_hist,cv_histogram.data_hist,cv_histogram.mc_hist)
+                c1 = ROOT.TCanvas()
+                MNVPLOTTER.DrawErrorSummary(universe_histogram.mc_hist,"TR",True,True,0)
+                c1.Print('plots/'+universe_histogram.name+"_mc_summary.png")
+                MNVPLOTTER.DrawErrorSummary(universe_histogram.data_hist,"TR",True,True,0)
+                c1.Print('plots/'+universe_histogram.name+"_data_summary.png")
 
             print("writing {} universe for {} errorband".format(n_universes,err))
             file.write(err)
@@ -387,5 +351,5 @@ if __name__ == "__main__":
                 file.write(", {}".format(chi2s[i]))
 
             file.write("\n")
-    print("dnof: ",data_cv.hist.GetNbinsX()," chi2: ",Chi2DataMC(data_cv.hist,mc_cv.hist))
+    print("dnof: ",cv_histogram.data_hist.GetNbinsX()," chi2: ",Chi2DataMC(cv_histogram.data_hist,cv_histogram.mc_hist))
 

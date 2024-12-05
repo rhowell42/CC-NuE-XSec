@@ -42,52 +42,73 @@ errorbandDict = { #keys are the errorbands that need to be renamed, values are w
         }
 
 class StitchedHistogram:
-    def __init__(self,name,is_mc,pseudodata=False):
+    def __init__(self,name,pseudodata=False):
         self.name = name
-        self.is_mc = is_mc
-        self.hists = OrderedDict()
-        self.ref_hists = OrderedDict()
-        self.templates = OrderedDict()
-        self.is_pseudodata = pseudodata
 
-        self.hist = None
+        self.data_hists = OrderedDict()
+        self.mc_hists = OrderedDict()
+        self.templates = OrderedDict()
+
+        self.keys = []
+
+        self.mc_hist = None
+        self.data_hist = None
         self.template = None
 
-    def AddHistogram(self,name,hist,ref_hist,template = None):
-        if len(self.hists.keys()) > 0 and type(hist) != type(list(self.hists.values())[0]):
-            raise ValueError("Cannot add {} to histogram dictionary of {}".format(type(hist),type(list(self.hists.values())[0])))
+        self.is_pseudodata = pseudodata
+        self.is_processed = False
+
+    def AddHistogram(self,name,mc_hist,data_hist,template=None):
+        if len(self.data_hists.keys()) > 0 and type(data_hist) != type(list(self.data_hists.values())[0]):
+            raise ValueError("Cannot add {} to data histogram dictionary of {}".format(type(hist),type(list(self.data_hists.values())[0])))
+        if len(self.mc_hists.keys()) > 0 and type(mc_hist) != type(list(self.data_hists.values())[0]):
+            raise ValueError("Cannot add {} to data histogram dictionary of {}".format(type(hist),type(list(self.mc_hists.values())[0])))
         if template is not None and len(templates.keys()) > 0 and type(template) != type(templates.values()[0]):
             raise ValueError("Cannot add {} to template dictionary of {}".format(type(template),type(list(templates.values())[0])))
 
-        self.hists[name] = hist
-        self.ref_hists[name] = ref_hist
+        self.data_hists[name] = data_hist
+        self.mc_hists[name] = mc_hist
 
         if template is not None:
             self.templates[name] = template
 
-    def RemoveHistogram(self,name):
-        if name in list(self.hists.keys()):
-            del self.hists[name]
-            del self.ref_hists[name]
-        else:
-            raise ValueError("{} not in histogram dictionary".format(name))
+        self.UpdateKeys()
+        self.is_processed = False
 
-        if name in list(self.templates.keys()):
+    def RemoveHistogram(self,name):
+        if name not in list(self.data_hists.keys()):
+            raise ValueError("{} not in data histogram dictionary".format(name))
+        if name not in list(self.mc_hists.keys()):
+            raise ValueError("{} not in mc histogram dictionary".format(name))
+
+        del self.data_hists[name]
+        del self.mc_hists[name]
+        
+        if len(list(self.templates.keys())) > 0:
+            if name not in list(self.templates.keys()):
+                raise ValueError("{} not in templates dictionary".format(name))
             del self.templates[name]
-        elif len(list(self.templates.keys())) > 0:
-            raise ValueError("{} not in templates dictionary".format(name))
+
+        self.UpdateKeys()
+
+    def UpdateKeys(self):
+        self.keys = list(self.mc_hists.keys())
+        if self.keys != list(self.data_hists.keys()):
+            raise ValueError("MC dictionary incompatable with data dictionary")
 
     def MakeRatio(self,beam):
         beam = beam.lower()
         muonname = beam+"_muselection"
         elecname = beam+"_selection"
-        if muonname in self.hists.keys() and elecname in self.hists.keys():
-            toClone = self.hists[muonname].Clone()
-            toClone.Divide(toClone,self.hists[elecname])
-            refClone = self.ref_hists[muonname].Clone()
-            refClone.Divide(refClone,self.ref_hists[elecname])
+
+        if muonname in self.keys and elecname in self.keys:
+            mc_clone = self.mc_hists[muonname].Clone()
+            mc_clone.Divide(mc_clone,self.mc_hists[elecname])
+            data_clone = self.data_hists[muonname].Clone()
+            data_clone.Divide(data_clone,self.data_hists[elecname])
+
             self.RemoveHistogram(elecname)
-            self.AddHistogram('{}_ratio'.format(beam),toClone,refClone)
+            self.AddHistogram('{}_ratio'.format(beam),mc_clone,data_clone)
 
     def ApplyExclusion(self,exclude):
         if "fhc" in exclude:
@@ -115,66 +136,92 @@ class StitchedHistogram:
         self.SyncErrorBands()
 
         for errname in names:
-            for h in self.hists:
-                if errname in self.hists[h].GetVertErrorBandNames():
-                    self.hists[h].PopVertErrorBand(errname)
+            for h in self.keys:
+                if errname in self.data_hists[h].GetVertErrorBandNames():
+                    self.data_hists[h].PopVertErrorBand(errname)
+            for h in self.keys:
+                if errname in self.mc_hists[h].GetVertErrorBandNames():
+                    self.mc_hists[h].PopVertErrorBand(errname)
+
+        self.is_processed = True
 
     def SeparateBeamAngle(self):
-        for h in self.hists:
-            if "beam_angle" not in self.hists[h].GetVertErrorBandNames():
+        for h in self.keys:
+            if "beam_angle" not in self.data_hists[h].GetVertErrorBandNames():
                 continue
-            hists = self.hists[h].GetVertErrorBand("beam_angle").GetHists()
-            self.hists[h].PopVertErrorBand("beam_angle")
-            xhists = hists[:2]
-            yhists = hists[2:]
-            self.hists[h].AddVertErrorBand("BeamAngleX",xhists)
-            self.hists[h].AddVertErrorBand("BeamAngleY",yhists)
+            data_hists = self.data_hists[h].GetVertErrorBand("beam_angle").GetHists()
+            self.data_hists[h].PopVertErrorBand("beam_angle")
+            if "BeamAngleX" not in self.data_hists[h].GetVertErrorBandNames() and "BeamAngleY" not in self.data_hists[h].GetVertErrorBandNames():
+                xdata_hists = data_hists[:2]
+                ydata_hists = data_hists[2:]
+                self.data_hists[h].AddVertErrorBand("BeamAngleX",xdata_hists)
+                self.data_hists[h].AddVertErrorBand("BeamAngleY",ydata_hists)
+
+            if "beam_angle" not in self.mc_hists[h].GetVertErrorBandNames():
+                continue
+            mc_hists = self.mc_hists[h].GetVertErrorBand("beam_angle").GetHists()
+            self.mc_hists[h].PopVertErrorBand("beam_angle")
+            if "BeamAngleX" not in self.mc_hists[h].GetVertErrorBandNames() and "BeamAngleY" not in self.mc_hists[h].GetVertErrorBandNames():
+                xmc_hists = mc_hists[:2]
+                ymc_hists = mc_hists[2:]
+                self.mc_hists[h].AddVertErrorBand("BeamAngleX",xmc_hists)
+                self.mc_hists[h].AddVertErrorBand("BeamAngleY",ymc_hists)
 
     def LateralToVertical(self):
-        for h in self.hists:
-            for name in self.hists[h].GetLatErrorBandNames():
-                hists = self.hists[h].GetLatErrorBand(name).GetHists()
-                self.hists[h].PopLatErrorBand(name)
-                self.hists[h].AddVertErrorBand(name,hists)
+        for h in self.keys:
+            for name in self.data_hists[h].GetLatErrorBandNames():
+                data_hists = self.data_hists[h].GetLatErrorBand(name).GetHists()
+                self.data_hists[h].PopLatErrorBand(name)
+                if h not in self.data_hists[h].GetVertErrorBandNames(): 
+                    self.data_hists[h].AddVertErrorBand(name,data_hists)
+            for name in self.mc_hists[h].GetLatErrorBandNames():
+                mc_hists = self.mc_hists[h].GetLatErrorBand(name).GetHists()
+                self.mc_hists[h].PopLatErrorBand(name)
+                if h not in self.mc_hists[h].GetVertErrorBandNames(): 
+                    self.mc_hists[h].AddVertErrorBand(name,mc_hists)
 
     def Stitch(self):
         # ----- Create empty ROOT histograms to fill with stitched content ----- #
         n_bins_new = 0
-        for h in self.ref_hists:
-            for i in range(0,self.ref_hists[h].GetNbinsX()+1):
-                if self.ref_hists[h].GetBinContent(i) > minBinCont:
+        for h in self.keys:
+            for i in range(0,self.mc_hists[h].GetNbinsX()+1):
+                if self.mc_hists[h].GetBinContent(i) > minBinCont:
                     n_bins_new+=1
 
-        self.hist     = ROOT.TH1D(self.name,self.name,n_bins_new,0,n_bins_new)
-        self.template = ROOT.TH2D(self.name+"_template",self.name+"_template", n_bins_new, 0,  n_bins_new,34,0,0.495)
+        self.mc_hist   = ROOT.TH1D(self.name+"_mc",self.name+"_mc",n_bins_new,0,n_bins_new)
+        self.data_hist = ROOT.TH1D(self.name+"_data",self.name+"_data",n_bins_new,0,n_bins_new)
+        self.template  = ROOT.TH2D(self.name+"_template",self.name+"_template",n_bins_new,0,n_bins_new,34,0,0.495)
 
         # ----- Do some errorband cleaning ----- #
-        self.SeparateBeamAngle() # make beam angle systematics consistent across samples
-        self.LateralToVertical() # convert lateral errorbands (deprecated) from old samples to vertical
-        self.SyncErrorBands()  # make sure all samples have the same errorbands, reduce flux universes to 100
+        if not self.is_processed:
+            self.SeparateBeamAngle() # make beam angle systematics consistent across samples
+            self.LateralToVertical() # convert lateral errorbands (deprecated) from old samples to vertical
+            self.SyncErrorBands()  # make sure all samples have the same errorbands, reduce flux universes to 100
+            self.is_processed = True
 
         # ----- Combine samples to one histogram ----- #
         self.StitchThis()   # combine 1D histograms
-
         if len(list(self.templates.keys())) > 0:
             self.StitchThis2D() # combine 2D templates
         
         # ----- Convert ROOT.TH1 to PlotUtils.Mnv1D and fill errorbands ----- #
-        self.hist = PlotUtils.MnvH1D(self.hist)
-        self.FillErrorBandfromHist2()
+        self.mc_hist = PlotUtils.MnvH1D(self.mc_hist)
+        self.data_hist = PlotUtils.MnvH1D(self.data_hist)
+        self.FillErrorBandsFromDict()
 
     def Write(self,filename):
         f = ROOT.TFile(filename,"UPDATE")
-        self.hist.Write()
+        self.mc_hist.Write()
+        self.data_hist.Write()
         self.template.Write()
         f.Close()
 
     def StitchThis2D(self):
         i_new = 0
-        for h in self.hists:
+        for h in self.templates:
             h_old = self.templates[h]
-            for x in range(1, self.ref_hist[h].GetNbinsX()+1):
-                if self.ref_hists[h].GetBinContent(x) <= minBinCont:
+            for x in range(1, self.mc_hists[h].GetNbinsX()+1):
+                if self.mc_hists[h].GetBinContent(x) <= minBinCont:
                     continue
 
                 i_new += 1
@@ -194,160 +241,164 @@ class StitchedHistogram:
 
     def StitchThis(self):
         i_new = 0
-        for h in self.hists:
-            h_old = self.hists[h]
-            for i in range(1,h_old.GetNbinsX()+1):
-                bin_c = h_old.GetBinContent(i)
-                if self.is_pseudodata:
-                    bin_c = self.ref_hists[h].GetBinContent(i)
-                
-                if self.ref_hists[h].GetBinContent(i) <= minBinCont:
-                    continue
+        for h in self.keys:
+            h_mc = self.mc_hists[h]
+            h_data = self.data_hists[h]
 
+            for i in range(1,h_mc.GetNbinsX()+1):
+                if h_mc.GetBinContent(i) <= minBinCont:
+                    continue # skip empty MC bins
                 i_new += 1
-                self.hist.SetBinContent(i_new,bin_c)
 
+                # ----- do MC stitching ----- #
+                bin_c = h_mc.GetBinContent(i)
+                self.mc_hist.SetBinContent(i_new,bin_c)
                 # no statistical error on elastic scattering special production
-                if 'nueel' in h and self.is_mc:
-                    self.hist.SetBinError(i_new,0)
+                if 'nueel' in h:
+                    self.mc_hist.SetBinError(i_new,0)
 
-    def FillErrorBandfromHist2(self):
+                # ----- do data stitching ----- #
+                bin_c = h_data.GetBinContent(i)
+                if self.is_pseudodata:
+                    bin_c = h_mc.GetBinContent(i)                
+                self.data_hist.SetBinContent(i_new,bin_c)
+
+    def FillErrorBandsFromDict(self):
         offset = 1
-        for h in self.hists:
-            h_old = self.hists[h]
-            Nbins = h_old.GetNbinsX()+1 if not self.ref_hists else self.ref_hists[h].GetNbinsX()+1
+        for h in self.keys:
+            h_mc = self.mc_hists[h]
+            h_data = self.data_hists[h]
+            Nbins = h_mc.GetNbinsX()+1
 
-            errorband_names_vert = h_old.GetVertErrorBandNames()
+            if not self.is_processed:
+                raise ValueError("Histograms have not been synced")
+
+            errorband_names_vert = h_mc.GetVertErrorBandNames()
+
             n_univ = 0
-            sys_bc = 0.0
+            sys_mc = 0.0
+            sys_data = 0.0
 
             for error_band in errorband_names_vert:
-                if error_band == 'Flux':
-                    n_univ = 100
-                else:
-                    n_univ = h_old.GetVertErrorBand(error_band).GetNHists()
-                    if error_band == "GENIE_MaZExpCCQE":
-                        n_univ = 100
-                    elif error_band == "GENIE_MaCCQE":
-                        n_univ = 2
-
-                if not self.hist.HasVertErrorBand( error_band ) and h_old.HasVertErrorBand( error_band ):
-                    self.hist.AddVertErrorBandAndFillWithCV( error_band, n_univ )
-                    self.hist.GetVertErrorBand(error_band).SetUseSpreadError( h_old.GetVertErrorBand(error_band).GetUseSpreadError())
+                n_univ = h_mc.GetVertErrorBand(error_band).GetNHists()
+                if not self.mc_hist.HasVertErrorBand(error_band) and h_mc.HasVertErrorBand(error_band):
+                    self.mc_hist.AddVertErrorBandAndFillWithCV(error_band, n_univ)
+                    self.mc_hist.GetVertErrorBand(error_band).SetUseSpreadError(h_mc.GetVertErrorBand(error_band).GetUseSpreadError())
+                if not self.data_hist.HasVertErrorBand(error_band) and h_data.HasVertErrorBand(error_band):
+                    self.data_hist.AddVertErrorBandAndFillWithCV(error_band, n_univ)
+                    self.data_hist.GetVertErrorBand(error_band).SetUseSpreadError(h_data.GetVertErrorBand(error_band).GetUseSpreadError())
 
                 for universe in range(0, n_univ):
                     bin_offset = offset
                     for b in range(1, Nbins):
-                        bin_c = h_old.GetBinContent(b)
-                        mcbin_c = self.ref_hists[h].GetBinContent(b)
-                        sys_bc = h_old.GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
-                        ratio = sys_bc/bin_c if bin_c != 0 else 0
-                        if self.is_pseudodata:
-                            sys_bc = mcbin_c*ratio
+                        bin_mc = h_mc.GetBinContent(b)
+                        bin_data = h_data.GetBinContent(b)
 
-                        if mcbin_c <= minBinCont:
+                        if bin_mc <= minBinCont:
                             bin_offset += -1
                             continue
+
+                        sys_mc = h_mc.GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
+                        sys_data = h_data.GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
+
+                        if self.is_pseudodata:
+                            ratio = sys_data/bin_data if bin_data != 0 else 0
+                            sys_data = bin_mc*ratio
+
                         bin_new = b + bin_offset - 1
-                        self.hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent( bin_new, sys_bc )
+                        self.mc_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_mc)
+                        self.data_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_data)
+
             for i in range(1,Nbins):
-                if self.ref_hists[h].GetBinContent(i) <= minBinCont:
+                if self.mc_hists[h].GetBinContent(i) <= minBinCont:
                     continue
                 offset+=1
-
-        for error in self.hist.GetVertErrorBandNames():
-            for n in range(self.hist.GetVertErrorBand(error).GetNHists()):
-                for i in range(self.hist.GetNbinsX()+1):
-                    if self.hist.GetBinContent(i) == 0:
-                        self.hist.GetVertErrorBand(error).SetBinContent(i,0)
-                        self.hist.GetVertErrorBand(error).GetHist(n).SetBinContent(i,0)
+        if False:
+            for error in self.mc_hist.GetVertErrorBandNames():
+                for n in range(self.mc_hist.GetVertErrorBand(error).GetNHists()):
+                    for i in range(self.mc_hist.GetNbinsX()+1):
+                        if self.mc_hist.GetBinContent(i) == 0:
+                            self.mc_hist.GetVertErrorBand(error).SetBinContent(i,0)
+                            self.mc_hist.GetVertErrorBand(error).GetHist(n).SetBinContent(i,0)
 
     def SyncHistograms(self,h_sync):
         if type(h_sync) == StitchedHistogram:
-            h_sync = h_sync.hist
-        elif type(h_sync) != PlotUtils.MnvH1D:
-            raise ValueError("Cannot sync {} to MnvH1D".format(type(h_sync)))
-
-        for name in self.hist.GetVertErrorBandNames():
-            if name == "Flux":
-                if self.hist.GetVertErrorBand(name).GetNHists() > 100:
-                    h1_hists = self.hist.GetVertErrorBand(name).GetHists()
-                    h1_hists = [h1_hists[i] for i in range(100)]
-                    useSpread = self.hist.GetVertErrorBand(name).GetUseSpreadError()
-                    errband = self.hist.GetVertErrorBand(name)
-                    self.hist.PopVertErrorBand(name)
-                    self.hist.AddVertErrorBand(name,h1_hists)
-                    self.hist.GetVertErrorBand(name).SetUseSpreadError(useSpread)
-                    for i in range(self.hist.GetNbinsX()+1):
-                        self.hist.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
-            elif(name not in h_sync.GetVertErrorBandNames()):
-                n_universes = self.hist.GetVertErrorBand(name).GetNHists()
-                h_sync.AddVertErrorBandAndFillWithCV(name, n_universes)
-                
-        for name in h_sync.GetVertErrorBandNames():
-            if name == "Flux":
-                if h_sync.GetVertErrorBand(name).GetNHists() > 100:
-                    h2_hists = h_sync.GetVertErrorBand(name).GetHists()
-                    h2_hists = [h2_hists[i] for i in range(100)]
-                    useSpread = h_sync.GetVertErrorBand(name).GetUseSpreadError()
-                    errband = h_sync.GetVertErrorBand(name)
-                    h_sync.PopVertErrorBand(name)
-                    h_sync.AddVertErrorBand(name,h2_hists)
-                    h_sync.GetVertErrorBand(name).SetUseSpreadError(useSpread)
-                    for i in range(h_sync.GetNbinsX()+1):
-                        h_sync.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
-            elif(name not in self.hist.GetVertErrorBandNames()):
-                n_universes = h_sync.GetVertErrorBand(name).GetNHists()
-                self.hist.AddVertErrorBandAndFillWithCV(name, n_universes)
+            mc_sync = h_sync.mc_hist
+            data_sync = h_sync.data_hist
+            if mc_sync.GetVertErrorBandNames() != self.mc_hist.GetVertErrorBandNames():
+                self.Sync(mc_sync,self.mc_hist)
+            if data_sync.GetVertErrorBandNames() != self.data_hist.GetVertErrorBandNames():
+                self.Sync(data_sync,self.data_hist)
+        elif type(h_sync) == PlotUtils.MnvH1D:
+            if h_sync.GetVertErrorBandNames() != self.mc_hist.GetVertErrorBandNames():
+                self.Sync(h_sync,self.mc_hist)
+            if h_sync.GetVertErrorBandNames() != self.data_hist.GetVertErrorBandNames():
+                self.Sync(h_sync,self.mc_hist)
+        else:
+            raise ValueError("Cannot sync {} to MnvH1D or StitchedHistogram".format(type(h_sync)))
 
     def SyncErrorBands(self,rename_bands=True):
         if rename_bands:
-            for h in self.hists:
-                for name in self.hists[h].GetVertErrorBandNames():
-                    if str(name) in errorbandDict.keys():
-                        universes = self.hists[h].GetVertErrorBand(name).GetHists()
-                        useSpread = self.hists[h].GetVertErrorBand(name).GetUseSpreadError()
-                        self.hists[h].AddVertErrorBand(errorbandDict[str(name)],universes)
-                        self.hists[h].GetVertErrorBand(errorbandDict[str(name)]).SetUseSpreadError(useSpread)
-                        for i in range(self.hists[h].GetNbinsX()+1):
-                            self.hists[h].GetVertErrorBand(errorbandDict[str(name)]).SetBinContent(i,self.hists[h].GetVertErrorBand(name).GetBinContent(i))
-                        self.hists[h].PopVertErrorBand(name)
+            for h in self.keys:
+                self.RenameBands(self.mc_hists[h])
+                self.RenameBands(self.data_hists[h])
 
-        for _h1 in self.hists:
-            for _h2 in self.hists:
-                h1 = self.hists[_h1]
-                h2 = self.hists[_h2]
-                if h1 == h2:
-                    continue
+        for _h1 in self.keys:
+            for _h2 in self.keys:
+                h1 = self.data_hists[_h1]
+                h2 = self.data_hists[_h2]
+                if h1 != h2:
+                    self.Sync(h1,h2)
 
-                for name in h1.GetVertErrorBandNames():
-                    if name == "Flux":
-                        if h1.GetVertErrorBand(name).GetNHists() > 100:
-                            h1_hists = h1.GetVertErrorBand(name).GetHists()
-                            h1_hists = [h1_hists[i] for i in range(100)]
-                            useSpread = h1.GetVertErrorBand(name).GetUseSpreadError()
-                            errband = h1.GetVertErrorBand(name)
-                            h1.PopVertErrorBand(name)
-                            h1.AddVertErrorBand(name,h1_hists)
-                            h1.GetVertErrorBand(name).SetUseSpreadError(useSpread)
-                            for i in range(h1.GetNbinsX()+1):
-                                h1.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
-                    elif(name not in h2.GetVertErrorBandNames()):
-                        n_universes = h1.GetVertErrorBand(name).GetNHists()
-                        h2.AddVertErrorBandAndFillWithCV(name, n_universes)
-                        
-                for name in h2.GetVertErrorBandNames():
-                    if name == "Flux":
-                        if h2.GetVertErrorBand(name).GetNHists() > 100:
-                            h2_hists = h2.GetVertErrorBand(name).GetHists()
-                            h2_hists = [h2_hists[i] for i in range(100)]
-                            useSpread = h2.GetVertErrorBand(name).GetUseSpreadError()
-                            errband = h2.GetVertErrorBand(name)
-                            h2.PopVertErrorBand(name)
-                            h2.AddVertErrorBand(name,h2_hists)
-                            h2.GetVertErrorBand(name).SetUseSpreadError(useSpread)
-                            for i in range(h2.GetNbinsX()+1):
-                                h2.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
-                    elif(name not in h1.GetVertErrorBandNames()):
-                        n_universes = h2.GetVertErrorBand(name).GetNHists()
-                        h1.AddVertErrorBandAndFillWithCV(name, n_universes)
+                h1 = self.mc_hists[_h1]
+                h2 = self.mc_hists[_h2]
+                if h1 != h2:
+                    self.Sync(h1,h2)
+
+            h1 = self.mc_hists[_h1]
+            h2 = self.data_hists[_h1]
+            self.Sync(h1,h2)
+
+    def Sync(self,h1,h2):
+        for name in h1.GetVertErrorBandNames():
+            if name == "Flux":
+                if h1.GetVertErrorBand(name).GetNHists() > 100:
+                    h1_hists = h1.GetVertErrorBand(name).GetHists()
+                    h1_hists = [h1_hists[i] for i in range(100)]
+                    useSpread = h1.GetVertErrorBand(name).GetUseSpreadError()
+                    errband = h1.GetVertErrorBand(name)
+                    h1.PopVertErrorBand(name)
+                    h1.AddVertErrorBand(name,h1_hists)
+                    h1.GetVertErrorBand(name).SetUseSpreadError(useSpread)
+                    for i in range(h1.GetNbinsX()+1):
+                        h1.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
+            if(name not in h2.GetVertErrorBandNames()):
+                n_universes = h1.GetVertErrorBand(name).GetNHists()
+                h2.AddVertErrorBandAndFillWithCV(name, n_universes)
+                
+        for name in h2.GetVertErrorBandNames():
+            if name == "Flux":
+                if h2.GetVertErrorBand(name).GetNHists() > 100:
+                    h2_hists = h2.GetVertErrorBand(name).GetHists()
+                    h2_hists = [h2_hists[i] for i in range(100)]
+                    useSpread = h2.GetVertErrorBand(name).GetUseSpreadError()
+                    errband = h2.GetVertErrorBand(name)
+                    h2.PopVertErrorBand(name)
+                    h2.AddVertErrorBand(name,h2_hists)
+                    h2.GetVertErrorBand(name).SetUseSpreadError(useSpread)
+                    for i in range(h2.GetNbinsX()+1):
+                        h2.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
+            if(name not in h1.GetVertErrorBandNames()):
+                n_universes = h2.GetVertErrorBand(name).GetNHists()
+                h1.AddVertErrorBandAndFillWithCV(name, n_universes)
+
+    def RenameBands(self,h1):
+        for name in h1.GetVertErrorBandNames():
+            if str(name) in errorbandDict.keys():
+                universes = h1.GetVertErrorBand(name).GetHists()
+                useSpread = h1.GetVertErrorBand(name).GetUseSpreadError()
+                h1.AddVertErrorBand(errorbandDict[str(name)],universes)
+                h1.GetVertErrorBand(errorbandDict[str(name)]).SetUseSpreadError(useSpread)
+                for i in range(h1.GetNbinsX()+1):
+                    h1.GetVertErrorBand(errorbandDict[str(name)]).SetBinContent(i,h1.GetVertErrorBand(name).GetBinContent(i))
+                h1.PopVertErrorBand(name)
