@@ -5,9 +5,15 @@ import argparse
 import math
 import psutil
 from array import array
-import numpy as np
 
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+import numpy as np
 from scipy import optimize,linalg
+
 ccnueroot = os.environ.get('CCNUEROOT')
 
 import ROOT
@@ -17,29 +23,10 @@ import PlotUtils
 from tools.PlotLibrary import HistHolder
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS 
 
+from Tools.OscHistogram import *
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
 MNVPLOTTER = PlotUtils.MnvPlotter()
-#config MNVPLOTTER:
-#MNVPLOTTER.chi2_use_overflow_err = True
-MNVPLOTTER.draw_normalized_to_bin_width=False
-MNVPLOTTER.legend_text_size = 0.04
-#MNVPLOTTER.extra_top_margin = -.035# go slightly closer to top of pad
-#MNVPLOTTER.mc_bkgd_color = 46 
-#MNVPLOTTER.mc_bkgd_line_color = 46
-MNVPLOTTER.legend_n_columns = 1
-#MNVPLOTTER.mc_line_width = 0
-MNVPLOTTER.data_bkgd_color = 12 #gray
-MNVPLOTTER.data_bkgd_style = 24 #circle  
-#MNVPLOTTER.axis_maximum = 500 #circle  
-
-#legend entries are closer
-MNVPLOTTER.height_nspaces_per_hist = 1.2
-MNVPLOTTER.width_xspace_per_letter = .4
-MNVPLOTTER.legend_text_size        = .03
-MNVPLOTTER.legend_offset_x           = .15
-#MNVPLOTTER.mc_line_width = 0
-#MNVPLOTTER.axis_minimum=0.1
 MNVPLOTTER.error_summary_group_map.clear();
 for k,v in CONSOLIDATED_ERROR_GROUPS.items():
     vec = ROOT.vector("std::string")()
@@ -66,42 +53,40 @@ class MinimizeStopper(object):
         elapsed = time.time() - self.start
         print("Elapsed: %.3f sec" % elapsed)
 
-def doFit(stitched_data, templates, stitched_mc, makePlot = False, plotArgs = []):
+def DoFit(histogram):
     x0 = [0.0,0.0,0.0,0.0]
     bounds = np.array([[0.0,1.0],[0.0,0.15],[0.0,0.41],[0,0.66]], dtype = float)
     cons = [{"type":"ineq","fun":constraint}]
-    mc = stitched_mc.Clone()
-    data = stitched_data.Clone()
 
-    res = optimize.differential_evolution(func=CalChi2,bounds=bounds,polish=False,x0=x0,args=(mc,templates,data),maxiter=30,disp=True,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
+    res = optimize.differential_evolution(func=CalChi2,bounds=bounds,polish=False,x0=x0,args=(histogram,),maxiter=50,disp=True,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
     new_x0 = res.x
-    res = optimize.minimize(fun=CalChi2,x0=new_x0,tol=1e-4,options={"maxiter":20},args=(mc,templates,data),method="SLSQP",bounds=bounds,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
+    res = optimize.minimize(fun=CalChi2,x0=new_x0,tol=1e-4,options={"maxiter":20},args=(histogram,),method="SLSQP",bounds=bounds,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
     chi2 = float(res.fun)
     return(chi2,{"m":res.x[0]*100,"ue4":res.x[1],"umu4":res.x[2],"utau4":res.x[3]})
 
-def fitNorm(stitched_data, templates, stitched_mc):
+def fitNorm(hist_data, templates, hist_mc):
     x0 = [1,1,1,1]
-    mc = stitched_mc.Clone()
-    data = stitched_data.Clone()
+    mc = hist_mc.Clone()
+    data = hist_data.Clone()
 
     res = optimize.minimize(NormCalc, x0,tol=0.,method="Nelder-Mead",args=(mc,templates,data),options={"disp":True})
     chi2 = float(res.fun)
-    bestfit = MuonNorm(stitched_mc,templates,res.x[0],res.x[1],res.x[2],res.x[3])
+    bestfit = MuonNorm(hist_mc,templates,res.x[0],res.x[1],res.x[2],res.x[3])
     return(chi2,bestfit,{"fhc numu":res.x[0],"rhc numu":res.x[1],"fhc nue":res.x[2],"rhc nue":res.x[3]})
 
-def NormCalc(x,stitched_mc,templates,stitched_data):
+def NormCalc(x,hist_mc,templates,hist_data):
     fhc_norm = x[0]
     rhc_norm = x[1]
     fhc_nue_norm = x[2]
     rhc_nue_norm = x[3]
-    normalized = MuonNorm(stitched_mc,templates,fhc_norm,rhc_norm,fhc_nue_norm,rhc_nue_norm)
-    PlotNorms(stitched_mc,stitched_data,normalized,[fhc_norm,rhc_norm,fhc_nue_norm,rhc_nue_norm])
-    chi2 = Chi2DataMC(stitched_data,normalized)
+    normalized = MuonNorm(hist_mc,templates,fhc_norm,rhc_norm,fhc_nue_norm,rhc_nue_norm)
+    PlotNorms(hist_mc,hist_data,normalized,templates,[fhc_norm,rhc_norm,fhc_nue_norm,rhc_nue_norm])
+    chi2 = Chi2DataMC(hist_data,normalized)
     return(chi2)
 
-def PlotNorms(stitched_mc,stitched_data,fitHist,params=[]):
-    chi2_model = Chi2DataMC(stitched_data,fitHist)
-    chi2_null = Chi2DataMC(stitched_data,stitched_mc)
+def PlotNorms(hist_mc,hist_data,fitHist,templates,params=[]):
+    chi2_model = Chi2DataMC(hist_data,fitHist)
+    chi2_null = Chi2DataMC(hist_data,hist_mc)
 
     c1 = ROOT.TCanvas()
     margin = .12
@@ -118,19 +103,18 @@ def PlotNorms(stitched_mc,stitched_data,fitHist,params=[]):
     
     fitHist.GetXaxis().SetTitle("Bin number")
     fitHist.GetYaxis().SetTitle("Entries")
-    MNVPLOTTER.ApplyAxisStyle(fitHist,True,True)
 
-    nullRatio =  stitched_data.Clone()
+    nullRatio =  hist_data.Clone()
     oscRatio =  fitHist.Clone()
 
     fitHist.SetLineColor(ROOT.kRed)
     fitHist.SetLineWidth(3)
-    stitched_mc.SetLineColor(ROOT.kBlue)
-    stitched_mc.SetLineWidth(3)
-    stitched_mc.GetYaxis().SetTitle("Nevents")
-    stitched_mc.Draw("hist")
+    hist_mc.SetLineColor(ROOT.kBlue)
+    hist_mc.SetLineWidth(3)
+    hist_mc.GetYaxis().SetTitle("Nevents")
+    hist_mc.Draw("hist")
     fitHist.Draw("hist same")
-    stitched_data.Draw("same")
+    hist_data.Draw("same")
 
     osc = fitHist.GetCVHistoWithError()
     osc.SetLineColor(ROOT.kRed)
@@ -139,7 +123,7 @@ def PlotNorms(stitched_mc,stitched_data,fitHist,params=[]):
     osc.SetFillColorAlpha(ROOT.kPink + 1, 0.3)
     osc.Draw("E2 SAME")
 
-    null = stitched_mc.GetCVHistoWithError()
+    null = hist_mc.GetCVHistoWithError()
     null.SetLineColor(ROOT.kBlue)
     null.SetLineWidth(3)
     null.SetMarkerStyle(0)
@@ -149,21 +133,21 @@ def PlotNorms(stitched_mc,stitched_data,fitHist,params=[]):
     leg = ROOT.TLegend()
     if len(params) > 0:
         leg.SetHeader("fhc muon:{:.2f} rhc muon:{:.2f} fhc elec:{:.2f} rhc elec:{:.2f}".format(params[0],params[1],params[2],params[3]))
-    leg.AddEntry(stitched_data,"Data","p")
+    leg.AddEntry(hist_data,"Data","p")
     leg.AddEntry(fitHist,"Best Fit #chi^{2}="+"{:.1f}".format(chi2_model),"l")
     #leg.AddEntry(fitHist,"Oscillation #chi^{2}="+"{:.1f}".format(chi2_model),"l")
     #leg.AddEntry(fitHist,"RAA #chi^{2}="+"{:.1f}".format(chi2_model),"l")
-    leg.AddEntry(stitched_mc,"Null Hypothesis #chi^{2}="+"{:.1f}".format(chi2_null),"l")
+    leg.AddEntry(hist_mc,"Null Hypothesis #chi^{2}="+"{:.1f}".format(chi2_null),"l")
     leg.Draw()
 
-    oscRatio.Divide(oscRatio, stitched_mc)
-    nullRatio.Divide(nullRatio,stitched_mc)
+    oscRatio.Divide(oscRatio, hist_mc)
+    nullRatio.Divide(nullRatio,hist_mc)
 
     bottom.cd()
     bottom.SetTopMargin(0)
     bottom.SetBottomMargin(0.3)
 
-    nullErrors = stitched_mc.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
+    nullErrors = hist_mc.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
     for whichBin in range(0, nullErrors.GetXaxis().GetNbins()+1): 
         nullErrors.SetBinError(whichBin, max(nullErrors.GetBinContent(whichBin), 1e-9))
         nullErrors.SetBinContent(whichBin, 1)
@@ -222,33 +206,32 @@ def PlotNorms(stitched_mc,stitched_data,fitHist,params=[]):
     else:
         overall.Print("fit_muonnorm.png")
 
-def MuonNorm(stitched_mc,templates,fhc_norm,rhc_norm,fhc_nue_norm,rhc_nue_norm):
-    stitched_nueTemp = templates["nue"]
-    stitched_numuTemp = templates["numu"]
-    stitched_swapTemp = templates["swap"]
+def MuonNorm(hist_mc,templates,fhc_norm,rhc_norm,fhc_nue_norm,rhc_nue_norm):
+    hist_nueTemp = templates["nue_template"]
+    hist_numuTemp = templates["numu_template"]
+    hist_swapTemp = templates["swap_template"]
 
-    stitched_nue_energy = templates["nue_energy"].Clone()
-    stitched_numu_energy = templates["numu_energy"].Clone()
-    stitched_nutau_id = templates["nutau_energy"].Clone()
-    stitched_ratio_id = templates["ratio_energy"].Clone()
-    stitched_fhc_id = templates["fhc_energy"].Clone()
-    stitched_rhc_id = stitched_fhc_id.Clone()
-    stitched_inv_ratio_id = stitched_ratio_id.Clone()
-    stitched_swap_energy = templates["swap_energy"].Clone()
-    stitched_nueselection_id = templates["nueselection_energy"].Clone()
+    hist_nue_energy = templates["nue"].Clone()
+    hist_numu_energy = templates["numu"].Clone()
+    hist_nutau_id = templates["elastic_id"].Clone()
+    hist_ratio_id = templates["ratio_id"].Clone()
+    hist_fhc_id = templates["beam_id"].Clone()
+    hist_rhc_id = hist_fhc_id.Clone()
+    hist_inv_ratio_id = hist_ratio_id.Clone()
+    hist_swap_energy = templates["swap"].Clone()
 
-    InvertID(stitched_inv_ratio_id)
-    InvertID(stitched_rhc_id)
+    InvertID(hist_inv_ratio_id)
+    InvertID(hist_rhc_id)
 
-    fhc_numu_energy = stitched_numu_energy.Clone()
-    rhc_numu_energy = stitched_numu_energy.Clone()
-    fhc_nue_energy = stitched_nue_energy.Clone()
-    rhc_nue_energy = stitched_nue_energy.Clone()
+    fhc_numu_energy = hist_numu_energy.Clone()
+    rhc_numu_energy = hist_numu_energy.Clone()
+    fhc_nue_energy = hist_nue_energy.Clone()
+    rhc_nue_energy = hist_nue_energy.Clone()
 
-    fhc_numu_energy.MultiplySingle(fhc_numu_energy,stitched_fhc_id)
-    rhc_numu_energy.MultiplySingle(rhc_numu_energy,stitched_rhc_id)
-    fhc_nue_energy.MultiplySingle(fhc_nue_energy,stitched_fhc_id)
-    rhc_nue_energy.MultiplySingle(rhc_nue_energy,stitched_rhc_id)
+    fhc_numu_energy.MultiplySingle(fhc_numu_energy,hist_fhc_id)
+    rhc_numu_energy.MultiplySingle(rhc_numu_energy,hist_rhc_id)
+    fhc_nue_energy.MultiplySingle(fhc_nue_energy,hist_fhc_id)
+    rhc_nue_energy.MultiplySingle(rhc_nue_energy,hist_rhc_id)
 
     fhc_numu_energy.Scale(1/fhc_norm)
     rhc_numu_energy.Scale(1/rhc_norm)
@@ -262,10 +245,10 @@ def MuonNorm(stitched_mc,templates,fhc_norm,rhc_norm,fhc_nue_norm,rhc_nue_norm):
 
     ratio = numu.Clone()
     ratio.Divide(ratio,nue)
-    ratio.MultiplySingle(ratio,stitched_ratio_id)
+    ratio.MultiplySingle(ratio,hist_ratio_id)
 
-    nue.MultiplySingle(nue,stitched_inv_ratio_id)
-    numu.MultiplySingle(numu,stitched_inv_ratio_id)
+    nue.MultiplySingle(nue,hist_inv_ratio_id)
+    numu.MultiplySingle(numu,hist_inv_ratio_id)
 
     hist = numu.Clone()
     hist.Add(nue)
@@ -276,7 +259,7 @@ def Chi2DataMC(dataHist,mcHist,data_cov=None,mc_cov=None):
     #We get the number of bins and make sure it's compatible with the NxN matrix given
     if dataHist.GetNbinsX() != mcHist.GetNbinsX():
         logging.error("breaking error in Chi2DataMC")
-        logging.error("MnvPlotter::Chi2DataMC", "The number of bins from Data and MC histograms differ. Returning -1.")
+        logging.error("The number of bins from Data ({}) and MC ({}) histograms differ. Returning -1.".format(dataHist.GetNbinsX(),mcHist.GetNbinsX()))
         return(-1)
 
     #get the covariance matrix
@@ -306,20 +289,22 @@ def Chi2DataMC(dataHist,mcHist,data_cov=None,mc_cov=None):
     # ----- Calculate chi2 value ----= #
     diff = mc - data
     chi2 = diff.T @ errorMatrix @ diff # @ is numpy efficient matrix multiplication
+
+    if abs(chi2) > 1e30:
+        logging.error("chi2 has invalid value: {}".format(chi2))
+        print("chi2 has invalid value: {}".format(chi2))
+        return(-1)
+    
+
     return(chi2)
 
-def CalChi2(x,stitched_mc,templates,stitched_data):
+def CalChi2(x,histogram):
     ms = x[0]*100
     U_e4 = x[1]
     U_mu4 = x[2]
     U_tau4 = x[3]
-    oscillated = GetOscillatedHistogram(stitched_mc,templates,ms,U_e4,U_mu4,U_tau4)
-    chi2 = Chi2DataMC(stitched_data,oscillated,data_cov=templates["data_cov"])
-    if chi2 == -1:
-        logging.error("bad m: {}".format(ms))
-        logging.error("bad ue4: {}".format(U_e4))
-        logging.error("bad umu4: {}".format(U_mu4))
-        logging.error("bad utau4: {}".format(U_tau4))
+    OscillateHistogram(histogram,ms,U_e4,U_mu4,U_tau4)
+    chi2 = Chi2DataMC(histogram.GetDataHistogram(),histogram.GetOscillatedHistogram(),data_cov=histogram.GetDataCov(),mc_cov=histogram.GetOscCov())
     return(chi2)
 
 def InvertID(hist):
@@ -331,27 +316,29 @@ def InvertID(hist):
             hist.SetBinContent(i,0.0)
             hist.SetBinError(i,0.0)
 
-def GetOscillatedHistogram(histogram, templates, m, U_e4, U_mu4, U_tau4,doSys = False):
-    # stitched_nueselection_energy is 1 only for the nueselection sample
-    # stitched_nutau_energy is 1 only for the nueel selection
-    # stitched_ratio_energy is 1 only for the ratio sample
+def OscillateHistogram(histogram, m, U_e4, U_mu4, U_tau4,fitPseudodata=False):
+    # elastic_id is 1 only for the nueel samples
+    # ratio_id is 1 only for the ratio samples
     # if 0 is False, if 1 is True
 
-    stitched_nueTemp = templates["nue"]
-    stitched_numuTemp = templates["numu"]
-    stitched_swapTemp = templates["swap"]
+    hist_nueTemp = histogram.nue_template
+    hist_numuTemp = histogram.numu_template
+    hist_swapTemp = histogram.swap_template
 
-    stitched_nue_energy = templates["nue_energy"].Clone()
-    stitched_numu_energy = templates["numu_energy"].Clone()
-    stitched_nutau_id = templates["nutau_energy"].Clone()
-    stitched_ratio_id = templates["ratio_energy"].Clone()
-    stitched_inv_ratio_id = stitched_ratio_id.Clone()
-    stitched_swap_energy = templates["swap_energy"].Clone()
-    stitched_nueselection_id = templates["nueselection_energy"].Clone()
+    hist_nue_energy = histogram.nue_hist.Clone()
+    hist_numu_energy = histogram.numu_hist.Clone()
+    hist_swap_energy = histogram.swap_hist.Clone()
+    hist_nutau_id = histogram.elastic_id.Clone()
+    hist_ratio_id = histogram.ratio_id.Clone()
+    hist_inv_ratio_id = hist_ratio_id.Clone()
 
-    InvertID(stitched_inv_ratio_id)
+    InvertID(hist_inv_ratio_id)
 
-    hist = histogram.Clone()
+    if fitPseudodata:
+        hist = histogram.GetPseudoHistogram()
+    else:
+        hist = histogram.GetMCHistogram()
+
     nue_weights = hist.GetCVHistoWithStatError().Clone()
     numu_weights = hist.GetCVHistoWithStatError().Clone()
     nuenutau_weights = hist.GetCVHistoWithStatError().Clone()
@@ -359,9 +346,9 @@ def GetOscillatedHistogram(histogram, templates, m, U_e4, U_mu4, U_tau4,doSys = 
     numunutau_weights = hist.GetCVHistoWithStatError().Clone()
 
     for i in range(0,hist.GetNbinsX() + 1):
-        nue_sin = sin_average(i,m,stitched_nueTemp)
-        numu_sin = sin_average(i,m,stitched_numuTemp)
-        swap_sin = sin_average(i,m,stitched_swapTemp)
+        nue_sin = sin_average(i,m,hist_nueTemp)
+        numu_sin = sin_average(i,m,hist_numuTemp)
+        swap_sin = sin_average(i,m,hist_swapTemp)
 
         P_ee = float(1 - 4*U_e4*(1-U_e4)*nue_sin)
 
@@ -384,36 +371,34 @@ def GetOscillatedHistogram(histogram, templates, m, U_e4, U_mu4, U_tau4,doSys = 
         nuenutau_weights.SetBinError(i,0)
         numunue_weights.SetBinError(i,0)
         numunutau_weights.SetBinError(i,0)
-        stitched_ratio_id.SetBinError(i,0)
-        stitched_nutau_id.SetBinError(i,0)
-        stitched_nueselection_id.SetBinError(i,0)
+        hist_ratio_id.SetBinError(i,0)
+        hist_nutau_id.SetBinError(i,0)
 
-    c1 = ROOT.TCanvas()
-    numu = stitched_numu_energy.Clone()
+    numu = hist_numu_energy.Clone()
     numu.MultiplySingle(numu,numu_weights)
 
-    nue = stitched_nue_energy.Clone()
+    nue = hist_nue_energy.Clone()
     nue.MultiplySingle(nue,nue_weights)
 
-    numunue = stitched_numu_energy.Clone()
+    numunue = hist_swap_energy.Clone()
     numunue.MultiplySingle(numunue,numunue_weights)
     nue.Add(numunue)
 
-    numunutau = stitched_numu_energy.Clone()
+    numunutau = hist_numu_energy.Clone()
     numunutau.MultiplySingle(numunutau,numunutau_weights)
 
-    nuenutau  = stitched_nue_energy.Clone()
+    nuenutau  = hist_nue_energy.Clone()
     nuenutau.MultiplySingle(nuenutau,nuenutau_weights)
     nutau = numunutau.Clone()
     nutau.Add(nuenutau)
-    nutau.MultiplySingle(nutau,stitched_nutau_id)
+    nutau.MultiplySingle(nutau,hist_nutau_id)
 
     ratio = numu.Clone()
     ratio.Divide(ratio,nue)
-    ratio.MultiplySingle(ratio,stitched_ratio_id)
+    ratio.MultiplySingle(ratio,hist_ratio_id)
 
-    nue.MultiplySingle(nue,stitched_inv_ratio_id)
-    numu.MultiplySingle(numu,stitched_inv_ratio_id)
+    nue.MultiplySingle(nue,hist_inv_ratio_id)
+    numu.MultiplySingle(numu,hist_inv_ratio_id)
 
     hist = numu.Clone()
     hist.Add(nue)
@@ -421,37 +406,44 @@ def GetOscillatedHistogram(histogram, templates, m, U_e4, U_mu4, U_tau4,doSys = 
     if nutau.Integral() > 0:
         hist.Add(nutau)
 
-    return(hist)
+    histogram.SetOscHistogram(hist)
 
-def makeChi2Surface(templates,stitched_data,stitched_mc,outdir_surface,dodeltachi2 = False,deltam = 1,U_e4 = 0,U_tau4 = 0):
+def makeChi2Surface(histogram,outdir,dodeltachi2=False,deltam=1,U_e4=0,U_tau4=0):
     U_mu4s = 0.41*np.logspace(-3,0,60)
     U_mu4s[0] = 0
-    surface = np.zeros(np.shape(U_mu4s)[0],dtype='f')
-    fits    = np.zeros(np.shape(U_mu4s)[0],dtype='f')
+    asimov_surface = np.zeros(np.shape(U_mu4s)[0],dtype='f')
+    data_surface   = np.zeros(np.shape(U_mu4s)[0],dtype='f')
+    fits           = np.zeros(np.shape(U_mu4s)[0],dtype='f')
     count = 0
     for i in range(U_mu4s.shape[0]):
         count+=1
         U_mu4 = U_mu4s[i]
         if dodeltachi2:
-            testHist = GetOscillatedHistogram(stitched_data, templates, deltam, U_e4, U_mu4, U_tau4)
-            minchi2,_ = doFit(testHist,templates,stitched_mc)
-            chi2_null = Chi2DataMC(stitched_data,stitched_mc,data_cov=templates['data_cov'])
-            surface[i] = minchi2 - chi2_null
+            OscillateHistogram(histogram, deltam, U_e4, U_mu4, U_tau4)
+            test_hist = histogram.GetOscillatedHistogram()
+            
+            minchi2,res = DoFit(histogram)
+            chi2_null = Chi2DataMC(histogram.GetDataHistogram(),histogram.GetMCHistogram(),data_cov=histogram.GetDataCov(),mc_cov=histogram.GetMCCov())
+
+            asimov_surface[i] = minchi2 - chi2_null
             fits[i] = minchi2
         else:
-            testHist = GetOscillatedHistogram(stitched_mc, templates, deltam, U_e4, U_mu4, U_tau4)
-            chi2_model = Chi2DataMC(stitched_data,testHist,data_cov=templates['data_cov'])
-            #minchi2,_  = doFit(testHist,templates,stitched_mc)
-            surface[i] = chi2_model
-            #fits[i] = minchi2
+            OscillateHistogram(histogram, deltam, U_e4, U_mu4, U_tau4)
+            test_hist = histogram.GetOscillatedHistogram()
 
-    logging.info("{:.2f}% done with chi2s. Current chi2 = {:.4f}".format(100*count/(U_mu4s.shape[0]),surface[i]))
+            chi2_data       = Chi2DataMC(histogram.GetDataHistogram(),test_hist,data_cov=histogram.GetDataCov(),mc_cov=histogram.GetOscCov())
+            data_surface[i] = chi2_data
+            chi2_asimov       = Chi2DataMC(histogram.GetPseudoHistogram(),test_hist,data_cov=histogram.GetPseudoCov(),mc_cov=histogram.GetOscCov())
+            asimov_surface[i] = chi2_asimov
         
+        logging.info("{:.2f}% done with chi2s. Current chi2 = {:.4f}".format(100*count/(U_mu4s.shape[0]),data_surface[i]))
+
     if dodeltachi2:
-        np.save('{}/deltachi2_surface_m_{}_Ue4_{}.dat'.format(outdir_surface,deltam,U_e4),surface)
+        np.save('{}/deltachi2_surface_m_{}_Ue4_{}.dat'.format(outdir,deltam,U_e4),surface)
+        np.save('{}/chi2_fit_chi2_m_{}_Ue4_{}.dat'.format(outdir,deltam,U_e4),fits)
     else:
-        np.save('{}/chi2_asimov_chi2_m_{}_Ue4_{}.dat'.format(outdir_surface,deltam,U_e4),surface)
-        #np.save('{}/chi2_fit_chi2_m_{}_Ue4_{}.dat'.format(outdir_surface,deltam,U_e4),fits)
+        np.save('{}/chi2_surface_data_m_{}_Ue4_{}.dat'.format(outdir,deltam,U_e4),data_surface)
+        np.save('{}/chi2_surface_pseudodata_m_{}_Ue4_{}.dat'.format(outdir,deltam,U_e4),asimov_surface)
 
 def sin_average(q = 0,dm2 = 0,template = None):
     avgsin = 0

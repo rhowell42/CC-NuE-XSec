@@ -2,12 +2,19 @@ import os
 import logging, sys
 import ROOT
 import PlotUtils
+
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 import numpy as np
 np.set_printoptions(precision=1)
 np.set_printoptions(linewidth=1520)
 np.set_printoptions(threshold=sys.maxsize)
 from scipy import optimize, integrate
 import argparse
+import subprocess
 ccnueroot = os.environ.get('CCNUEROOT')
 
 import math
@@ -77,8 +84,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("-Ue4", "--U_e4",
                         dest = "U_e4",
-                        help="U_e4 parameter to probe.",
-                        type=float,
+                        help="index of U_e4 parameter to probe.",
+                        type=int,
                         default=0
     )
     parser.add_argument("--pseudodata",
@@ -86,72 +93,33 @@ if __name__ == "__main__":
                         default = False,
                         action="store_true",
     )
+    parser.add_argument("--dodeltachi2",
+                        dest = "dodelta",
+                        default = False,
+                        action="store_true",
+    )
 
     args = parser.parse_args()
-    outdir_surface = args.output_dir
+    outdir = args.output_dir
     delta_m = args.delta_m
     runongrid = args.grid
     U_tau4 = args.U_tau4
-    U_e4 = args.U_e4
-    pseudodata = args.pseudodata
+    i_U_e4 = args.U_e4
+    dodelta = args.dodelta
 
-    filename = ""
-    if pseudodata:
-        filename = "NuE_stitched_hists_pseudo.root"
-    else:
-        filename = "NuE_stitched_hists.root"
+    filename = "NuE_stitched_hists.root"
+    file_path = "{}/FeldmanCousins/{}".format(ccnueroot,filename)
 
-    stitched_data = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('data_stitched')
-    stitched_mc = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched')
-    
-    stitched_nueTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_nue')
-    stitched_numuTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_numu')
-    stitched_swapTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_swap')
+    sample_histogram = StitchedHistogram("sample")
+    sample_histogram.Load(file_path)
 
-    stitched_nue_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nue')
-    stitched_numu_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_numu')
-    stitched_nutau_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nutau')
-    stitched_nueselection_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nueselection')
-    stitched_ratio_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_ratio')
-    stitched_fhc_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_fhc')
-    stitched_swap_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_swap')
+    U_e4s = 0.15*np.logspace(-2.2,0,60)
+    U_e4s[0] = 0
+    U_e4 = U_e4s[i_U_e4]
 
-    templates = {
-            "nue":stitched_nueTemp,
-            "numu":stitched_numuTemp,
-            "swap":stitched_swapTemp,
-            "nue_energy":stitched_nue_energy,
-            "numu_energy":stitched_numu_energy,
-            "nutau_energy":stitched_nutau_energy,
-            "fhc_energy":stitched_nutau_energy,
-            "swap_energy":stitched_swap_energy,
-            "ratio_energy":stitched_ratio_energy,
-            "nueselection_energy":stitched_nueselection_energy,
-    }
-
-    dodelta = False
     if not runongrid: # surface plot
         m_toloop = np.logspace(0,2,60)
         for m in m_toloop:
-            makeChi2Surface(templates,stitched_data,stitched_mc,outdir_surface,dodelta,m,U_e4,U_tau4)
-            #logging.info("completed delta m2 = {:.2f} run".format(m))
-            #t1 = multiprocessing.Process(target=makeChi2Surface, args=(templates,stitched_data,stitched_mc,outdir_surface,dodelta,dm,U_tau4), name='t1')
-            #t2 = multiprocessing.Process(target=makeChi2Surface, args=(templates,stitched_data,stitched_mc,outdir_surface,dodelta,dm+0.5,U_tau4), name='t2')
-            #t3 = multiprocessing.Process(target=makeChi2Surface, args=(templates,stitched_data,stitched_mc,outdir_surface,dodelta,dm+1,U_tau4), name='t3')
-            #t4 = multiprocessing.Process(target=makeChi2Surface, args=(templates,stitched_data,stitched_mc,outdir_surface,dodelta,dm+1.5,U_tau4), name='t4')
-
-            #logging.info("starting multiprocess threads")
-            #t1.start()
-            #t2.start()
-            #t3.start()
-            #t4.start()
-
-            #logging.info("joining multiprocess threads")
-            #t1.join()
-            #t2.join()
-            #t3.join()
-            #t4.join()
-        exit()
+            makeChi2Surface(sample_histogram,outdir,dodelta,m,U_e4,U_tau4)
     else:
-        print("******* {} *******".format(U_tau4))
-        makeChi2Surface(templates,stitched_data,stitched_mc,outdir_surface,dodelta,delta_m,U_e4,U_tau4)
+        makeChi2Surface(sample_histogram,outdir,dodelta,delta_m,U_e4,U_tau4)

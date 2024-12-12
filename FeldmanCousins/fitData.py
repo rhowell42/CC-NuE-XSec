@@ -21,7 +21,7 @@ from array import array
 
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
-from Tools.FitTools import *
+from Tools.OscHistogram import *
 from Tools.PlotTools import *
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
@@ -103,53 +103,32 @@ if __name__ == "__main__":
     U_e4 = args.U_e4
     U_mu4 = args.U_mu4
     U_tau4 = args.U_tau4
-    pseudodata = args.pseudodata
 
     filename = ""
-    if pseudodata:
-        filename = "NuE_stitched_hists_pseudo.root"
-    else:
-        filename = "NuE_stitched_hists.root"
-
-    stitched_data = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('data_stitched')
-    stitched_mc = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched')
+    filename = "NuE_stitched_hists.root"
     
-    stitched_nueTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_nue')
-    stitched_numuTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_numu')
-    stitched_swapTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_swap')
+    file_path = "{}/FeldmanCousins/{}".format(ccnueroot,filename)
 
-    stitched_nue_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nue')
-    stitched_numu_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_numu')
-    stitched_nutau_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nutau')
-    stitched_nueselection_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nueselection')
-    stitched_ratio_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_ratio')
-    stitched_swap_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_swap')
+    sample_histogram = StitchedHistogram("sample")
+    sample_histogram.Load(file_path)
 
-    mc_cov = np.asarray(matrix(stitched_mc.GetTotalErrorMatrix(True, True, False)))[1:-1,1:-1]
-    data_cov = np.asarray(matrix(stitched_data.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
+    chi2_fit, res = DoFit(sample_histogram)
+    
+    #name = 'kevin_weights.txt'
+    #DataMCCVPlot(sample_histogram.data_hist,sample_histogram.mc_hist,"pre_fit.png")
+    #print(sample_histogram.GetChi2())
+    #sample_histogram.ReweightFluxToCV(name)
+    #DataMCCVPlot(sample_histogram.data_hist,sample_histogram.mc_hist,"post_fit.png")
+    #print(sample_histogram.GetChi2())
+    #exit()
 
-    templates = {
-            "nue":stitched_nueTemp,
-            "numu":stitched_numuTemp,
-            "swap":stitched_swapTemp,
-            "nue_energy":stitched_nue_energy,
-            "numu_energy":stitched_numu_energy,
-            "swap_energy":stitched_swap_energy,
-            "mc_cov":mc_cov,
-            "data_cov":data_cov,
-            "nutau_energy":stitched_nutau_energy,
-            "ratio_energy":stitched_ratio_energy,
-            "nueselection_energy":stitched_nueselection_energy,
-    }
-        
-    chi2_fit, res = doFit(stitched_data, templates, stitched_mc)
-    seed = np.array([res['m']/100,res['ue4'],res['umu4'],res['utau4']])
-
-    chi2_mod = Chi2DataMC(stitched_data,stitched_mc)
+    chi2_mod = Chi2DataMC(sample_histogram.GetDataHistogram(),sample_histogram.GetMCHistogram())
     print("Data fit: delta chi2 = {:.3f} = {:.3f} - {:.3f}".format(chi2_mod-chi2_fit,chi2_mod,chi2_fit))
     print("Best fit params:")
     print("   delta m^2 = {:.2f} eV^2 +- {:.4f}".format(res['m'],0))
     print("   U_e4^2    = {:.2f}      +- {:.4f}".format(res['ue4'],1))
     print("   U_mu4^2   = {:.2f}      +- {:.4f}".format(res['umu4'],1))
     print("   U_tau4^2  = {:.2f}      +- {:.4f}".format(res['utau4'],1))
-    MakePlot(stitched_mc,stitched_data,templates,res)
+    #mc_hist = sample_histogram.GetMCHist()
+    #data_hist = sample_histogram.GetDataHist()
+    #MakePlot(mc_hist,data_hist,templates,res)
