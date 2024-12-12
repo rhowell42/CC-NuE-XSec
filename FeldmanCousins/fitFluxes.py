@@ -287,9 +287,7 @@ if __name__ == "__main__":
 
     chi2filename = "chi2_values_{}_{}.txt".format(ftag,exclude.replace(" ","_"))
     with open(chi2filename,'w') as file:
-        file.write("errorband")
-        for i in range(1,101):
-            file.write(", Universe {}".format(i))
+        file.write("Universe,chi2,osc_chi2,dm^2,U_e4^2,U_mu4^2,U_tau4^2".format(i))
         file.write("\n")
         
         # ---------------------- Create Stitched CV Histograms -----------------------------
@@ -384,15 +382,16 @@ if __name__ == "__main__":
 
         # ----- Stitch histograms together ----- #
         cv_histogram.Stitch()
-        print(Chi2DataMC(cv_histogram.GetDataHist(),cv_histogram.GetMCHist()))
+        print(Chi2DataMC(cv_histogram.data_hist,cv_histogram.mc_hist))
 
         # ---------------------- Start Swapping Universes -----------------------------
-        err_names = cv_histogram.GetMCHist().GetVertErrorBandNames()
+        err_names = cv_histogram.mc_hist.GetVertErrorBandNames()
         for err in err_names:
             err = str(err)
-            n_universes = cv_histogram.GetMCHist().GetVertErrorBand(err).GetNHists()
+            if err != "Flux":
+                continue
+            n_universes = cv_histogram.mc_hist.GetVertErrorBand(err).GetNHists()
             print("loading {} errorband that has {} n_universes".format(err,n_universes))
-            chi2s = []
             for univ in range(n_universes):
                 if err != "ElectronScale" and err in rhc_scale_CV.GetVertErrorBandNames():
                     # ---------------------- NuE Universe Selection Block -----------------------------
@@ -511,18 +510,13 @@ if __name__ == "__main__":
                 # ----- Stitch histograms together ----- #
                 universe_histogram.Stitch()
                 universe_histogram.SyncHistograms(cv_histogram)
+                if err == "Flux":
+                    chi2_fit, res, templates = universe_histogram.FitOscHypothesis()
+                    MakePlot(universe_histogram.mc_hist,universe_histogram.data_hist,templates,res,"{}_{}.png".format(err,univ))
 
-                chi2 = Chi2DataMC(universe_histogram.GetDataHist(),universe_histogram.GetMCHist())
-                chi2s.append(chi2)
+                chi2 = Chi2DataMC(universe_histogram.data_hist,universe_histogram.mc_hist)
                 print(chi2)
 
-                #DataMCPlot(universe_histogram.GetDataHist(),universe_histogram.GetMCHist(),cv_histogram.GetDataHist(),cv_histogram.GetMCHist())
-
-            print("writing {} universe for {} errorband".format(n_universes,err))
-            file.write(err)
-            for i in range(0,n_universes):
-                file.write(", {}".format(chi2s[i]))
-
-            file.write("\n")
-    print("dnof: ",cv_histogram.GetDataHist().GetNbinsX()," chi2: ",Chi2DataMC(cv_histogram.GetDataHist(),cv_histogram.GetMCHist()))
+                file.write("{},{},{},{},{},{},{}".format(univ,chi2,chi2_fit,res['m'],res['ue4'],res['umu4'],res['utau4']))
+                file.write("\n")
 
