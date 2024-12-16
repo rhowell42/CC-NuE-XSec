@@ -135,3 +135,16 @@ make install
 - `--bkgTune_tag N4_tune` refers to which a dictionary object in $CONFIGPATH/config/BackgroundConfig.py that describes the categories with which to tune to data, as well as a few other things
 - This outputs root files containing your background subtracted data, the scaled-to-data histograms, and the base MC prediction with which to compare to the background subtracted data.
 - This will also make plots as given in $CONFIGPATH/config/DrawingConfig.py on the scaled and background subtracted histograms
+
+# Sterile Neutrino Oscillations
+## Special Samples
+- If accounting for numu -> nue oscillations, one needs to have a flavor swapped sample available of nue events with the parent decay positions and energies of numu events (and polarizations and other applied conservations)
+- There exists a sample for the Medium Energy sample, of flavor swapped ME1A, ME5A, and ME6A, at roughly 1/20 total POT. One may be able to reweight this to form a modified flavor swapped sample to use for Low Energy studies
+- The same selection should be applied to the flavor swapped sample and it should be por
+## Configuration
+- You need two histograms to perform an oscillation analysis: "Biased Neutrino Energy", and "Reco Energy vs L/E"
+    - "Biased Neutrino Energy" is the 1D reconstructed energy estimator, binned in GeV in unequal bin widths from 0 to 20 GeV
+    - "Reco Energy vs L/E" is the 2D template used to assigned oscillation probabilities, it gives the energy estimator and the corresponding true L/E
+- If running an electron neutrino selection, you also need to run with the dE/dX sideband for the background scaling and subtraction procedure.
+- The cuts to select the low-nu-like selections are defined in each of the corresponding config/CutConfig.py files
+    
