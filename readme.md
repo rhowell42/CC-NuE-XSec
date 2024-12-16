@@ -137,14 +137,30 @@ make install
 - This will also make plots as given in $CONFIGPATH/config/DrawingConfig.py on the scaled and background subtracted histograms
 
 # Sterile Neutrino Oscillations
+The framework to perform sterile neutrion oscillation analyses is kept in FeldmanCousins/. This was built with Medium Energy in mind, but it could be modifed to work on Low Energy samples as well. This is heavily reliant on python libraries that are not available on the gpvms, so a virtual environment is used.
+```
+cd FeldmanCousins/
+python3 -m venv py3env
+source py3env/bin/activate
+pip install -r requirements.txt
+deactivate
+```
 ## Special Samples
 - If accounting for numu -> nue oscillations, one needs to have a flavor swapped sample available of nue events with the parent decay positions and energies of numu events (and polarizations and other applied conservations)
 - There exists a sample for the Medium Energy sample, of flavor swapped ME1A, ME5A, and ME6A, at roughly 1/20 total POT. One may be able to reweight this to form a modified flavor swapped sample to use for Low Energy studies
-- The same selection should be applied to the flavor swapped sample and it should be por
+- The same selection should be applied to the flavor swapped sample and care should be made to properly POT scale it when added back in for an oscillation hypothesis
 ## Configuration
 - You need two histograms to perform an oscillation analysis: "Biased Neutrino Energy", and "Reco Energy vs L/E"
     - "Biased Neutrino Energy" is the 1D reconstructed energy estimator, binned in GeV in unequal bin widths from 0 to 20 GeV
     - "Reco Energy vs L/E" is the 2D template used to assigned oscillation probabilities, it gives the energy estimator and the corresponding true L/E
-- If running an electron neutrino selection, you also need to run with the dE/dX sideband for the background scaling and subtraction procedure.
-- The cuts to select the low-nu-like selections are defined in each of the corresponding config/CutConfig.py files
-    
+- If running an electron neutrino selection, you also need to run with the dE/dX sideband for the background scaling and subtraction procedure. This is not necessary for the flavor swapped sample, since we take the base MC prediction of both samples
+- The cuts to select the low-nu-like selections are defined in each of the corresponding config/CutConfig.py files. This is true for the FHC, RHC, nue, and numu selections
+- Numu selections do not need to be background scaled/subtracted because there's neglibible background events for CC numu in the NuMI beam
+## Samples
+- Many samples used for oscillation measurements in MINERvA have strong correlations between each other, which must be taken into account when computing the chi2. A StitchedHistogram object is used to combine every sample together into one histogram, with correctly handled systematics, to get an accurate full covariance matrix.
+- `py3env/bin/python3 stitchHistograms.py`
+    - This will combine all the samples you want for an oscillation analysis. Some options can be given in the command line for different samples; `--ratio` to use flavor ratios instead of base selections, `--exclude "{Your Samples}"` to exclude any samples from an analysis, `--fit_muons` to keep in muon neutrino selections when using flavor ratios, etc...
+- `py3env/bin/python3 fitData.py` fit an oscillation analysis to data, returns best fit parameters and test statistic
+- `py3env/bin/python3 gridSurface.py` send jobs to the grid to compute sensitivity and exclusion regions in oscillation space for your sample
+    - `merge_files.py` to merge these files in the proper order to make plotting easier (see https://github.com/rhowell42/FeldmanCousinsMacros)  
+- `py3env/bin/python3 gridAsimovs.py` send jobs to the grid to compute 100,000 pseudo-experiment delta chi2s to determine Feldman Cousins contours for null hypothesis
