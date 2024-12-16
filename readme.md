@@ -90,6 +90,7 @@ cmake ../../MAT-MINERvA/bootstrap -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_
 make install
 ```
 - Exit out of current ssh session and log back in !
+## Install CC-NuE-XSec
 ```
 /cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer shell --shell=/bin/bash -B /cvmfs,/grid,/exp,/nashome,/pnfs/minerva,/opt,/run/user,/etc/hostname,/etc/hosts,/etc/krb5.conf --ipc --pid /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:latest # setup the SL7 container
 source /cvmfs/larsoft.opensciencegrid.org/products/setup
