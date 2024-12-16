@@ -64,3 +64,13 @@ Here is a list of files currently used in the macro:
 - Be sure to remove previous output directories if you changed the code and resubmit in an hour, the dCache files can't be overwritten.
 - most options for eventSelection will work with gridSelection, even though it won't show up in `--help`. The help message shows options that overwritten in gridSelection, unrecognized option will be forwarded to eventSeletion
 - The grid processing runs a playlist in separated jobs, hence counting POT in each job doesn't make sense. User should used `--cal_POT` option of gridSelection to count POT.
+
+# How to make a selection
+- `python eventSelection.py --playlist me5A_p4 --ntuple_tag MAD --use-sideband dEdX --truth --cal_POT --selection_tag thesis --mc_only`
+  -- `--playlist me5A_p4`  tells you to run over the anatuples in the me5A playlist, which is a MINERvA RHC run. This specifically tells you to use the tuples whose full paths are stored in a dictionary in configs/POT.json which points to the files in file_option/
+    --- change POT.json to point to text files containing paths to any additional anatuples you want to run over, and add the text files in file_option/ to actually point to those LE files. See files in those areas for examples.
+  -- `--ntuple_tag MAD`  further identifies which files you want to use in configs/POT.json, it specifies the tool used to create the anatuples, in this case (and for yours) it stands for MasterAnaDev
+ -- `--use-sideband dEdX`  uses a sideband named dEdX which is defined with a series of kinematic cuts in $CONFIGPATH/config/CutConfig.py.
+-- `--selection_tag thesis` puts a string at the end the output root files to further help identify them, this case "thesis"
+-- `--mc_onl`y tells you to only run over the monte carlo production. Just remove this to run with both data and MC, or put `--data_only` if you just want to run over data.
+-- `--test` put this in your command to just run over 1000 events to test that everything is working before you devote a lot of time to running over the full thing
