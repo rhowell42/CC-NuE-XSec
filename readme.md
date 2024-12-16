@@ -65,12 +65,72 @@ Here is a list of files currently used in the macro:
 - most options for eventSelection will work with gridSelection, even though it won't show up in `--help`. The help message shows options that overwritten in gridSelection, unrecognized option will be forwarded to eventSeletion
 - The grid processing runs a playlist in separated jobs, hence counting POT in each job doesn't make sense. User should used `--cal_POT` option of gridSelection to count POT.
 
-# How to make a selection
+# Changes from AL9 Upgrade
+- This framework currently does not work in AL9 due to lack of ROOT version availability. Newer ROOT versions make some inheritance between Python and MAT-MINERvA classes impossible, and the AL9 installs do not have older ROOT versions for use. This could be solved with local spack installs of ROOT, but that has not been worked out yet.
+- It is strongly recommended to run this framework in an SL7 container.
+- `/cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer shell --shell=/bin/bash -B /cvmfs,/grid,/exp,/nashome,/pnfs/minerva,/opt,/run/user,/etc/hostname,/etc/hosts,/etc/krb5.conf --ipc --pid /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:latest # setup the SL7 container and enter it`
+- From here, run everything as usual.
+
+# How to Install
+## Install MAT-MINERvA
+```
+/cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer shell --shell=/bin/bash -B /cvmfs,/grid,/exp,/nashome,/pnfs/minerva,/opt,/run/user,/etc/hostname,/etc/hosts,/etc/krb5.conf --ipc --pid /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:latest # setup the SL7 container
+source /cvmfs/larsoft.opensciencegrid.org/products/setup
+source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh
+kinit 
+unset SSH_ASKPASS
+setup root v6_22_06a -q e19:p383b:prof
+source /cvmfs/minerva.opensciencegrid.org/minerva/hep_hpc_products/setups
+setup cmake v3_7_1
+cd /exp/minerva/app/users/$USER/
+mkdir cmtuser/ && cd cmtuser/
+git clone https://github.com/MinervaExpt/MAT-MINERvA.git
+mkdir -p opt/build/ && cd opt/build/
+cmake ../../MAT-MINERvA/bootstrap -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Release
+make install
+```
+- Exit out of current ssh session and log back in !
+```
+/cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer shell --shell=/bin/bash -B /cvmfs,/grid,/exp,/nashome,/pnfs/minerva,/opt,/run/user,/etc/hostname,/etc/hosts,/etc/krb5.conf --ipc --pid /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:latest # setup the SL7 container
+source /cvmfs/larsoft.opensciencegrid.org/products/setup
+source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh
+setup root v6_22_06a -q e19:p383b:prof
+export JOBSUB_GROUP=minerva
+source /cvmfs/minerva.opensciencegrid.org/minerva/hep_hpc_products/setups
+setup cmake v3_9_5
+
+git clone https://github.com/rhowell42/CC-NuE-XSec.git
+cd CVUniversePythonBinding/
+rm -r build && mkdir build/ && cd build/
+cmake ../ -DCMAKE_INSTALL_PREFIX=/exp/minerva/app/users/$USER/cmtuser/opt -DCMAKE_BUILD_TYPE=Release
+make install
+```
+
+# Making an Event Selection
+## Running Interactively
 - `python eventSelection.py --playlist me5A_p4 --ntuple_tag MAD --use-sideband dEdX --truth --cal_POT --selection_tag thesis --mc_only`
-  -- `--playlist me5A_p4`  tells you to run over the anatuples in the me5A playlist, which is a MINERvA RHC run. This specifically tells you to use the tuples whose full paths are stored in a dictionary in configs/POT.json which points to the files in file_option/
-    --- change POT.json to point to text files containing paths to any additional anatuples you want to run over, and add the text files in file_option/ to actually point to those LE files. See files in those areas for examples.
-  -- `--ntuple_tag MAD`  further identifies which files you want to use in configs/POT.json, it specifies the tool used to create the anatuples, in this case (and for yours) it stands for MasterAnaDev
- -- `--use-sideband dEdX`  uses a sideband named dEdX which is defined with a series of kinematic cuts in $CONFIGPATH/config/CutConfig.py.
--- `--selection_tag thesis` puts a string at the end the output root files to further help identify them, this case "thesis"
--- `--mc_onl`y tells you to only run over the monte carlo production. Just remove this to run with both data and MC, or put `--data_only` if you just want to run over data.
--- `--test` put this in your command to just run over 1000 events to test that everything is working before you devote a lot of time to running over the full thing
+    - `--playlist me5A_p4`  tells you to run over the anatuples in the me5A playlist, which is a MINERvA RHC run. This specifically tells you to use the tuples whose full paths are stored in a dictionary in configs/POT.json which points to the files in file_option/
+    - change POT.json to point to text files containing paths to any additional anatuples you want to run over, and add the text files in file_option/ to actually point to those LE files. See files in those areas for examples.
+    - `--ntuple_tag MAD`  further identifies which files you want to use in configs/POT.json, it specifies the tool used to create the anatuples, in this case (and for yours) it stands for MasterAnaDev
+    - `--use-sideband dEdX`  uses a sideband named dEdX which is defined with a series of kinematic cuts in $CONFIGPATH/config/CutConfig.py.
+    - `--selection_tag thesis` puts a string at the end the output root files to further help identify them, this case "thesis"
+    - `--mc_onl`y tells you to only run over the monte carlo production. Just remove this to run with both data and MC, or put `--data_only` if you just want to run over data.
+    - `--test` put this in your command to just run over 1000 events to test that everything is working before you devote a lot of time to running over the full thing
+## Running on the Grid
+- Enter an SL7 container and run through your setup same as before
+- `python gridSelection.py --playlist me5A_p4 --ntuple_tag MAD --use-sideband dEdX --truth --cal_POT --selection_tag thesis --mc_only` , where you can just use the same command line options as you used for the interactive run (without the `--test` option)
+- This will, among other things, create a tarball of your environment that will be used to run the event selection on a grid node, and create the jobsub_submit commands to actually submit those jobs
+- This will spit out a bash script in jobsub_commands/ called jobsub_wrapper.sh. Because of recent OS changes from SL7 to Alma9, you can't actually submit jobs inside an SL7 container. What you can do is run jobsub_submit commands in a native Alma9 environment (see next step)
+- Exit your SL7 container and submit your jobs by running source jobsub_wrapper.sh. If everything has worked this will submit your jobs and you can check they're running with jobsub_q -G minerva --user $USER some time later. These take up to an hour to finish running all the way, usually.
+## Combine Files
+- `python combine_file.py --playlist NewPlaylistName --i  /pnfs/minerva/persistent/users/qvuong/{selection_directory}_hists/ --cal_POT --ntuple_tag MAD --selection_tag thesis`
+- You pass it a new playlist name that you create yourself, to represent this fully combined event selection. For me I named them to denote them as either RHC or FHC samples. Make sure you pass the same playlist name for MC and data selections of the same sample.
+- This will prompt you for additional paths if you want to add more samples. If you're running this over your base MC selection sample, this is where you would add the path to your special samples selection.
+- If you're running over data you don't need to do anything here, just press enter again.
+- This merges all of your samples together with madd, which is the MINERvA wrapper for hadd that takes care of all the universe sub-histograms in your event selection. It spits out one root file for each run and saves it to output_dir, which is set in your analysis configuration. I think you can pass this on the command line as well if you want to change this in situ.
+## Background Scaling
+- Run background tuning and scaling: this tunes your signal region and sideband region to data in a histogram type provided by you in . This takes the output root file from the event selection as the input, and uses the histograms in the list HISTOGRAMS_TO_UNFOLD in $CONFIGPATH/config/UnfoldingConfig.py.
+- `python background_fit/backgroundFit.py --playlist me5A_p4 --ntuple_tag MAD --use-sideband dEdX --truth --selection_tag thesis --bkgTune_tag N4_tune`
+- `--bkgTune_tag N4_tune` refers to which a dictionary object in $CONFIGPATH/config/BackgroundConfig.py that describes the categories with which to tune to data, as well as a few other things
+- This outputs root files containing your background subtracted data, the scaled-to-data histograms, and the base MC prediction with which to compare to the background subtracted data.
+- This will also make plots as given in $CONFIGPATH/config/DrawingConfig.py on the scaled and background subtracted histograms
