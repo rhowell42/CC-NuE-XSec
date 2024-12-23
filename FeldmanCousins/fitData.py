@@ -1,5 +1,6 @@
 import os
 import logging, sys
+import copy
 import ROOT
 import PlotUtils
 import numpy as np
@@ -8,6 +9,7 @@ np.set_printoptions(precision=1)
 np.set_printoptions(linewidth=1520)
 np.set_printoptions(threshold=sys.maxsize)
 from scipy import optimize, integrate
+
 import argparse
 ccnueroot = os.environ.get('CCNUEROOT')
 
@@ -112,23 +114,15 @@ if __name__ == "__main__":
     sample_histogram = StitchedHistogram("sample")
     sample_histogram.Load(file_path)
 
-    chi2_fit, res = DoFit(sample_histogram)
-    
-    #name = 'kevin_weights.txt'
-    #DataMCCVPlot(sample_histogram.data_hist,sample_histogram.mc_hist,"pre_fit.png")
-    #print(sample_histogram.GetChi2())
-    #sample_histogram.ReweightFluxToCV(name)
-    #DataMCCVPlot(sample_histogram.data_hist,sample_histogram.mc_hist,"post_fit.png")
-    #print(sample_histogram.GetChi2())
-    #exit()
+    solution = FitFluxUniverses(sample_histogram)
+    chi2_null = Chi2DataMC(sample_histogram.GetDataHistogram(),sample_histogram.GetMCHistogram())
 
-    chi2_mod = Chi2DataMC(sample_histogram.GetDataHistogram(),sample_histogram.GetMCHistogram())
-    print("Data fit: delta chi2 = {:.3f} = {:.3f} - {:.3f}".format(chi2_mod-chi2_fit,chi2_mod,chi2_fit))
+    chi2_fit, res = DoFit(sample_histogram)
+
+    print("Data fit: delta chi2 = {:.3f} = {:.3f} - {:.3f}".format(chi2_null-chi2_fit,chi2_null,chi2_fit))
     print("Best fit params:")
-    print("   delta m^2 = {:.2f} eV^2 +- {:.4f}".format(res['m'],0))
-    print("   U_e4^2    = {:.2f}      +- {:.4f}".format(res['ue4'],1))
-    print("   U_mu4^2   = {:.2f}      +- {:.4f}".format(res['umu4'],1))
-    print("   U_tau4^2  = {:.2f}      +- {:.4f}".format(res['utau4'],1))
-    #mc_hist = sample_histogram.GetMCHist()
-    #data_hist = sample_histogram.GetDataHist()
-    #MakePlot(mc_hist,data_hist,templates,res)
+    print("   delta m^2 = {:.3f} eV^2 +- {:.4f}".format(res['m'],0))
+    print("   U_e4^2    = {:.3f}      +- {:.4f}".format(res['ue4'],0))
+    print("   U_mu4^2   = {:.5f}    +- {:.4f}".format(res['umu4'],0))
+    print("   U_tau4^2  = {:.3f}      +- {:.4f}".format(res['utau4'],0))
+    PlotOscillationEffects(sample_histogram,res,"bestfit")
