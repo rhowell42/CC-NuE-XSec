@@ -6,11 +6,11 @@ import math
 import psutil
 from array import array
 
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+#os.environ["OPENBLAS_NUM_THREADS"] = "1"
+#os.environ["MKL_NUM_THREADS"] = "1"
+#os.environ["NUMEXPR_NUM_THREADS"] = "1"
+#os.environ["OMP_NUM_THREADS"] = "1"
+#os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 import numpy as np
 from scipy import optimize,linalg
 
@@ -58,11 +58,103 @@ def DoFit(histogram):
     bounds = np.array([[0.0,1.0],[0.0,0.15],[0.0,0.41],[0,0.66]], dtype = float)
     cons = [{"type":"ineq","fun":constraint}]
 
+    null = optimize.minimize(fun=CalChi2,x0=x0,tol=1e-4,options={"maxiter":20},args=(histogram,),method="SLSQP",bounds=bounds,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
+    null_chi2 = float(null.fun)
+    print("fit near null: {}".format(null.fun))
+
     res = optimize.differential_evolution(func=CalChi2,bounds=bounds,polish=False,x0=x0,args=(histogram,),maxiter=50,disp=True,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
     new_x0 = res.x
+    print("best fit: {}".format(res.fun))
+
     res = optimize.minimize(fun=CalChi2,x0=new_x0,tol=1e-4,options={"maxiter":20},args=(histogram,),method="SLSQP",bounds=bounds,constraints=optimize.LinearConstraint([[0,1,1,1]],-np.inf,1))
     chi2 = float(res.fun)
+    print("polish fit: {}".format(res.fun))
+
+    if null_chi2 < chi2:
+        chi2 = null_chi2
+        res = null
     return(chi2,{"m":res.x[0]*100,"ue4":res.x[1],"umu4":res.x[2],"utau4":res.x[3]})
+
+def FitFluxUniverses(histogram,plot=False,useOsc=False):
+    if useOsc:
+        mc_hist = histogram.GetOscillatedHistogram()
+    else:
+        mc_hist = histogram.GetMCHistogram()
+        
+    mc = np.array(mc_hist)[1:-1]
+    data = np.array(histogram.GetDataHistogram())[1:-1]
+
+    band = mc_hist.GetVertErrorBand("Flux")
+    I = np.identity(band.GetNHists())
+    A = np.array([np.array(band.GetHist(i))[1:-1] for i in range(band.GetNHists())])
+    V = histogram.GetMCCov() + histogram.GetDataCov()
+    C = data - mc
+    
+    L = 2 * np.dot(np.dot(A,np.linalg.inv(V)),C)
+    Q = np.dot(np.dot(A,np.linalg.inv(V)),A.T)+I
+    solution = np.linalg.solve(Q,L/2)
+    new_cv = mc + np.dot(solution,A-np.array([mc for i in range(band.GetNHists())]))    
+
+    weights = mc_hist.GetCVHistoWithStatError()
+    for i in range(1,weights.GetNbinsX()+1):
+        weight = weights.GetBinContent(i) / new_cv[i-1] if new_cv[i-1] != 0 else weights.GetBinContent(i)
+        weights.SetBinContent(i,weight)
+        weights.SetBinError(i,0)
+
+    new_mc = mc_hist.Clone()
+    new_mc.DivideSingle(new_mc,weights)
+
+    #new_nue = histogram.nue_hist.Clone()
+    #new_nue.DivideSingle(new_nue,weights)
+    #histogram.nue_hist = new_nue
+
+    #new_numu = histogram.numu_hist.Clone()
+    #new_numu.DivideSingle(new_numu,weights)
+    #histogram.numu_hist = new_numu
+
+    #new_swap = histogram.swap_hist.Clone()
+    #new_swap.DivideSingle(new_swap,weights)
+    #histogram.swap_hist = new_swap
+
+    if useOsc:
+        histogram.SetOscHistogram(new_mc)
+    else:
+        histogram.SetMCHistogram(new_mc)
+        histogram.RemoveFluxSystematic()
+
+    if plot:
+        cv_ratio = data/new_cv
+        mc_ratio = data/mc
+
+        x = np.arange(len(mc),dtype=float)
+
+        c1 = ROOT.TCanvas()
+
+        mg = ROOT.TMultiGraph()
+
+        g1 = ROOT.TGraph(len(x), x, cv_ratio)
+        g3 = ROOT.TGraph(len(x), x, mc_ratio)
+
+        g1.SetLineColor(ROOT.kRed)
+        g3.SetLineColor(ROOT.kBlue)
+
+        g1.SetLineWidth(3)
+        g3.SetLineWidth(3)
+
+        g1.SetTitle("After Flux Calc.")
+        g3.SetTitle("Before Flux Calc.")
+
+        mg.Add(g1)
+        mg.Add(g3)
+
+        mg.GetYaxis().SetTitle("Data Ratio")
+
+        mg.Draw("AL")
+        c1.BuildLegend()
+
+        c1.Print("flux_fit_results.png")
+
+    return(solution)
 
 def fitNorm(hist_data, templates, hist_mc):
     x0 = [1,1,1,1]
@@ -255,7 +347,7 @@ def MuonNorm(hist_mc,templates,fhc_norm,rhc_norm,fhc_nue_norm,rhc_nue_norm):
     hist.Add(ratio)
     return(hist)
 
-def Chi2DataMC(dataHist,mcHist,data_cov=None,mc_cov=None):
+def Chi2DataMC(dataHist,mcHist,cov=None):
     #We get the number of bins and make sure it's compatible with the NxN matrix given
     if dataHist.GetNbinsX() != mcHist.GetNbinsX():
         logging.error("breaking error in Chi2DataMC")
@@ -268,19 +360,15 @@ def Chi2DataMC(dataHist,mcHist,data_cov=None,mc_cov=None):
     errorAsFraction    = False
 
     # ----- Get covariance matrix for chi2 calculation ----- #
-    if mc_cov is None:
-        mc_cov = mcHist.GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
-        mc_cov = np.asarray(matrix(mc_cov))[1:-1,1:-1]
-    if data_cov is None:
-        data_cov = dataHist.GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
-        data_cov = np.asarray(matrix(data_cov))[1:-1,1:-1]
-
-    covMatrix = mc_cov + data_cov
+    if cov is None:
+        h_test = dataHist.Clone()
+        h_test.Add(mcHist,-1)
+        cov = np.asarray(matrix(h_test.GetTotalErrorMatrix(includeStatError,errorAsFraction,useOnlyShapeErrors)))[1:-1,1:-1]
 
     try:
-        errorMatrix = np.linalg.inv(covMatrix)
+        errorMatrix = np.linalg.inv(cov)
     except:
-        logging.error("Matrix couldn't be inverted. Returning -1")
+        logging.error("Data-MC covariance matrix couldn't be inverted. Returning -1")
         return(-1)
 
     mc = np.array(mcHist)[1:-1] # store MC bin contents excluding over/underflow bins
@@ -303,8 +391,8 @@ def CalChi2(x,histogram):
     U_e4 = x[1]
     U_mu4 = x[2]
     U_tau4 = x[3]
-    OscillateHistogram(histogram,ms,U_e4,U_mu4,U_tau4)
-    chi2 = Chi2DataMC(histogram.GetDataHistogram(),histogram.GetOscillatedHistogram(),data_cov=histogram.GetDataCov(),mc_cov=histogram.GetOscCov())
+    OscillateHistogram(histogram,ms,U_e4,U_mu4,U_tau4,False,False)
+    chi2 = Chi2DataMC(histogram.GetDataHistogram(),histogram.GetOscillatedHistogram())
     return(chi2)
 
 def InvertID(hist):
@@ -316,7 +404,125 @@ def InvertID(hist):
             hist.SetBinContent(i,0.0)
             hist.SetBinError(i,0.0)
 
-def OscillateHistogram(histogram, m, U_e4, U_mu4, U_tau4,fitPseudodata=False):
+def OscillateSubHistogram(histogram,name,m,U_e4,U_mu4,U_tau4):
+    # elastic_id is 1 only for the nueel samples
+    # ratio_id is 1 only for the ratio samples
+    # if 0 is False, if 1 is True
+
+    hist_nueTemp = histogram.samples_nue_templates[name]
+    hist_numuTemp = histogram.samples_numu_templates[name]
+    hist_swapTemp = histogram.samples_swap_templates[name]
+
+    hist_nue_energy = histogram.samples_nue[name].Clone()
+    hist_numu_energy = histogram.samples_numu[name].Clone()
+    hist_swap_energy = histogram.samples_swap[name].Clone()
+
+    hist = histogram.samples_nue[name].Clone()
+
+    nue_weights = hist.GetCVHistoWithStatError().Clone()
+    numu_weights = hist.GetCVHistoWithStatError().Clone()
+    nuenutau_weights = hist.GetCVHistoWithStatError().Clone()
+    numunue_weights = hist.GetCVHistoWithStatError().Clone()
+    numunutau_weights = hist.GetCVHistoWithStatError().Clone()
+
+    for i in range(0,hist.GetNbinsX() + 1):
+        nue_sin = sin_average(i,m,hist_nueTemp,False)
+        numu_sin = sin_average(i,m,hist_numuTemp,False)
+        swap_sin = sin_average(i,m,hist_swapTemp,False)
+
+        P_ee = float(1 - 4*U_e4*(1-U_e4)*nue_sin)
+
+        P_mue = float(4*(U_e4)*(U_mu4)*swap_sin)
+
+        P_mumu = float(1 - 4*U_mu4*(1-U_mu4)*numu_sin)
+
+        P_mutau = float(4*U_tau4*U_mu4*numu_sin)
+
+        P_etau = float(4*U_e4*U_tau4*nue_sin)
+
+        nue_weights.SetBinContent(i,P_ee)
+        numu_weights.SetBinContent(i,P_mumu)
+        nuenutau_weights.SetBinContent(i,P_etau)
+        numunue_weights.SetBinContent(i,P_mue)
+        numunutau_weights.SetBinContent(i,P_mutau)
+
+        nue_weights.SetBinError(i,0)
+        numu_weights.SetBinError(i,0)
+        nuenutau_weights.SetBinError(i,0)
+        numunue_weights.SetBinError(i,0)
+        numunutau_weights.SetBinError(i,0)
+
+    numu = hist_numu_energy.Clone()
+    numu.MultiplySingle(numu,numu_weights)
+
+    nue = hist_nue_energy.Clone()
+    nue.MultiplySingle(nue,nue_weights)
+
+    numunue = hist_swap_energy.Clone()
+    numunue.MultiplySingle(numunue,numunue_weights)
+
+    numunutau = hist_numu_energy.Clone()
+    numunutau.MultiplySingle(numunutau,numunutau_weights)
+
+    nuenutau  = hist_nue_energy.Clone()
+    nuenutau.MultiplySingle(nuenutau,nuenutau_weights)
+    nutau = numunutau.Clone()
+    nutau.Add(nuenutau)
+
+    nue.SetFillColor(ROOT.kRed)
+    numu.SetFillColor(ROOT.kBlue)
+    numunue.SetFillColor(ROOT.kBlue)
+    nutau.SetFillColor(ROOT.kGray)
+
+    nue.SetLineColor(ROOT.kRed)
+    numu.SetLineColor(ROOT.kBlue)
+    numunue.SetLineColor(ROOT.kBlue)
+    nutau.SetLineColor(ROOT.kGray)
+
+    nue.SetLineWidth(0)
+    numu.SetLineWidth(0)
+    numunue.SetLineWidth(0)
+    nutau.SetLineWidth(0)
+    histogram.data_samples[name].SetLineWidth(1)
+
+    nue.SetFillStyle(3244)
+    numu.SetFillStyle(3744)
+    numunue.SetFillStyle(3244)
+    nutau.SetFillStyle(3409)
+
+    TArray = []
+    nue.SetTitle("#nu_{e}")
+    numu.SetTitle("#nu_{#mu}")
+    numunue.SetTitle("#nu_{#mu}->#nu_{e}")
+    nutau.SetTitle("#nu_{#tau}")
+    histogram.data_samples[name].SetTitle("Oscillated {}".format(name))
+
+    if "elastic" in name:
+        nue.Scale(2,'width')
+        numu.Scale(2,'width')
+        numunue.Scale(2,'width')
+        nutau.Scale(2,'width')
+        histogram.data_samples[name].Scale(2,'width')
+        histogram.data_samples[name].GetXaxis().SetTitle("Electron Energy [ / 2 GeV ]")
+    else:
+        nue.Scale(1,'width')
+        numu.Scale(1,'width')
+        numunue.Scale(1,'width')
+        histogram.data_samples[name].Scale(1,'width')
+        histogram.data_samples[name].GetXaxis().SetTitle("Neutrino Energy Estimator [ GeV ]")
+
+    if nue.Integral() > 0:
+        TArray.append(nue)
+    if numu.Integral() > 0:
+        TArray.append(numu)
+    if numunue.Integral() > 0 and ("elastic" in name or "nue" in name):
+        TArray.append(numunue)
+    if nutau.Integral() > 0 and "elastic" in name:
+        TArray.append(nutau)
+
+    return(TArray)
+
+def OscillateHistogram(histogram, m, U_e4, U_mu4, U_tau4,fitPseudodata=False,fitFluxUniverses=False):
     # elastic_id is 1 only for the nueel samples
     # ratio_id is 1 only for the ratio samples
     # if 0 is False, if 1 is True
@@ -400,13 +606,37 @@ def OscillateHistogram(histogram, m, U_e4, U_mu4, U_tau4,fitPseudodata=False):
     nue.MultiplySingle(nue,hist_inv_ratio_id)
     numu.MultiplySingle(numu,hist_inv_ratio_id)
 
-    hist = numu.Clone()
-    hist.Add(nue)
-    hist.Add(ratio)
+    osc = numu.Clone()
+    osc.Add(nue)
+    osc.Add(ratio)
     if nutau.Integral() > 0:
-        hist.Add(nutau)
+        osc.Add(nutau)
 
-    histogram.SetOscHistogram(hist)
+    # If we've already fit the flux universes, just reweight the MC to maintain flux fits 
+    if "Flux" not in hist.GetVertErrorBandNames():
+        nue = hist_nue_energy.Clone()
+        numu = hist_numu_energy.Clone()
+        ratio = hist_numu_energy.Clone()
+        ratio.Divide(ratio,nue)
+
+        nue.MultiplySingle(nue,hist_inv_ratio_id)
+        numu.MultiplySingle(numu,hist_inv_ratio_id)
+        ratio.MultiplySingle(ratio,hist_ratio_id)
+
+        nue.Add(numu)
+        nue.Add(ratio)
+
+        weights = nue.Clone()
+        weights.DivideSingle(weights,osc)
+
+        osc = histogram.GetMCHistogram()
+        osc.DivideSingle(osc,weights)
+
+
+    histogram.SetOscHistogram(osc)
+    if fitFluxUniverses:
+        sol = FitFluxUniverses(histogram,False,True)
+        histogram.RemoveFluxfromOsc()
 
 def makeChi2Surface(histogram,outdir,dodeltachi2=False,deltam=1,U_e4=0,U_tau4=0):
     U_mu4s = 0.41*np.logspace(-3,0,60)
@@ -423,7 +653,7 @@ def makeChi2Surface(histogram,outdir,dodeltachi2=False,deltam=1,U_e4=0,U_tau4=0)
             test_hist = histogram.GetOscillatedHistogram()
             
             minchi2,res = DoFit(histogram)
-            chi2_null = Chi2DataMC(histogram.GetDataHistogram(),histogram.GetMCHistogram(),data_cov=histogram.GetDataCov(),mc_cov=histogram.GetMCCov())
+            chi2_null = Chi2DataMC(histogram.GetDataHistogram(),histogram.GetMCHistogram())
 
             asimov_surface[i] = minchi2 - chi2_null
             fits[i] = minchi2
@@ -431,9 +661,9 @@ def makeChi2Surface(histogram,outdir,dodeltachi2=False,deltam=1,U_e4=0,U_tau4=0)
             OscillateHistogram(histogram, deltam, U_e4, U_mu4, U_tau4)
             test_hist = histogram.GetOscillatedHistogram()
 
-            chi2_data       = Chi2DataMC(histogram.GetDataHistogram(),test_hist,data_cov=histogram.GetDataCov(),mc_cov=histogram.GetOscCov())
+            chi2_data       = Chi2DataMC(histogram.GetDataHistogram(),test_hist)
             data_surface[i] = chi2_data
-            chi2_asimov       = Chi2DataMC(histogram.GetPseudoHistogram(),test_hist,data_cov=histogram.GetPseudoCov(),mc_cov=histogram.GetOscCov())
+            chi2_asimov       = Chi2DataMC(histogram.GetPseudoHistogram(),test_hist)
             asimov_surface[i] = chi2_asimov
         
         logging.info("{:.2f}% done with chi2s. Current chi2 = {:.4f}".format(100*count/(U_mu4s.shape[0]),data_surface[i]))
@@ -445,15 +675,23 @@ def makeChi2Surface(histogram,outdir,dodeltachi2=False,deltam=1,U_e4=0,U_tau4=0)
         np.save('{}/chi2_surface_data_m_{}_Ue4_{}.dat'.format(outdir,deltam,U_e4),data_surface)
         np.save('{}/chi2_surface_pseudodata_m_{}_Ue4_{}.dat'.format(outdir,deltam,U_e4),asimov_surface)
 
-def sin_average(q = 0,dm2 = 0,template = None):
+def sin_average(q=0,dm2=0,template=None,yaxis=True):
     avgsin = 0
     total_N = 0
-    for x in range(template.GetNbinsY()+1):
-        lowEdge = template.GetYaxis().GetBinLowEdge(x)
-        upEdge = template.GetYaxis().GetBinUpEdge(x)
+
+    if yaxis:
+        length = template.GetNbinsY()+1
+        axis = template.GetYaxis()
+    else:
+        length = template.GetNbinsX()+1
+        axis = template.GetXaxis()
+
+    for b in range(length):
+        lowEdge = axis.GetBinLowEdge(b)
+        upEdge = axis.GetBinUpEdge(b)
         bin_width = upEdge-lowEdge
         bin_center = (upEdge+lowEdge)/2
-        N_bin = template.GetBinContent(q,x)
+        N_bin = template.GetBinContent(q,b)
         total_N+=N_bin
         if N_bin == 0:
             continue
