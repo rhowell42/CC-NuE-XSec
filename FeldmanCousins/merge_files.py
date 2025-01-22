@@ -43,6 +43,9 @@ def MergeChi2s():
             print("Enter a valid path")
             break
 
+        if path[-1] != '/':
+            path = path+'/'
+            
         if os.path.isdir(path):
             data_files = [f for f in os.listdir(path) if "chi2_surface" in f]
             if len(data_files) == 0:
@@ -67,25 +70,49 @@ def MergeChi2s():
 
         datas = []
         asimovs = []
+        datas_penalty = []
+        asimovs_penalty = []
 
         for m in m_names:
             m_data   = []
+            m_data_penalty = []
+
             m_asimov = []
+            m_asimov_penalty = []
+
             for e in e_names:
                 data = np.load(path+"chi2_surface_data_m_{}_Ue4_{}.dat.npy".format(m,e))
+                data_penalty = np.load(path+"chi2_penalty_data_m_{}_Ue4_{}.dat.npy".format(m,e))
+
                 asimov = np.load(path+"chi2_surface_pseudodata_m_{}_Ue4_{}.dat.npy".format(m,e))
+                asimov_penalty = np.load(path+"chi2_penalty_pseudodata_m_{}_Ue4_{}.dat.npy".format(m,e))
 
                 m_data.append(data)
+                m_data_penalty.append(data_penalty)
+
                 m_asimov.append(asimov)
+                m_asimov_penalty.append(asimov_penalty)
+
             datas.append(m_data)
+            datas_penalty.append(m_data_penalty)
+
             asimovs.append(m_asimov)
+            asimovs_penalty.append(m_asimov_penalty)
 
         datas = np.array(datas)
+        datas_penalty = np.array(datas_penalty)
+
         asimovs = np.array(asimovs)
+        asimovs_penalty = np.array(asimovs_penalty)
 
         np.save("data_chi2s",datas)
+        np.save("data_penalties",datas_penalty)
+        
         np.save("asimov_chi2s",asimovs)
+        np.save("asimov_penalties",asimovs_penalty)
+
         print("Done saving files")
+
         break
 
 if __name__ in "__main__":
