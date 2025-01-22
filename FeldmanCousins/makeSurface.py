@@ -9,7 +9,7 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 import numpy as np
-np.set_printoptions(precision=1)
+np.set_printoptions(precision=5)
 np.set_printoptions(linewidth=1520)
 np.set_printoptions(threshold=sys.maxsize)
 from scipy import optimize, integrate
@@ -27,6 +27,7 @@ from array import array
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
 from Tools.FitTools import *
+from Tools.PlotTools import *
 
 #logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -55,6 +56,41 @@ MNVPLOTTER.legend_offset_x           = .15
 # Specifically, w/o this, this script seg faults in the case where I try to instantiate FluxReweighterWithWiggleFit w/ nuE constraint set to False for more than one playlist
 ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
+
+def MakeSurface(histogram,outdir,dodeltachi2=False,deltam=1,U_e4=0,U_tau4=0,makePlot=False):
+    U_mu4s = 0.41*np.logspace(-5,0,100)
+    U_mu4s[0] = 0
+    asimov_surface    = np.zeros(np.shape(U_mu4s)[0],dtype='f')
+    data_surface      = np.zeros(np.shape(U_mu4s)[0],dtype='f')
+    data_penalties    = np.zeros(np.shape(U_mu4s)[0],dtype='f')
+    asimov_penalties  = np.zeros(np.shape(U_mu4s)[0],dtype='f')
+    fits              = np.zeros(np.shape(U_mu4s)[0],dtype='f')
+    count = 0
+
+    for i in range(U_mu4s.shape[0]):
+        count+=1
+        U_mu4 = U_mu4s[i]
+
+        OscillateHistogram(histogram, deltam, U_e4, U_mu4, U_tau4)
+
+        chi2_data,data_penalty = Chi2DataMC(histogram,invCov=histogram.GetInverseCovarianceMatrix(),marginalize=True,useOsc=True)
+        chi2_asimov,asimov_penalty = Chi2DataMC(histogram,invCov=histogram.GetInverseCovarianceMatrix(),marginalize=True,useOsc=True,usePseudo=True)
+
+        if makePlot:
+            res={"m":deltam,"ue4":U_e4,"umu4":U_mu4,"utau4":0}
+            PlotOscillationEffects(histogram,res,"asimov",False,useMarg=False,usePseudo=True)
+            PlotOscillationEffects(histogram,res,"asimov_marg",True,useMarg=True,usePseudo=True)
+
+        data_surface[i] = chi2_data
+        data_penalties[i] = data_penalty
+        asimov_surface[i] = chi2_asimov
+        asimov_penalties[i] = asimov_penalty
+        logging.info("{:.2f}% done with chi2s. Current data, asimov chi2s = {:.4f}, {:.4f}".format(100*count/(U_mu4s.shape[0]),data_surface[i],asimov_surface[i]))
+
+    np.save('{}/chi2_surface_data_m_{}_Ue4_{}.dat'.format(outdir,deltam,U_e4),data_surface)
+    np.save('{}/chi2_surface_pseudodata_m_{}_Ue4_{}.dat'.format(outdir,deltam,U_e4),asimov_surface)
+    np.save('{}/chi2_penalty_data_m_{}_Ue4_{}.dat'.format(outdir,deltam,U_e4),data_penalties)
+    np.save('{}/chi2_penalty_pseudodata_m_{}_Ue4_{}.dat'.format(outdir,deltam,U_e4),asimov_penalties)
 
 if __name__ == "__main__":
     BLUEARC = "/exp/minerva/data/users/{}/surfaces".format(os.environ["USER"])
@@ -113,13 +149,13 @@ if __name__ == "__main__":
     sample_histogram = StitchedHistogram("sample")
     sample_histogram.Load(file_path)
 
-    U_e4s = 0.15*np.logspace(-2.2,0,60)
+    U_e4s = 0.15*np.logspace(-4,0,100)
     U_e4s[0] = 0
     U_e4 = U_e4s[i_U_e4]
 
     if not runongrid: # surface plot
-        m_toloop = np.logspace(0,2,60)
+        m_toloop = np.logspace(-1,2,100)
         for m in m_toloop:
-            makeChi2Surface(sample_histogram,outdir,dodelta,m,U_e4,U_tau4)
+            MakeSurface(sample_histogram,outdir,dodelta,m,U_e4,U_tau4)
     else:
-        makeChi2Surface(sample_histogram,outdir,dodelta,delta_m,U_e4,U_tau4)
+        MakeSurface(sample_histogram,outdir,dodelta,delta_m,U_e4,U_tau4,makePlot=False)

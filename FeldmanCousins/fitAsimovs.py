@@ -29,24 +29,44 @@ logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 
-def ThrowSystematics(histogram,n_samples=50):
+# Kevin test
+# throw first from the flux covariance using cholesky decomp
+# throw rest of the systematics around that result
+# throw poisson from that result
+# do rest as normal
+
+def ThrowSystematics(histogram,throwFlux=False,useDataSubMCCov=True,n_samples=50):
     includeStatError = False
     errorAsFraction  = True
     useOnlyShapeErrors = False
 
-    covMatrixTmp  = histogram.GetMCHistogram().GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
-    covMatrixTmp += histogram.GetPseudoHistogram().GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
+    pred_vals = np.array(histogram.GetMCHistogram())[1:-1] # store MC bin contents excluding over/underflow bins
 
-    mc_hist = histogram.GetMCHistogram()
-    for i in range(mc_hist.GetNbinsX()+1):
-        for j in range(i,mc_hist.GetNbinsX()+1):
-            covMatrixTmp[i][j] = covMatrixTmp[i][j] * mc_hist.GetBinContent(i) * mc_hist.GetBinContent(j)
-            covMatrixTmp[j][i] = covMatrixTmp[i][j]
+    if useDataSubMCCov:
+        covMatrix = histogram.GetCovarianceMatrix()
+    else:
+        covMatrixTmp  = histogram.GetMCHistogram().GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
+        covMatrixTmp += histogram.GetPseudoHistogram().GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
 
-    covMatrix = np.asarray(matrix(covMatrixTmp))[1:-1,1:-1] # convert to numpy array, exclude over/underflow bins
-    pred_vals = np.array(mc_hist)[1:-1] # store MC bin contents excluding over/underflow bins
+        mc_hist = histogram.GetMCHistogram()
+        for i in range(mc_hist.GetNbinsX()+1):
+            for j in range(i,mc_hist.GetNbinsX()+1):
+                covMatrixTmp[i][j] = covMatrixTmp[i][j] * mc_hist.GetBinContent(i) * mc_hist.GetBinContent(j)
+                covMatrixTmp[j][i] = covMatrixTmp[i][j]
 
-    sys_throws = multivariate_normal.rvs(mean=pred_vals,cov=covMatrix,size=n_samples)
+        covMatrix = np.asarray(matrix(covMatrixTmp))[1:-1,1:-1] # convert to numpy array, exclude over/underflow bins
+
+    if throwFlux:
+        #fluxCov = histogram.GetCovarianceMatrix() - histogram.GetCovarianceMatrix(sansFlux=True)
+        fluxCov = np.loadtxt("fluxCholeskyTolerance10.csv",delimiter=',')
+        fluxCov = fluxCov @ np.conj(fluxCov.T)
+        flux_throws = multivariate_normal.rvs(mean=pred_vals,cov=fluxCov) # randomly sample covariance matrix around null hypothesis
+
+        sansFluxCov = histogram.GetCovarianceMatrix(sansFlux=True)
+        sys_throws  = multivariate_normal.rvs(mean=flux_throws,cov=sansFluxCov,size=n_samples) # randomly sample covariance matrix around null hypothesis
+    else:
+        sys_throws = multivariate_normal.rvs(mean=pred_vals,cov=covMatrix,size=n_samples) # randomly sample covariance matrix around null hypothesis
+
     return(sys_throws)
 
 def ThrowPoissons(lambdas,histogram):
@@ -54,7 +74,7 @@ def ThrowPoissons(lambdas,histogram):
     for lam in lambdas:
         while lam[lam<0].any():
             logging.error("Negative value in sys throws, rerunning this throw...")
-            lam = ThrowSystematics(histogram,1) 
+            lam = ThrowSystematics(histogram,n_samples=1) 
         throw = np.random.poisson(lam)
         throws.append(throw)
     throws = np.array(throws)
@@ -74,10 +94,14 @@ def FitToyExperiments(histogram,experiments):
         data_histogram.DivideSingle(data_histogram,weights)
         histogram.SetDataHistogram(data_histogram)
 
-        chi2_fit, res = DoFit(histogram)
-        chi2_mod = Chi2DataMC(histogram.GetDataHistogram(),histogram.GetMCHistogram(),histogram.GetDataCov(),histogram.GetMCCov())
+        invCovariance = histogram.GetInverseCovarianceMatrix()
+        chi2_null,penalty = Chi2DataMC(histogram,invCov=invCovariance,marginalize=True)
 
-        results.append(chi2_mod-chi2_fit)
+        fitter = Fitter(histogram,invCov=invCovariance)
+        chi2_fit,res = fitter.DoFit()
+
+        dchi2 = chi2_null - chi2_fit
+        results.append(dchi2)
         histogram.SetDataHistogram(stitched_data)
 
     results = np.array(results)
@@ -147,7 +171,7 @@ if __name__ == "__main__":
     sample_histogram = StitchedHistogram("sample")
     sample_histogram.Load(file_path)
 
-    sys_throws  = ThrowSystematics(sample_histogram,50)
+    sys_throws  = ThrowSystematics(sample_histogram,throwFlux=True,n_samples=50)
     experiments = ThrowPoissons(sys_throws,sample_histogram)
 
     dchi2s = FitToyExperiments(sample_histogram,experiments)
