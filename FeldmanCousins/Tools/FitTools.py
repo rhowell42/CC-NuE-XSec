@@ -46,7 +46,7 @@ class Fitter():
         self.remakeCov = remakeCov
         self.useNewUniverses = useNewUniverses
         self.invCov = invCov
-        self.tol = 1e0
+        self.tol = 1e-12
 
     def DoFit(self):
         x0 = [0.0,0.0,0.0,0.0]

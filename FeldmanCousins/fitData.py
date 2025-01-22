@@ -5,7 +5,7 @@ import ROOT
 import PlotUtils
 import numpy as np
 from root_numpy import matrix
-np.set_printoptions(precision=1)
+np.set_printoptions(precision=4)
 np.set_printoptions(linewidth=1520)
 np.set_printoptions(threshold=sys.maxsize)
 from scipy import optimize, integrate
@@ -114,10 +114,13 @@ if __name__ == "__main__":
     sample_histogram = StitchedHistogram("sample")
     sample_histogram.Load(file_path)
 
-    solution = FitFluxUniverses(sample_histogram)
-    chi2_null = Chi2DataMC(sample_histogram.GetDataHistogram(),sample_histogram.GetMCHistogram())
+    invCovariance = sample_histogram.GetInverseCovarianceMatrix()
 
-    chi2_fit, res = DoFit(sample_histogram)
+    chi2_null,penalty = Chi2DataMC(sample_histogram,invCov=invCovariance,marginalize=True)
+    print("null chi2: {:.3f}".format(chi2_null))
+
+    fitter = Fitter(sample_histogram,invCov=invCovariance)
+    chi2_fit,res = fitter.DoFit()
 
     print("Data fit: delta chi2 = {:.3f} = {:.3f} - {:.3f}".format(chi2_null-chi2_fit,chi2_null,chi2_fit))
     print("Best fit params:")
@@ -125,4 +128,7 @@ if __name__ == "__main__":
     print("   U_e4^2    = {:.3f}      +- {:.4f}".format(res['ue4'],0))
     print("   U_mu4^2   = {:.5f}    +- {:.4f}".format(res['umu4'],0))
     print("   U_tau4^2  = {:.3f}      +- {:.4f}".format(res['utau4'],0))
-    PlotOscillationEffects(sample_histogram,res,"bestfit")
+
+    PlotOscillationEffects(sample_histogram,res,"bestfit",plotSamples=False)
+    PlotOscillationRatios(sample_histogram,res,"bestfit")
+    PlotFluxMarginalizationEffects(sample_histogram,res,"bestfit")
