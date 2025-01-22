@@ -355,11 +355,11 @@ if __name__ == "__main__":
     sample_histogram.AddTemplates("rhc_numu_selection",numu=h2_rhc_musel_template)
     sample_histogram.AddTemplates("rhc_nue_selection",nue=h2_rhc_template,swap=h2_rhc_swap_template)
 
-    # ----- Remove samples that we want to exclude from analysis ----- #
-    sample_histogram.ApplyExclusion(exclude)
-
     # ----- Process Systematics and Synchronize across histograms ----- #
     sample_histogram.CleanErrorBands(errsToRemove)
+
+    # ----- Remove samples that we want to exclude from analysis ----- #
+    sample_histogram.ApplyExclusion(exclude)
 
     if doratio: # do we want to replace selection samples with flavor ratios
         if "fhc" not in exclude: # do we care about the fhc component
@@ -399,6 +399,11 @@ if __name__ == "__main__":
     filename = "{}/FeldmanCousins/NuE_stitched_hists.root".format(ccnueroot)
 
     sample_histogram.Write(filename)
-    sample_histogram.DebugPlots()
+    sample_histogram.SetPlottingStyle()
+    #sample_histogram.DebugPlots()
+    
+    invCov=sample_histogram.GetInverseCovarianceMatrix()
+    nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
+
+    sample_histogram.PlotSamples(fluxSolution=nullSolution)
     DataMCCVPlot(mnv_data,mnv_mc,"mc_stitched_v2.png")
-    print(Chi2DataMC(mnv_data,mnv_mc))

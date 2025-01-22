@@ -45,13 +45,11 @@ class StitchedHistogram:
     def __init__(self,name):
         self.name = name
 
+        self.keys = ["fhc_elastic","fhc_imd","fhc_numu_selection","fhc_nue_selection","rhc_elastic","rhc_imd","rhc_numu_selection","rhc_nue_selection"]
+        self.titles = ["FHC #nu+e","FHC IMD","FHC CC #nu_{#mu}","FHC CC #nu_{e}","RHC #nu+e","RHC IMD","RHC CC anti #nu_{#mu}","RHC CC anti #nu_{e}"]
+
         self.data_hists = OrderedDict()
         self.mc_hists = OrderedDict()
-
-        self.mc_cov = None
-        self.data_cov = None
-        self.pseudo_cov = None
-        self.osc_cov = None
 
         self.nue_hists = {}
         self.numu_hists = {}
@@ -67,7 +65,20 @@ class StitchedHistogram:
         self.numu_templates = {}
         self.swap_templates = {}
 
-        self.keys = []
+        self.data_samples = {}
+        self.mc_samples = {}
+        self.samples_nue = {}
+        self.samples_numu = {}
+        self.samples_swap = {}
+        self.samples_nue_templates = {}
+        self.samples_numu_templates = {}
+        self.samples_swap_templates = {}
+
+        self.mc_flux_universes = []
+        self.A = None # matrix of universes - MC CV
+
+        self.inv_covariance = None
+        self.inv_covariance_sans_flux = None
 
         self.mc_hist = None
         self.data_hist = None
@@ -88,6 +99,7 @@ class StitchedHistogram:
         self.ratio_id = None # 1 for ratio, 0 otherwise
 
         self.is_processed = False
+        self.data_scaled = {}
 
     def __del__(self):
         self.data_hists = {}
@@ -129,25 +141,52 @@ class StitchedHistogram:
 
     def SetDataHistogram(self,hist):
         self.data_hist = hist.Clone()
-        self.mc_hist.AddMissingErrorBandsAndFillWithCV(self.data_hist)
-        self.data_hist.AddMissingErrorBandsAndFillWithCV(self.mc_hist)
-        self.data_cov = np.asarray(matrix(self.data_hist.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
 
     def SetPseudoHistogram(self,hist):
         self.pseudo_hist = hist.Clone()
-        self.mc_hist.AddMissingErrorBandsAndFillWithCV(self.pseudo_hist)
-        self.pseudo_hist.AddMissingErrorBandsAndFillWithCV(self.mc_hist)
-        self.pseudo_cov = np.asarray(matrix(self.pseudo_hist.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
 
     def SetMCHistogram(self,hist):
         self.mc_hist = hist.Clone()
-        self.mc_hist.AddMissingErrorBandsAndFillWithCV(self.data_hist)
-        self.data_hist.AddMissingErrorBandsAndFillWithCV(self.mc_hist)
-        self.mc_cov = np.asarray(matrix(self.mc_hist.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
+        self.SetAMatrix()
+
+    def SetAMatrix(self):
+        ##### Store flux universes for marginalization procedure #####
+        if "Flux" in self.mc_hist.GetVertErrorBandNames():
+            band = self.mc_hist.GetVertErrorBand("Flux")
+            nhists = band.GetNHists()
+            self.mc_flux_universes = np.array([np.array(band.GetHist(i))[1:-1] for i in range(nhists)])
+
+            cv = np.array(self.mc_hist)[1:-1]
+            self.A = self.mc_flux_universes - np.array([cv for i in range(nhists)])
+
+    def SetCovarianceMatrices(self):
+        if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist) and type(self.mc_hist) == PlotUtils.MnvH1D:
+            h_test = self.data_hist.Clone()
+            h_test.Add(self.mc_hist,-1)
+
+            inv_covariance = np.asarray(matrix(h_test.GetTotalErrorMatrix(True,False,False)))[1:-1,1:-1]
+            flux_covariance = np.asarray(matrix(h_test.GetSysErrorMatrix("Flux")))[1:-1,1:-1]
+            cov_sans_flux = inv_covariance - flux_covariance
+
+            self.inv_covariance = np.linalg.inv(inv_covariance)
+            self.inv_covariance_sans_flux = np.linalg.inv(cov_sans_flux)
+        else:
+            raise ValueError("MC and Data histograms must be defined before setting inv_covariance matrix")
+
+    def GetInverseCovarianceMatrix(self,sansFlux=False):
+        if sansFlux:
+            return(self.inv_covariance_sans_flux)
+        else:
+            return(self.inv_covariance)
+
+    def GetCovarianceMatrix(self,sansFlux=False):
+        if sansFlux:
+            return(np.linalg.inv(self.inv_covariance_sans_flux))
+        else:
+            return(np.linalg.inv(self.inv_covariance))
 
     def SetOscHistogram(self,hist):
         self.osc_hist = hist.Clone()
-        self.osc_cov = np.asarray(matrix(self.osc_hist.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
 
     def GetMCHistogram(self):
         return(self.mc_hist.Clone())
@@ -164,17 +203,11 @@ class StitchedHistogram:
         else:
             raise ValueError("Oscillation histogram not set.")
 
-    def GetMCCov(self):
-        return(self.mc_cov)
+    def GetFluxUniverses(self):
+        return(self.mc_flux_universes)
 
-    def GetDataCov(self):
-        return(self.data_cov)
-
-    def GetOscCov(self):
-        return(self.osc_cov)
-
-    def GetPseudoCov(self):
-        return(self.pseudo_cov)
+    def GetAMatrix(self):
+        return(self.A)
 
     def EmptyHist(self,h):
         h_ret = h.Clone()
@@ -206,6 +239,7 @@ class StitchedHistogram:
             raise ValueError("Cannot add {} to data histogram dictionary of {}".format(type(hist),type(list(self.mc_hists.values())[0])))
 
         self.data_hists[name] = data_hist
+        self.data_scaled[name] = False
         self.mc_hists[name] = mc_hist
 
         # ----- Set Electron Neutrino Histograms ----- #
@@ -268,6 +302,7 @@ class StitchedHistogram:
             raise ValueError("{} not in mc histogram dictionary".format(name))
 
         del self.data_hists[name]
+        del self.data_scaled[name]
         del self.mc_hists[name]
         del self.nue_hists[name]
         del self.numu_hists[name]
@@ -314,28 +349,40 @@ class StitchedHistogram:
             self.AddHistograms('{}_ratio'.format(beam),mc_clone,data_clone)
             self.AddTemplates("{}_ratio".format(beam),numu=self.numu_templates[beam+"_numu_selection"],nue=self.nue_templates[beam+"_nue_selection"],swap=self.swap_templates[beam+"_nue_selection"])
             self.RemoveHistograms(elecname)
+            if beam == 'fhc':
+                self.titles.remove("FHC CC #nu_{e}")
+                self.titles.append("FHC CC #nu_{#mu}/#nu_{e} Ratio")
+            elif beam == 'rhc':
+                self.titles.remove("RHC CC anti #nu_{e}")
+                self.titles.append("RHC CC anti #nu_{#mu}/#nu_{e} Ratio")
+
+    def Copy(self):
+        return(copy.deepcopy(self))
 
     def ApplyExclusion(self,exclude):
+        self.data_samples = copy.deepcopy(self.data_hists)
+        self.mc_samples = copy.deepcopy(self.mc_hists)
+        self.samples_nue = copy.deepcopy(self.nue_hists)
+        self.samples_numu = copy.deepcopy(self.numu_hists)
+        self.samples_swap = copy.deepcopy(self.swap_hists)
+        self.samples_nue_templates = copy.deepcopy(self.nue_templates)
+        self.samples_numu_templates = copy.deepcopy(self.numu_templates)
+        self.samples_swap_templates = copy.deepcopy(self.swap_templates)
+
         for h in self.keys:
             if "fhc" in exclude:
                 if "fhc" in h and "selection" in h:
                     self.RemoveHistograms(h)
-                    self.RemoveHistograms(h)
             if "rhc" in exclude:
                 if "rhc" in h and "selection" in h:
                     self.RemoveHistograms(h)
-                    self.RemoveHistograms(h)
             if "numu" in exclude and "numu" in h:
-                self.RemoveHistograms(h)
                 self.RemoveHistograms(h)
             if "nue" in exclude and "nue" in h:
                 self.RemoveHistograms(h)
-                self.RemoveHistograms(h)
             if "elastic" in exclude and "elastic" in h:
                 self.RemoveHistograms(h)
-                self.RemoveHistograms(h)
             if "imd" in exclude:
-                self.RemoveHistograms(h)
                 self.RemoveHistograms(h)
 
     def CleanErrorBands(self,names=[]):
@@ -351,14 +398,14 @@ class StitchedHistogram:
                 if errname in self.mc_hists[h].GetVertErrorBandNames():
                     self.mc_hists[h].PopVertErrorBand(errname)
 
-        if "fhc_nueel" in self.keys and "rhc_nueel" in self.keys:
-            for i in range(self.data_hists["fhc_nueel"].GetNbinsX()+1):
-                h_temp = self.data_hists['rhc_nueel']
+        if "fhc_elastic" in self.keys and "rhc_elastic" in self.keys:
+            for i in range(self.data_hists["fhc_elastic"].GetNbinsX()+1):
+                h_temp = self.data_hists['rhc_elastic']
                 h_cont = h_temp.GetBinContent(i)
                 h_cont = h_cont if h_cont != 0 else 1
                 ratio1 = h_temp.GetVertErrorBand("ElectronScale").GetHist(0).GetBinContent(i)/h_cont
                 ratio2 = h_temp.GetVertErrorBand("ElectronScale").GetHist(1).GetBinContent(i)/h_cont
-                h_fix = self.data_hists['fhc_nueel']
+                h_fix = self.data_hists['fhc_elastic']
                 h_fix.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_fix.GetBinContent(i) * ratio1)
                 h_fix.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_fix.GetBinContent(i) * ratio2)
 
@@ -453,13 +500,11 @@ class StitchedHistogram:
         self.swap_hist.AddMissingErrorBandsAndFillWithCV(self.mc_hists[self.keys[0]])
 
         self.FillErrorBandsFromDict()
-
-        self.mc_cov = np.asarray(matrix(self.mc_hist.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
-        self.data_cov = np.asarray(matrix(self.data_hist.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
-        self.pseudo_cov = np.asarray(matrix(self.pseudo_hist.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
+        self.SetCovarianceMatrices()
+        self.SetAMatrix()
 
     def Write(self,filename):
-        f = ROOT.TFile(filename,"UPDATE")
+        f = ROOT.TFile(filename,"RECREATE")
         self.mc_hist.Write()
         self.data_hist.Write()
         self.pseudo_hist.Write()
@@ -475,14 +520,40 @@ class StitchedHistogram:
         self.nue_template.Write()
         self.numu_template.Write()
         self.swap_template.Write()
+
+        for h in self.data_samples:
+            self.data_samples[h].SetName("data_"+h)
+            self.data_samples[h].Write()
+
+            self.mc_samples[h].SetName("mc_"+h)
+            self.mc_samples[h].Write()
+
+            self.samples_nue[h].SetName("nue_"+h)
+            self.samples_nue[h].Write()
+            self.samples_numu[h].SetName("numu_"+h)
+            self.samples_numu[h].Write()
+            self.samples_swap[h].SetName("swap_"+h)
+            self.samples_swap[h].Write()
+            self.samples_nue_templates[h].SetName("nue_temp_"+h)
+            self.samples_nue_templates[h].Write()
+            self.samples_numu_templates[h].SetName("numu_temp_"+h)
+            self.samples_numu_templates[h].Write()
+            self.samples_swap_templates[h].SetName("swap_temp_"+h)
+            self.samples_swap_templates[h].Write()
+
         f.Close()
 
     def Load(self,filename):
         f = ROOT.TFile.Open(filename)
 
         name = "sample"
-        self.mc_hist   = f.Get(name+"_mc")
-        self.data_hist = f.Get(name+"_data")
+
+        hist = f.Get(name+"_mc")
+        self.SetMCHistogram(hist)
+
+        hist = f.Get(name+"_data")
+        self.SetDataHistogram(hist)
+
         self.pseudo_hist = f.Get(name+"_pseudo")
         
         self.nue_hist = f.Get(name+"_nue")
@@ -496,10 +567,129 @@ class StitchedHistogram:
         self.nue_template   = f.Get(name+"_nue_template")
         self.numu_template  = f.Get(name+"_numu_template")
         self.swap_template  = f.Get(name+"_swap_template")
-        f.Close()
 
-        self.mc_cov = np.asarray(matrix(self.mc_hist.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
-        self.data_cov = np.asarray(matrix(self.data_hist.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
+        for h in self.keys:
+            self.data_samples[h] = f.Get("data_"+h)
+            self.mc_samples[h] = f.Get("mc_"+h)
+
+            self.samples_nue[h] = f.Get("nue_"+h)
+            self.samples_numu[h] = f.Get("numu_"+h)
+            self.samples_swap[h] = f.Get("swap_"+h)
+            self.samples_nue_templates[h] = f.Get("nue_temp_"+h)
+            self.samples_numu_templates[h] = f.Get("numu_temp_"+h)
+            self.samples_swap_templates[h] = f.Get("swap_temp_"+h)
+            self.data_scaled[h] = False
+
+
+        f.Close()
+        
+        #self.SyncErrorBands()
+        self.SetCovarianceMatrices()
+
+        self.SetPlottingStyle()
+
+    def SetPlottingStyle(self):
+        for i,name in enumerate(self.data_samples):
+            self.data_samples[name].SetLineColor(ROOT.kBlack)
+            self.data_samples[name].SetLineWidth(0)
+            self.data_samples[name].SetMarkerStyle(20)
+            self.data_samples[name].SetMarkerSize(1)
+            self.data_samples[name].SetTitle(self.titles[i])
+            self.data_samples[name].GetXaxis().SetTitleSize(0.1)
+            self.data_samples[name].GetXaxis().SetLabelSize(0.1)
+            self.data_samples[name].GetYaxis().SetLabelSize(0.1)
+            self.data_samples[name].GetYaxis().SetTitleSize(0.1)
+            self.data_samples[name].GetYaxis().SetTitleOffset(0.4)
+            if "elastic" in name:
+                self.data_samples[name].GetXaxis().SetTitle("Electron Energy [ GeV ]")
+                self.data_samples[name].GetYaxis().SetTitle("NEvents / 2 GeV")
+            if "imd" in name:
+                self.data_samples[name].GetXaxis().SetTitle("Muon Energy [ GeV ]")
+                self.data_samples[name].GetYaxis().SetTitle("NEvents / GeV")
+            else:
+                self.data_samples[name].GetXaxis().SetTitle("Neutrino Energy Estimator [ GeV ]")
+                self.data_samples[name].GetYaxis().SetTitle("NEvents / GeV")
+
+        for i,name in enumerate(self.mc_hists):
+            self.mc_hists[name].SetLineColor(ROOT.kRed)
+            self.mc_hists[name].SetLineWidth(2)
+            self.mc_hists[name].SetMarkerStyle(0)
+            self.mc_hists[name].SetLineStyle(1)
+            self.mc_hists[name].SetTitle(self.titles[i])
+            self.mc_hists[name].GetXaxis().SetTitleSize(0.1)
+            self.mc_hists[name].GetXaxis().SetLabelSize(0.1)
+            self.mc_hists[name].GetYaxis().SetLabelSize(0.1)
+            self.mc_hists[name].GetYaxis().SetTitleSize(0.1)
+            self.mc_hists[name].GetYaxis().SetTitleOffset(0.4)
+            if "elastic" in name:
+                self.mc_hists[name].GetXaxis().SetTitle("Electron Energy [ GeV ]")
+                self.mc_hists[name].GetYaxis().SetTitle("NEvents / 2 GeV")
+            if "imd" in name:
+                self.mc_hists[name].GetXaxis().SetTitle("Muon Energy [ GeV ]")
+                self.mc_hists[name].GetYaxis().SetTitle("NEvents / GeV")
+            else:
+                self.mc_hists[name].GetXaxis().SetTitle("Neutrino Energy Estimator [ GeV ]")
+                self.mc_hists[name].GetYaxis().SetTitle("NEvents / GeV")
+
+            self.data_hists[name].SetLineColor(ROOT.kBlack)
+            self.data_hists[name].SetLineWidth(0)
+            self.data_hists[name].SetMarkerStyle(20)
+            self.data_hists[name].SetMarkerSize(1)
+            self.data_hists[name].SetTitle(self.titles[i])
+            self.data_hists[name].GetXaxis().SetTitleSize(0.1)
+            self.data_hists[name].GetXaxis().SetLabelSize(0.1)
+            self.data_hists[name].GetYaxis().SetLabelSize(0.1)
+            self.data_hists[name].GetYaxis().SetTitleSize(0.1)
+            self.data_hists[name].GetYaxis().SetTitleOffset(0.4)
+            if "elastic" in name:
+                self.data_hists[name].GetXaxis().SetTitle("Electron Energy [ GeV ]")
+                self.data_hists[name].GetYaxis().SetTitle("NEvents / 2 GeV")
+            if "imd" in name:
+                self.data_hists[name].GetXaxis().SetTitle("Muon Energy [ GeV ]")
+                self.data_hists[name].GetYaxis().SetTitle("NEvents / GeV")
+            else:
+                self.data_hists[name].GetXaxis().SetTitle("Neutrino Energy Estimator [ GeV ]")
+                self.data_hists[name].GetYaxis().SetTitle("NEvents / GeV")
+
+        if type(self.mc_hist) == PlotUtils.MnvH1D:
+            self.mc_hist.SetLineColor(ROOT.kRed)
+            self.mc_hist.SetLineWidth(2)
+            self.mc_hist.SetMarkerStyle(0)
+            self.mc_hist.SetLineStyle(1)
+            self.mc_hist.GetXaxis().SetTitle("Bin Number")
+            self.mc_hist.GetYaxis().SetTitle("Entries")
+            self.mc_hist.GetXaxis().SetTitleSize(0.1)
+            self.mc_hist.GetXaxis().SetLabelSize(0.1)
+            self.mc_hist.GetYaxis().SetLabelSize(0.1)
+            self.mc_hist.GetYaxis().SetTitleSize(0.1)
+            self.mc_hist.GetYaxis().SetTitleOffset(0.4)
+
+        if type(self.osc_hist) == PlotUtils.MnvH1D:
+            self.osc_hist.SetLineColor(ROOT.kBlue)
+            self.osc_hist.SetLineWidth(2)
+            self.osc_hist.SetMarkerStyle(0)
+            self.osc_hist.SetLineStyle(1)
+            self.osc_hist.GetXaxis().SetTitle("Bin number")
+            self.osc_hist.GetYaxis().SetTitle("Entries")
+            self.osc_hist.GetXaxis().SetTitleSize(0.1)
+            self.osc_hist.GetXaxis().SetLabelSize(0.1)
+            self.osc_hist.GetYaxis().SetLabelSize(0.1)
+            self.osc_hist.GetYaxis().SetTitleSize(0.1)
+            self.osc_hist.GetYaxis().SetTitleOffset(0.4)
+
+        if type(self.data_hist) == PlotUtils.MnvH1D:
+            self.data_hist.SetLineWidth(0)
+            self.data_hist.SetMarkerStyle(20)
+            self.data_hist.SetMarkerSize(1)
+            self.data_hist.SetMarkerColor(ROOT.kBlack)
+            self.data_hist.SetLineColor(ROOT.kBlack)
+            self.data_hist.GetXaxis().SetTitle("Bin number")
+            self.data_hist.GetYaxis().SetTitle("Entries")
+            self.data_hist.GetXaxis().SetTitleSize(0.1)
+            self.data_hist.GetXaxis().SetLabelSize(0.1)
+            self.data_hist.GetYaxis().SetLabelSize(0.1)
+            self.data_hist.GetYaxis().SetTitleSize(0.1)
+            self.data_hist.GetYaxis().SetTitleOffset(0.4)
 
     def StitchThis2D(self):
         i_new = 0
@@ -662,26 +852,40 @@ class StitchedHistogram:
             raise ValueError("Cannot sync {} to MnvH1D or StitchedHistogram".format(type(h_sync)))
 
     def SyncErrorBands(self,rename_bands=True):
-        if rename_bands:
-            for h in self.keys:
-                self.RenameBands(self.mc_hists[h])
-                self.RenameBands(self.data_hists[h])
-        for h1 in self.keys:
-            for h2 in self.keys:
-                if h1 != h2:
-                    self.mc_hists[h1].AddMissingErrorBandsAndFillWithCV(self.data_hists[h1])
-                    self.mc_hists[h1].AddMissingErrorBandsAndFillWithCV(self.data_hists[h2])
-                    self.mc_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h2])
-                    self.data_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
-                    self.nue_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
-                    self.numu_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
-                    self.swap_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
+        if len(self.mc_hists) > 0:
+            if rename_bands:
+                for h in self.keys:
+                    self.RenameBands(self.mc_hists[h])
+                    self.RenameBands(self.data_hists[h])
+            for h1 in self.keys:
+                for h2 in self.keys:
+                    if h1 != h2:
+                        self.mc_hists[h1].AddMissingErrorBandsAndFillWithCV(self.data_hists[h1])
+                        self.mc_hists[h1].AddMissingErrorBandsAndFillWithCV(self.data_hists[h2])
+                        self.mc_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h2])
+                        self.data_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
+                        self.nue_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
+                        self.numu_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
+                        self.swap_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
 
-            self.ShortFlux(self.mc_hists[h1])
-            self.ShortFlux(self.data_hists[h1])
-            self.ShortFlux(self.nue_hists[h1])
-            self.ShortFlux(self.numu_hists[h1])
-            self.ShortFlux(self.swap_hists[h1])
+                self.ShortFlux(self.mc_hists[h1])
+                self.ShortFlux(self.data_hists[h1])
+                self.ShortFlux(self.nue_hists[h1])
+                self.ShortFlux(self.numu_hists[h1])
+                self.ShortFlux(self.swap_hists[h1])
+
+        for h in self.mc_samples:
+            self.ShortFlux(self.mc_samples[h])
+
+        if type(self.mc_hist) == PlotUtils.MnvH1D:
+            if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist):
+                self.mc_hist.AddMissingErrorBandsAndFillWithCV(self.data_hist)
+                self.data_hist.AddMissingErrorBandsAndFillWithCV(self.mc_hist)
+                self.pseudo_hist.AddMissingErrorBandsAndFillWithCV(self.data_hist)
+                self.data_hist.AddMissingErrorBandsAndFillWithCV(self.pseudo_hist)
+                self.mc_hist.AddMissingErrorBandsAndFillWithCV(self.data_hist)
+            else:
+                raise ValueError("Histograms are not all set when trying to sync error bands")
 
     def ShortFlux(self,h):
         name = "Flux"
@@ -727,30 +931,118 @@ class StitchedHistogram:
 
         reweight(name,self.mc_hist)
         reweight(name,self.data_hist)
-        self.mc_cov = np.asarray(matrix(self.mc_hist.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
-        self.data_cov = np.asarray(matrix(self.data_hist.GetTotalErrorMatrix(True, False, False)))[1:-1,1:-1]
 
-    def DebugPlots(self):
+    def PlotSamples(self,fluxSolution=None):
+        margin = .12
+        bottomFraction = .2
+        MNVPLOTTER = PlotUtils.MnvPlotter()
+
+        for name in self.mc_hists:
+            h_mc = self.mc_hists[name].Clone()
+            h_data = self.data_hists[name].Clone()
+
+            if fluxSolution is not None:
+                mc = np.array(h_mc)[1:-1]
+                band = h_mc.GetVertErrorBand("Flux")
+                nhists = band.GetNHists()
+                universes = np.array([np.array(band.GetHist(i))[1:-1] for i in range(nhists)])
+                cv_table = np.array([mc for i in range(len(universes))])
+                A = universes - cv_table
+
+                new_cv = mc + fluxSolution @ A
+                weights = h_mc.GetCVHistoWithStatError()
+                for i in range(1,weights.GetNbinsX()+1):
+                    weight = weights.GetBinContent(i) / new_cv[i-1] if new_cv[i-1] != 0 else weights.GetBinContent(i)
+                    weights.SetBinContent(i,weight)
+                    weights.SetBinError(i,0)
+
+                h_mc.DivideSingle(h_mc,weights)
+                h_mc.PopVertErrorBand("Flux")
+
+            if 'elastic' in name:
+                h_mc.Scale(2,'width')
+                h_data.Scale(2,'width')
+            elif 'ratio' not in name:
+                h_mc.Scale(1,'width')
+                h_data.Scale(1,'width')
+
+            MNVPLOTTER.ApplyAxisStyle(h_mc,True,True)
+            MNVPLOTTER.ApplyAxisStyle(h_data,True,True)
+
+            overall = ROOT.TCanvas(name)
+            top = ROOT.TPad("DATAMC", "DATAMC", 0, bottomFraction, 1, 1)
+            bottom = ROOT.TPad("Ratio", "Ratio", 0, 0, 1, bottomFraction+margin)
+
+            top.Draw()
+            bottom.Draw()
+
+            top.cd()
+
+            MNVPLOTTER.DrawDataMCWithErrorBand(h_data,h_mc,1,"TR")
+         
+            bottom.cd()
+            bottom.SetTopMargin(0)
+            bottom.SetBottomMargin(0.3)
+
+            ratio = h_data.Clone()
+            ratio.Divide(ratio, h_mc)
+
+            #Now fill mcRatio with 1 for bin content and fractional error
+            mcRatio = h_mc.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
+            for whichBin in range(1, mcRatio.GetXaxis().GetNbins()+1): 
+                mcRatio.SetBinError(whichBin, max(mcRatio.GetBinContent(whichBin), 1e-9))
+                mcRatio.SetBinContent(whichBin, 1)
+
+            ratio.SetTitle("")
+
+            ratio.GetYaxis().SetTitle("Data/MC")
+            ratio.GetYaxis().SetLabelSize(.13)
+            ratio.GetYaxis().SetTitleSize(0.1)
+            ratio.GetYaxis().SetTitleOffset(0.6)
+            ratio.GetYaxis().SetNdivisions(505) #5 minor divisions between 5 major divisions.  I'm trying to match a specific paper here.
+            ratio.GetXaxis().SetTitleSize(0.16)
+            ratio.GetXaxis().SetTitleOffset(0.9)
+            ratio.GetXaxis().SetLabelSize(.15)
+            ratio.SetMinimum(0.5)
+            ratio.SetMaximum(1.5)
+            ratio.SetLineWidth(1)
+            ratio.Draw('E1 X0')
+
+            #Error envelope for the MC
+            mcRatio.SetLineColor(ROOT.kRed)
+            mcRatio.SetLineWidth(3)
+            mcRatio.SetMarkerStyle(0)
+            mcRatio.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
+            mcRatio.Draw("E2 SAME")
+
+            straightLine = mcRatio.Clone()
+            straightLine.SetFillStyle(0)
+            straightLine.Draw("HIST L SAME")
+            ROOT.gStyle.SetOptTitle(1)
+            overall.Print("plots/{}_sample.png".format(name))
+
+
+    def DebugPlots(self,name=""):
         c1 = ROOT.TCanvas()
 
         self.nue_hist.Draw("hist")
-        c1.Print("nue_hist.png")
+        c1.Print("nue_hist"+name+".png")
         self.numu_hist.Draw("hist")
-        c1.Print("numu_hist.png")
+        c1.Print("numu_hist"+name+".png")
         self.swap_hist.Draw("hist")
-        c1.Print("swap_hist.png")
+        c1.Print("swap_hist"+name+".png")
         self.beam_id.Draw("hist")
-        c1.Print("beam_id.png")
+        c1.Print("beam_id"+name+".png")
         self.ratio_id.Draw("hist")
-        c1.Print("ratio_id.png")
+        c1.Print("ratio_id"+name+".png")
         self.elastic_id.Draw("hist")
-        c1.Print("elastic_id.png")
+        c1.Print("elastic_id"+name+".png")
         self.nue_template.Draw("colz")
-        c1.Print("nue_template.png")
+        c1.Print("nue_template"+name+".png")
         self.numu_template.Draw("colz")
-        c1.Print("numu_template.png")
+        c1.Print("numu_template"+name+".png")
         self.swap_template.Draw("colz")
-        c1.Print("swap_template.png")
+        c1.Print("swap_template"+name+".png")
 
         MNVPLOTTER = PlotUtils.MnvPlotter()
         MNVPLOTTER.error_summary_group_map.clear();

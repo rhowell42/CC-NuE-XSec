@@ -49,7 +49,7 @@ def LateralToVertical(hlist):
 def GetCovarianceMatrix(mnv_mc,mnv_data,ftag):
     NbinsTotal = mnv_mc.GetNbinsX()
     covMatrix = np.zeros(shape=[NbinsTotal,NbinsTotal],dtype='f')
-    includeStatError = False
+    includeStatError = True
     errorAsFraction  = False
     useOnlyShapeErrors = False
 
@@ -160,7 +160,7 @@ def StitchThis(h_new,h_olds,mchists=None,data=False,pseudodata=False):
                 continue
 
             # no statistical error on elastic scattering special production
-            if 'nueel' in h:
+            if 'nueel' in h or 'imd':
                 h_new.SetBinError(i_new,0)
 
 def EmptyHist(h):
@@ -181,11 +181,11 @@ def SyncErrorBandsv2(hists):
                 if str(name) in errorbandDict.keys():
                     universes = h.GetVertErrorBand(name).GetHists()
                     useSpread = h.GetVertErrorBand(name).GetUseSpreadError()
-                    h.PopVertErrorBand(name)
                     h.AddVertErrorBand(errorbandDict[str(name)],universes)
                     h.GetVertErrorBand(errorbandDict[str(name)]).SetUseSpreadError(useSpread)
                     for i in range(h.GetNbinsX()+1):
-                        h.GetVertErrorBand(errorbandDict[str(name)]).SetBinContent(i,h.GetBinContent(i))
+                        h.GetVertErrorBand(errorbandDict[str(name)]).SetBinContent(i,h.GetVertErrorBand(name).GetBinContent(i))
+                    h.PopVertErrorBand(name)
 
     for _h1 in range(len(hists)):
         for _h2 in range(len(hists)):
@@ -200,11 +200,12 @@ def SyncErrorBandsv2(hists):
                         h1_hists = h1.GetVertErrorBand(name).GetHists()
                         h1_hists = [h1_hists[i] for i in range(100)]
                         useSpread = h1.GetVertErrorBand(name).GetUseSpreadError()
+                        errband = h1.GetVertErrorBand(name)
                         h1.PopVertErrorBand(name)
                         h1.AddVertErrorBand(name,h1_hists)
                         h1.GetVertErrorBand(name).SetUseSpreadError(useSpread)
                         for i in range(h1.GetNbinsX()+1):
-                            h1.GetVertErrorBand(name).SetBinContent(i,h1.GetBinContent(i))
+                            h1.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
                 elif(name not in h2.GetVertErrorBandNames()):
                     n_universes = h1.GetVertErrorBand(name).GetNHists()
                     h2.AddVertErrorBandAndFillWithCV(name, n_universes)
@@ -215,11 +216,12 @@ def SyncErrorBandsv2(hists):
                         h2_hists = h2.GetVertErrorBand(name).GetHists()
                         h2_hists = [h2_hists[i] for i in range(100)]
                         useSpread = h2.GetVertErrorBand(name).GetUseSpreadError()
+                        errband = h2.GetVertErrorBand(name)
                         h2.PopVertErrorBand(name)
                         h2.AddVertErrorBand(name,h2_hists)
                         h2.GetVertErrorBand(name).SetUseSpreadError(useSpread)
                         for i in range(h2.GetNbinsX()+1):
-                            h2.GetVertErrorBand(name).SetBinContent(i,h2.GetBinContent(i))
+                            h2.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
                 elif(name not in h1.GetVertErrorBandNames()):
                     n_universes = h2.GetVertErrorBand(name).GetNHists()
                     h1.AddVertErrorBandAndFillWithCV(name, n_universes)
