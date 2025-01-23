@@ -360,6 +360,9 @@ def OscillateSubHistogram(histogram,name,m,U_e4,U_mu4,U_tau4):
     nutau = numunutau.Clone()
     nutau.Add(nuenutau)
 
+    total = nue.Clone()
+    total.Reset()
+
     nue.SetFillColor(ROOT.kRed)
     numu.SetFillColor(ROOT.kBlue)
     numunue.SetFillColor(ROOT.kBlue)
@@ -388,19 +391,32 @@ def OscillateSubHistogram(histogram,name,m,U_e4,U_mu4,U_tau4):
     nutau.SetTitle("#nu_{#tau}")
     histogram.data_samples[name].SetTitle("Oscillated {}".format(name))
 
-    total = nue.Clone()
-    total.Add(numu)
-    total.Add(numunue)
-    total.Add(nutau)
-
-    if nue.Integral() > 0:
+    if 'elastic' in name:
         oscHists.append(nue)
-    if numu.Integral() > 0:
-        oscHists.append(numu)
-    if numunue.Integral() > 0 and "muon" not in name and "imd" not in name:
         oscHists.append(numunue)
-    if nutau.Integral() > 0 and "elastic" in name:
+        oscHists.append(numu)
         oscHists.append(nutau)
+        total.Add(numu)
+        total.Add(numunue)
+        total.Add(nutau)
+        total.Add(nue)
+    elif 'imd' in name or 'numu' in name:
+        oscHists.append(numu)
+        total.Add(numu)
+    elif 'ratio' in name:
+        oscHists.append(nue)
+        oscHists.append(numunue)
+        oscHists.append(numu)
+        total.Add(nue)
+        total.Add(numunue)
+        total.Add(numu)
+    elif 'nue' in name:
+        oscHists.append(nue)
+        oscHists.append(numunue)
+        total.Add(nue)
+        total.Add(numunue)
+    else:
+        print("No histogram added for {}".format(name))
 
     return(oscHists,total)
 

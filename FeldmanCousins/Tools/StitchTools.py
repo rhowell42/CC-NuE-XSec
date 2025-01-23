@@ -57,13 +57,13 @@ def GetCovarianceMatrix(mnv_mc,mnv_data,ftag):
     for i in range(0,NbinsTotal):
         for j in range(0,NbinsTotal):
             covMatrix[i][j] = (covMatrixTmp[i+1][j+1])#*mnv_data.GetBinContent(i+1)*mnv_data.GetBinContent(j+1)
-    np.savetxt("mc_covmatrix_"+ftag+".csv",covMatrix,delimiter=",")
+    #np.savetxt("mc_covmatrix_"+ftag+".csv",covMatrix,delimiter=",")
 
     covMatrixTmp = mnv_data.GetTotalErrorMatrix(includeStatError, errorAsFraction, useOnlyShapeErrors)
     for i in range(0,NbinsTotal):
         for j in range(0,NbinsTotal):
             covMatrix[i][j] = (covMatrixTmp[i+1][j+1])#*mnv_data.GetBinContent(i+1)*mnv_data.GetBinContent(j+1)
-    np.savetxt("data_covmatrix_"+ftag+".csv",covMatrix,delimiter=",")
+    #np.savetxt("data_covmatrix_"+ftag+".csv",covMatrix,delimiter=",")
 
     return(covMatrixTmp,covMatrix)
 

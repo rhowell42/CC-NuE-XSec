@@ -19,6 +19,8 @@ from tools import Utilities
 from tools.PlotLibrary import HistHolder
 ccnueroot = os.environ.get('CCNUEROOT')
 
+from Tools.PlotHelper import *
+
 minBinCont = 1
 errorbandDict = { #keys are the errorbands that need to be renamed, values are what to rename them to
         "GENIE_D2_MaRES":"GENIE_MaRES",
@@ -589,26 +591,45 @@ class StitchedHistogram:
         self.SetPlottingStyle()
 
     def SetPlottingStyle(self):
+        MNVPLOTTER = PlotUtils.MnvPlotter()
+
         for i,name in enumerate(self.data_samples):
             self.data_samples[name].SetLineColor(ROOT.kBlack)
-            self.data_samples[name].SetLineWidth(0)
             self.data_samples[name].SetMarkerStyle(20)
             self.data_samples[name].SetMarkerSize(1)
             self.data_samples[name].SetTitle(self.titles[i])
-            self.data_samples[name].GetXaxis().SetTitleSize(0.1)
-            self.data_samples[name].GetXaxis().SetLabelSize(0.1)
-            self.data_samples[name].GetYaxis().SetLabelSize(0.1)
-            self.data_samples[name].GetYaxis().SetTitleSize(0.1)
-            self.data_samples[name].GetYaxis().SetTitleOffset(0.4)
+            self.data_samples[name].SetTitleFont(62)
+            self.data_samples[name].SetTitleSize(0.06)
+            MNVPLOTTER.ApplyAxisStyle(self.data_samples[name])
+            self.data_samples[name].GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
+
             if "elastic" in name:
                 self.data_samples[name].GetXaxis().SetTitle("Electron Energy [ GeV ]")
                 self.data_samples[name].GetYaxis().SetTitle("NEvents / 2 GeV")
-            if "imd" in name:
+            elif "imd" in name:
                 self.data_samples[name].GetXaxis().SetTitle("Muon Energy [ GeV ]")
                 self.data_samples[name].GetYaxis().SetTitle("NEvents / GeV")
             else:
                 self.data_samples[name].GetXaxis().SetTitle("Neutrino Energy Estimator [ GeV ]")
                 self.data_samples[name].GetYaxis().SetTitle("NEvents / GeV")
+
+            self.mc_samples[name].SetLineColor(ROOT.kRed)
+            self.mc_samples[name].SetLineWidth(2)
+            self.mc_samples[name].SetMarkerStyle(0)
+            self.mc_samples[name].SetLineStyle(1)
+            self.mc_samples[name].SetTitle(self.titles[i])
+            MNVPLOTTER.ApplyAxisStyle(self.mc_samples[name])
+            self.mc_samples[name].GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
+
+            if "elastic" in name:
+                self.mc_samples[name].GetXaxis().SetTitle("Electron Energy [ GeV ]")
+                self.mc_samples[name].GetYaxis().SetTitle("NEvents / 2 GeV")
+            elif "imd" in name:
+                self.mc_samples[name].GetXaxis().SetTitle("Muon Energy [ GeV ]")
+                self.mc_samples[name].GetYaxis().SetTitle("NEvents / GeV")
+            else:
+                self.mc_samples[name].GetXaxis().SetTitle("Neutrino Energy Estimator [ GeV ]")
+                self.mc_samples[name].GetYaxis().SetTitle("NEvents / GeV")
 
         for i,name in enumerate(self.mc_hists):
             self.mc_hists[name].SetLineColor(ROOT.kRed)
@@ -616,15 +637,13 @@ class StitchedHistogram:
             self.mc_hists[name].SetMarkerStyle(0)
             self.mc_hists[name].SetLineStyle(1)
             self.mc_hists[name].SetTitle(self.titles[i])
-            self.mc_hists[name].GetXaxis().SetTitleSize(0.1)
-            self.mc_hists[name].GetXaxis().SetLabelSize(0.1)
-            self.mc_hists[name].GetYaxis().SetLabelSize(0.1)
-            self.mc_hists[name].GetYaxis().SetTitleSize(0.1)
-            self.mc_hists[name].GetYaxis().SetTitleOffset(0.4)
+            MNVPLOTTER.ApplyAxisStyle(self.mc_hists[name])
+            self.mc_hists[name].GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
+            
             if "elastic" in name:
                 self.mc_hists[name].GetXaxis().SetTitle("Electron Energy [ GeV ]")
                 self.mc_hists[name].GetYaxis().SetTitle("NEvents / 2 GeV")
-            if "imd" in name:
+            elif "imd" in name:
                 self.mc_hists[name].GetXaxis().SetTitle("Muon Energy [ GeV ]")
                 self.mc_hists[name].GetYaxis().SetTitle("NEvents / GeV")
             else:
@@ -632,19 +651,16 @@ class StitchedHistogram:
                 self.mc_hists[name].GetYaxis().SetTitle("NEvents / GeV")
 
             self.data_hists[name].SetLineColor(ROOT.kBlack)
-            self.data_hists[name].SetLineWidth(0)
             self.data_hists[name].SetMarkerStyle(20)
             self.data_hists[name].SetMarkerSize(1)
             self.data_hists[name].SetTitle(self.titles[i])
-            self.data_hists[name].GetXaxis().SetTitleSize(0.1)
-            self.data_hists[name].GetXaxis().SetLabelSize(0.1)
-            self.data_hists[name].GetYaxis().SetLabelSize(0.1)
-            self.data_hists[name].GetYaxis().SetTitleSize(0.1)
-            self.data_hists[name].GetYaxis().SetTitleOffset(0.4)
+            MNVPLOTTER.ApplyAxisStyle(self.data_hists[name])
+            self.data_hists[name].GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
+
             if "elastic" in name:
                 self.data_hists[name].GetXaxis().SetTitle("Electron Energy [ GeV ]")
                 self.data_hists[name].GetYaxis().SetTitle("NEvents / 2 GeV")
-            if "imd" in name:
+            elif "imd" in name:
                 self.data_hists[name].GetXaxis().SetTitle("Muon Energy [ GeV ]")
                 self.data_hists[name].GetYaxis().SetTitle("NEvents / GeV")
             else:
@@ -658,11 +674,8 @@ class StitchedHistogram:
             self.mc_hist.SetLineStyle(1)
             self.mc_hist.GetXaxis().SetTitle("Bin Number")
             self.mc_hist.GetYaxis().SetTitle("Entries")
-            self.mc_hist.GetXaxis().SetTitleSize(0.1)
-            self.mc_hist.GetXaxis().SetLabelSize(0.1)
-            self.mc_hist.GetYaxis().SetLabelSize(0.1)
-            self.mc_hist.GetYaxis().SetTitleSize(0.1)
-            self.mc_hist.GetYaxis().SetTitleOffset(0.4)
+            MNVPLOTTER.ApplyAxisStyle(self.mc_hist)
+            self.mc_hist.GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
 
         if type(self.osc_hist) == PlotUtils.MnvH1D:
             self.osc_hist.SetLineColor(ROOT.kBlue)
@@ -671,25 +684,18 @@ class StitchedHistogram:
             self.osc_hist.SetLineStyle(1)
             self.osc_hist.GetXaxis().SetTitle("Bin number")
             self.osc_hist.GetYaxis().SetTitle("Entries")
-            self.osc_hist.GetXaxis().SetTitleSize(0.1)
-            self.osc_hist.GetXaxis().SetLabelSize(0.1)
-            self.osc_hist.GetYaxis().SetLabelSize(0.1)
-            self.osc_hist.GetYaxis().SetTitleSize(0.1)
-            self.osc_hist.GetYaxis().SetTitleOffset(0.4)
+            MNVPLOTTER.ApplyAxisStyle(self.osc_hist)
+            self.osc_hist.GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
 
         if type(self.data_hist) == PlotUtils.MnvH1D:
-            self.data_hist.SetLineWidth(0)
             self.data_hist.SetMarkerStyle(20)
             self.data_hist.SetMarkerSize(1)
             self.data_hist.SetMarkerColor(ROOT.kBlack)
             self.data_hist.SetLineColor(ROOT.kBlack)
             self.data_hist.GetXaxis().SetTitle("Bin number")
             self.data_hist.GetYaxis().SetTitle("Entries")
-            self.data_hist.GetXaxis().SetTitleSize(0.1)
-            self.data_hist.GetXaxis().SetLabelSize(0.1)
-            self.data_hist.GetYaxis().SetLabelSize(0.1)
-            self.data_hist.GetYaxis().SetTitleSize(0.1)
-            self.data_hist.GetYaxis().SetTitleOffset(0.4)
+            MNVPLOTTER.ApplyAxisStyle(self.data_hist)
+            self.data_hist.GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
 
     def StitchThis2D(self):
         i_new = 0
@@ -936,10 +942,18 @@ class StitchedHistogram:
         margin = .12
         bottomFraction = .2
         MNVPLOTTER = PlotUtils.MnvPlotter()
+        self.SetPlottingStyle()
 
-        for name in self.mc_hists:
-            h_mc = self.mc_hists[name].Clone()
-            h_data = self.data_hists[name].Clone()
+        useSamples = len(self.data_samples) > 0
+        names = self.data_samples.keys() if useSamples else self.data_hists.keys()
+        
+        for name in names:
+            if not useSamples:
+                h_mc = self.mc_hists[name].Clone()
+                h_data = self.data_hists[name].Clone()
+            else:
+                h_mc = self.mc_samples[name].Clone()
+                h_data = self.data_samples[name].Clone()
 
             if fluxSolution is not None:
                 mc = np.array(h_mc)[1:-1]
@@ -958,6 +972,7 @@ class StitchedHistogram:
 
                 h_mc.DivideSingle(h_mc,weights)
                 h_mc.PopVertErrorBand("Flux")
+                h_mc.AddMissingErrorBandsAndFillWithCV(h_data)
 
             if 'elastic' in name:
                 h_mc.Scale(2,'width')
@@ -965,9 +980,6 @@ class StitchedHistogram:
             elif 'ratio' not in name:
                 h_mc.Scale(1,'width')
                 h_data.Scale(1,'width')
-
-            MNVPLOTTER.ApplyAxisStyle(h_mc,True,True)
-            MNVPLOTTER.ApplyAxisStyle(h_data,True,True)
 
             overall = ROOT.TCanvas(name)
             top = ROOT.TPad("DATAMC", "DATAMC", 0, bottomFraction, 1, 1)
@@ -993,31 +1005,25 @@ class StitchedHistogram:
                 mcRatio.SetBinError(whichBin, max(mcRatio.GetBinContent(whichBin), 1e-9))
                 mcRatio.SetBinContent(whichBin, 1)
 
-            ratio.SetTitle("")
-
-            ratio.GetYaxis().SetTitle("Data/MC")
-            ratio.GetYaxis().SetLabelSize(.13)
-            ratio.GetYaxis().SetTitleSize(0.1)
-            ratio.GetYaxis().SetTitleOffset(0.6)
-            ratio.GetYaxis().SetNdivisions(505) #5 minor divisions between 5 major divisions.  I'm trying to match a specific paper here.
-            ratio.GetXaxis().SetTitleSize(0.16)
-            ratio.GetXaxis().SetTitleOffset(0.9)
-            ratio.GetXaxis().SetLabelSize(.15)
-            ratio.SetMinimum(0.5)
-            ratio.SetMaximum(1.5)
-            ratio.SetLineWidth(1)
-            ratio.Draw('E1 X0')
-
             #Error envelope for the MC
             mcRatio.SetLineColor(ROOT.kRed)
-            mcRatio.SetLineWidth(3)
+            mcRatio.SetLineWidth(2)
             mcRatio.SetMarkerStyle(0)
             mcRatio.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
-            mcRatio.Draw("E2 SAME")
+            mcRatio.GetYaxis().SetTitle("Data/Null Hypothesis")
+            mcRatio.SetMinimum(0)
+            mcRatio.SetMaximum(2)
+            RatioAxis(mcRatio,MNVPLOTTER)
+
+            mcRatio.Draw("E2")
+            
+            ratio.SetLineColor(ROOT.kBlack)
+            #ratio.SetLineWidth(3)
+            ratio.Draw('E1 X0 SAME')
 
             straightLine = mcRatio.Clone()
             straightLine.SetFillStyle(0)
-            straightLine.Draw("HIST L SAME")
+            straightLine.Draw("HIST SAME")
             ROOT.gStyle.SetOptTitle(1)
             overall.Print("plots/{}_sample.png".format(name))
 
