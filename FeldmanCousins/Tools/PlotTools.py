@@ -25,26 +25,7 @@ from tools.PlotLibrary import HistHolder
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
 MNVPLOTTER = PlotUtils.MnvPlotter()
-#config MNVPLOTTER:
-#MNVPLOTTER.chi2_use_overflow_err = True
 MNVPLOTTER.draw_normalized_to_bin_width=False
-#MNVPLOTTER.extra_top_margin = -.035# go slightly closer to top of pad
-#MNVPLOTTER.mc_bkgd_color = 46 
-#MNVPLOTTER.mc_bkgd_line_color = 46
-MNVPLOTTER.legend_n_columns = 1
-#MNVPLOTTER.mc_line_width = 0
-#MNVPLOTTER.mc_line_width = 0
-MNVPLOTTER.data_bkgd_color = 12 #gray
-MNVPLOTTER.data_bkgd_style = 24 #circle  
-#MNVPLOTTER.axis_maximum = 500 #circle  
-
-#legend entries are closer
-MNVPLOTTER.height_nspaces_per_hist = 1.2
-MNVPLOTTER.width_xspace_per_letter = .4
-#MNVPLOTTER.legend_text_size        = .4
-#MNVPLOTTER.legend_offset_x           = .15
-#MNVPLOTTER.mc_line_width = 0
-MNVPLOTTER.axis_minimum=0.1
 
 # Get This from Rob. Thanks Rob.
 # This helps python and ROOT not fight over deleting something, by stopping ROOT from trying to own the histogram. Thanks, Phil!
@@ -52,129 +33,8 @@ MNVPLOTTER.axis_minimum=0.1
 ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 
-def PlotNorms(stitched_mc,stitched_data,fitHist,params=[]):
-    chi2_model = Chi2DataMC(stitched_data,fitHist)
-    chi2_null = Chi2DataMC(stitched_data,stitched_mc)
-
-    c1 = ROOT.TCanvas()
-    margin = .12
-    bottomFraction = .2
-    overall = ROOT.TCanvas("Data/MC")
-    top = ROOT.TPad("DATAMC", "DATAMC", 0, bottomFraction, 1, 1)
-    bottom = ROOT.TPad("Ratio", "Ratio", 0, 0, 1, bottomFraction+margin)
-
-    top.Draw()
-    bottom.Draw()
-
-    top.cd()
-    top.SetLogy()
-    
-    fitHist.GetXaxis().SetTitle("Bin number")
-    fitHist.GetYaxis().SetTitle("Entries")
-
-    nullRatio =  stitched_data.Clone()
-    oscRatio =  fitHist.Clone()
-
-    fitHist.SetLineColor(ROOT.kRed)
-    fitHist.SetLineWidth(3)
-    stitched_mc.SetLineColor(ROOT.kBlue)
-    stitched_mc.SetLineWidth(3)
-    stitched_mc.GetYaxis().SetTitle("Nevents")
-    stitched_mc.Draw("hist")
-    fitHist.Draw("hist same")
-    stitched_data.Draw("same")
-
-    osc = fitHist.GetCVHistoWithError()
-    osc.SetLineColor(ROOT.kRed)
-    osc.SetLineWidth(3)
-    osc.SetMarkerStyle(0)
-    osc.SetFillColorAlpha(ROOT.kPink + 1, 0.3)
-    osc.Draw("E2 SAME")
-
-    null = stitched_mc.GetCVHistoWithError()
-    null.SetLineColor(ROOT.kBlue)
-    null.SetLineWidth(3)
-    null.SetMarkerStyle(0)
-    null.SetFillColorAlpha(ROOT.kBlue + 1, 0.3)
-    null.Draw("E2 SAME")
-
-    leg = ROOT.TLegend()
-    leg.AddEntry(stitched_data,"Data","p")
-    leg.AddEntry(fitHist,"Best Fit #chi^{2}="+"{:.1f}".format(chi2_model),"l")
-    #leg.AddEntry(fitHist,"Oscillation #chi^{2}="+"{:.1f}".format(chi2_model),"l")
-    #leg.AddEntry(fitHist,"RAA #chi^{2}="+"{:.1f}".format(chi2_model),"l")
-    leg.AddEntry(stitched_mc,"Null Hypothesis #chi^{2}="+"{:.1f}".format(chi2_null),"l")
-    leg.Draw()
-
-    oscRatio.Divide(oscRatio, stitched_mc)
-    nullRatio.Divide(nullRatio,stitched_mc)
-
-    bottom.cd()
-    bottom.SetTopMargin(0)
-    bottom.SetBottomMargin(0.3)
-
-    nullErrors = stitched_mc.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
-    for whichBin in range(0, nullErrors.GetXaxis().GetNbins()+1): 
-        nullErrors.SetBinError(whichBin, max(nullErrors.GetBinContent(whichBin), 1e-9))
-        nullErrors.SetBinContent(whichBin, 1)
-
-    oscRatio.SetTitle("")
-    oscRatio.SetLineColor(ROOT.kRed)
-    nullRatio.SetLineColor(ROOT.kBlue)
-    oscRatio.SetLineWidth(3)
-    nullRatio.SetLineWidth(3)
-    oscRatio.SetTitleSize(0)
-
-    #Error envelope for the MC
-    nullErrors.SetLineWidth(0)
-    nullErrors.SetMarkerStyle(0)
-    nullErrors.SetFillColorAlpha(ROOT.kBlue + 1, 0.4)
-    nullErrors.Draw("E2")
-
-    nullErrors.GetYaxis().SetTitle("#splitline{Ratio to}{Null Hypothesis}")
-    nullErrors.GetYaxis().SetLabelSize(.13)
-    nullErrors.GetYaxis().SetTitleSize(0.1)
-    nullErrors.GetYaxis().SetTitleOffset(0.6)
-    nullErrors.GetYaxis().SetNdivisions(505) #5 minor divisions between 5 major divisions.  I'm trying to match a specific paper here.
-    nullErrors.GetXaxis().SetTitleSize(0.16)
-    nullErrors.GetXaxis().SetTitleOffset(0.9)
-    nullErrors.GetXaxis().SetLabelSize(.15)
-    nullErrors.GetXaxis().SetTitle("Bin Number")
-    nullErrors.SetMinimum(0)
-    nullErrors.SetMaximum(2)
-
-    
-    #Draw the data ratios
-    oscRatio.SetMinimum(0)
-    oscRatio.SetMaximum(2)
-    nullRatio.SetMinimum(0)
-    nullRatio.SetMaximum(2)
-    nullRatio.SetLineColorAlpha(ROOT.kBlue+1,0.6)
-    oscRatio.Draw("same")
-    nullRatio.Draw("same")
-
-    #Draw a flat line at 1 for oscRatio of MC to itself
-    straightLine = nullErrors.Clone()
-    straightLine.SetLineColor(ROOT.kBlue)
-    straightLine.SetLineWidth(3)
-    straightLine.SetFillColor(0)
-    straightLine.Draw("HIST L SAME")
-
-    leg1 = ROOT.TLegend(.5,.5,.9,.9)
-    if len(params) > 0:
-        leg1.SetHeader("fhc:{:.2f} rhc:{:.2f}".format(params[0],params[1]))
-    leg1.AddEntry(nullRatio,"Data/Null Hypothesis","p")
-    leg1.AddEntry(oscRatio,"Model/Null Hypothesis","l")
-    leg1.AddEntry(straightLine,"Null/Null Hypothesis","l")
-    #leg1.Draw()
-
-    top.cd()
-    if len(params) > 0:
-        overall.Print("fit_norm_{:.2f}_{:.2f}.png".format(params[0],params[1]))
-    else:
-        overall.Print("fit_muonnorm.png")
-
-def PlotFluxMarginalizationEffects(histogram,parameters,name="",plotSamples=False,usePseudo=False):
+def PlotFluxMarginalizationEffects(sample_histogram,parameters,name="",plotSamples=False,usePseudo=False):
+    histogram = copy.deepcopy(sample_histogram)
     histogram.SetPlottingStyle()
     
     invCov=histogram.GetInverseCovarianceMatrix()
@@ -204,7 +64,6 @@ def PlotFluxMarginalizationEffects(histogram,parameters,name="",plotSamples=Fals
     _,_ = Chi2DataMC(histogram,invCov=invCov,setHists=True,marginalize=True,usePseudo=usePseudo)
     h_null_marg = histogram.GetMCHistogram()
 
-    #c1 = ROOT.TCanvas()
     c1 = ROOT.TCanvas("CMarg", "canvas", 1024, 640)
     c1.SetFillStyle(4000)
 
@@ -222,16 +81,7 @@ def PlotFluxMarginalizationEffects(histogram,parameters,name="",plotSamples=Fals
 
     nullSols.GetYaxis().SetTitle("Frequency")
     nullSols.GetXaxis().SetTitle("Marginalization Solution Pulls")
-    nullSols.GetYaxis().SetTitleOffset(1)
-    nullSols.GetYaxis().SetTitleFont(43)
-    nullSols.GetYaxis().SetTitleSize(16)
-    nullSols.GetYaxis().SetLabelFont(43)
-    nullSols.GetYaxis().SetLabelSize(16)
-    nullSols.GetXaxis().SetTitleOffset(2)
-    nullSols.GetXaxis().SetTitleFont(43)
-    nullSols.GetXaxis().SetTitleSize(16)
-    nullSols.GetXaxis().SetLabelFont(43)
-    nullSols.GetXaxis().SetLabelSize(16)
+    RatioAxis(nullSols,MNVPLOTTER)
 
     nullSols.SetLineWidth(2)
     nullSols.SetLineColor(ROOT.kRed)
@@ -239,12 +89,12 @@ def PlotFluxMarginalizationEffects(histogram,parameters,name="",plotSamples=Fals
     oscSols.SetLineColor(ROOT.kBlue)
 
     nullSols.Draw("hist")
-    #oscSols.Draw("hist l same")
+    oscSols.Draw("hist same")
 
     leg1 = ROOT.TLegend(.3,.2)
     leg1.AddEntry(nullSols,"Null Hypothesis Pulls","l")
-    #leg1.AddEntry(oscSols,"Best Fit Pulls","l")
-    #leg1.Draw()
+    leg1.AddEntry(oscSols,"Osc. Model Pulls","l")
+    leg1.Draw()
 
     # ------------------------------------ Second Pad -----------------------------------------
     # plot mc - flux universe / mc
@@ -257,19 +107,10 @@ def PlotFluxMarginalizationEffects(histogram,parameters,name="",plotSamples=Fals
     for whichBin in range(0, straightLine.GetXaxis().GetNbins()+1): 
         straightLine.SetBinContent(whichBin, 0)
 
+    RatioAxis(straightLine,MNVPLOTTER)
     straightLine.SetMinimum(-.5)
     straightLine.SetMaximum(.5)
     straightLine.GetYaxis().SetTitle("#frac{Universe - CV}{CV}")
-    straightLine.GetYaxis().SetTitleOffset(1)
-    straightLine.GetYaxis().SetTitleFont(43)
-    straightLine.GetYaxis().SetTitleSize(16)
-    straightLine.GetYaxis().SetLabelFont(43)
-    straightLine.GetYaxis().SetLabelSize(16)
-    straightLine.GetXaxis().SetTitleOffset(2)
-    straightLine.GetXaxis().SetTitleFont(43)
-    straightLine.GetXaxis().SetTitleSize(16)
-    straightLine.GetXaxis().SetLabelFont(43)
-    straightLine.GetXaxis().SetLabelSize(16)
 
     straightLine.Draw("hist l")
 
@@ -314,11 +155,12 @@ def PlotFluxMarginalizationEffects(histogram,parameters,name="",plotSamples=Fals
 
     leg3 = ROOT.TLegend(.3,.2)
     leg3.AddEntry(straightLine,"Central Value","l")
-    #leg3.Draw()
+    leg3.Draw()
 
-    c1.Print("{}_marg_effects_{:.1f}_{:.3f}_{:.4f}.png".format(name,parameters["m"],parameters['ue4'],parameters['umu4']))
+    c1.Print("plots/{}_marg_effects_{:.1f}_{:.3f}_{:.4f}.png".format(name,parameters["m"],parameters['ue4'],parameters['umu4']))
 
-def PlotOscillationRatios(histogram,parameters,name="",plotSamples=False,usePseudo=False):
+def PlotOscillationRatios(sample_histogram,parameters,name="",plotSamples=False,usePseudo=False):
+    histogram = copy.deepcopy(sample_histogram)
     histogram.SetPlottingStyle()
     
     invCov=histogram.GetInverseCovarianceMatrix()
@@ -332,27 +174,24 @@ def PlotOscillationRatios(histogram,parameters,name="",plotSamples=False,usePseu
         nullSols.Fill(nullSolution[i])
         oscSols.Fill(oscSolution[i])
 
-    chi2_null_marg,null_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,usePseudo=usePseudo)
-    chi2_model_marg,model_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,useOsc=True,usePseudo=usePseudo)
-    chi2_null,_ = Chi2DataMC(histogram,invCov=invCov,marginalize=False,usePseudo=usePseudo)
-    chi2_model,_ = Chi2DataMC(histogram,invCov=invCov,marginalize=False,useOsc=True,usePseudo=usePseudo)
+    h_null = histogram.GetMCHistogram()
+    h_osc = histogram.GetOscillatedHistogram()
     h_data = histogram.GetPseudoHistogram() if usePseudo else histogram.GetDataHistogram()
 
-    h_osc = histogram.GetOscillatedHistogram()
-    _,_ = Chi2DataMC(histogram,invCov=invCov,useOsc=True,setHists=True,marginalize=True,usePseudo=usePseudo)
-    h_osc_marg = histogram.GetOscillatedHistogram()
-    h_null = histogram.GetMCHistogram()
-    _,_ = Chi2DataMC(histogram,invCov=invCov,setHists=True,marginalize=True,usePseudo=usePseudo)
-    h_null_marg = histogram.GetMCHistogram()
+    chi2_null,_ = Chi2DataMC(histogram,invCov=invCov,marginalize=False,usePseudo=usePseudo)
+    chi2_model,_ = Chi2DataMC(histogram,invCov=invCov,marginalize=False,useOsc=True,usePseudo=usePseudo)
 
-    #c1 = ROOT.TCanvas()
-    n_plots = 2
+    chi2_model_marg,model_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,useOsc=True,usePseudo=usePseudo,setHists=True)
+    chi2_null_marg,null_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,usePseudo=usePseudo,setHists=True)
+
+    h_null_marg = histogram.GetMCHistogram()
+    h_osc_marg = histogram.GetOscillatedHistogram()
 
     c1 = ROOT.TCanvas("C", "canvas", 1024, 640)
     c1.SetFillStyle(4000)
 
     Nx = 1
-    Ny = 2
+    Ny = 3
 
     lMargin = 0.12
     rMargin = 0.05
@@ -362,14 +201,58 @@ def PlotOscillationRatios(histogram,parameters,name="",plotSamples=False,usePseu
     CanvasPartition(c1, Nx, Ny, lMargin, rMargin, bMargin, tMargin)
 
     # ------------------------------------ First Pad -----------------------------------------
-    pad1 = c1.FindObject("pad_{}_{}".format(0,1))
+    pad1 = c1.FindObject("pad_{}_{}".format(0,2))
     pad1.cd()
 
     nullRatio = h_data.Clone()
     oscRatio  = h_osc.Clone()
+    margRatio = h_null_marg.Clone()
+    flux_null = h_null.Clone()
 
     nullRatio.Divide(nullRatio,h_null)
     oscRatio.Divide(oscRatio, h_null)
+    margRatio.Divide(margRatio, h_null)
+
+    for err in flux_null.GetVertErrorBandNames():
+        if err != "Flux":
+            flux_null.PopVertErrorBand(err)
+
+    fluxErrors = flux_null.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
+    for whichBin in range(0, fluxErrors.GetXaxis().GetNbins()+1): 
+        fluxErrors.SetBinError(whichBin, max(fluxErrors.GetBinContent(whichBin), 1e-9))
+        fluxErrors.SetBinContent(whichBin, 1)
+    fluxErrors.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
+
+    fluxCV = fluxErrors.Clone()
+    fluxCV.SetLineColor(ROOT.kRed)
+    fluxCV.SetLineWidth(2)
+    fluxCV.SetFillColor(0)
+
+    fluxErrors.SetMinimum(.5)
+    fluxErrors.SetMaximum(1.5)
+    fluxErrors.SetLineWidth(0)
+    fluxErrors.GetYaxis().SetTitle("#splitline{Ratio to}{Null Flux CV}")
+
+    margRatio.SetLineStyle(2)
+    oscRatio.SetFillColor(0)
+
+    RatioAxis(fluxErrors,MNVPLOTTER)
+    fluxErrors.Draw("E2")
+    oscRatio.Draw("same hist l")
+    margRatio.Draw("same l")
+    fluxCV.Draw("same hist")
+
+    x1, y1, x2, y2 = XtoPad(0.05),YtoPad(0.65),XtoPad(.4),YtoPad(.95)
+
+    leg0 = ROOT.TLegend(x1,y1,x2,y2)
+    leg0.AddEntry(fluxErrors,"Null Hypothesis Flux CV","f")
+    leg0.AddEntry(oscRatio,"Osc. Model","l")
+    leg0.AddEntry(margRatio,"Null Marg'd","l")
+    leg0.Draw()
+
+    # ------------------------------------ Second Pad -----------------------------------------
+    pad1 = c1.FindObject("pad_{}_{}".format(0,1))
+    pad1.cd()
 
     nullErrors = h_null.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
     for whichBin in range(0, nullErrors.GetXaxis().GetNbins()+1): 
@@ -382,46 +265,30 @@ def PlotOscillationRatios(histogram,parameters,name="",plotSamples=False,usePseu
     straightLine.SetLineWidth(2)
     straightLine.SetFillColor(0)
 
-    #oscErrors = h_osc.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
-    #for whichBin in range(0, oscErrors.GetXaxis().GetNbins()+1): 
-    #    oscErrors.SetBinError(whichBin, max(oscErrors.GetBinContent(whichBin), 1e-9))
-    #    oscErrors.SetBinContent(whichBin, 1)
-    #oscErrors.SetFillColorAlpha(ROOT.kBlue + 1, 0.4)
-
     nullErrors.SetMinimum(0)
     nullErrors.SetMaximum(2)
-    nullErrors.GetYaxis().SetTitle("#splitline{Ratio to}{Null Hypothesis}")
-    nullErrors.GetYaxis().SetTitleOffset(1)
-    nullErrors.GetYaxis().SetTitleFont(43)
-    nullErrors.GetYaxis().SetTitleSize(30)
-    nullErrors.GetYaxis().SetLabelFont(43)
-    nullErrors.GetYaxis().SetLabelSize(30)
-    nullErrors.GetXaxis().SetTitleOffset(2)
-    nullErrors.GetXaxis().SetTitleFont(43)
-    nullErrors.GetXaxis().SetTitleSize(30)
-    nullErrors.GetXaxis().SetLabelFont(43)
-    nullErrors.GetXaxis().SetLabelSize(30)
+    nullErrors.GetYaxis().SetTitle("#splitline{Ratio to Null}{Hypothesis}")
 
-    nullRatio.SetFillColor(0)
-    nullRatio.SetLineWidth(2)
+    margRatio.SetLineStyle(2)
     oscRatio.SetFillColor(0)
-    straightLine.SetFillColor(0)
 
+    RatioAxis(nullErrors,MNVPLOTTER)
     nullErrors.Draw("E2")
-    #oscErrors.Draw("E2 SAME")
     nullRatio.Draw("same")
     oscRatio.Draw("same hist l")
-    straightLine.Draw("HIST L SAME")
+    margRatio.Draw("same l")
+    straightLine.Draw("same hist")
 
     x1, y1, x2, y2 = XtoPad(0.05),YtoPad(0.65),XtoPad(.4),YtoPad(.95)
 
     leg1 = ROOT.TLegend(x1,y1,x2,y2)
     leg1.AddEntry(h_data,"Data","p")
-    leg1.AddEntry(oscRatio,"Best Fit #chi^{2}="+"{:.2f}".format(chi2_model),"l")
+    leg1.AddEntry(oscRatio,"Osc. Model #chi^{2}="+"{:.2f}".format(chi2_model),"l")
     leg1.AddEntry(straightLine,"Null #chi^{2}="+"{:.2f}".format(chi2_null),"l")
+    leg1.AddEntry(margRatio,"Null Marg'd #chi^{2}="+"{:.2f}+{:.2f}".format(chi2_null_marg-null_pen,null_pen),"l")
     leg1.Draw()
 
-    # ------------------------------------ Second Pad -----------------------------------------
+    # ------------------------------------ Third Pad -----------------------------------------
     pad2 = c1.FindObject("pad_{}_{}".format(0,0))
     pad2.cd()
 
@@ -432,53 +299,38 @@ def PlotOscillationRatios(histogram,parameters,name="",plotSamples=False,usePseu
     oscMargRatio.Divide(oscMargRatio, h_null_marg)
 
     h_null_marg.PopVertErrorBand("Flux")
+    h_null_marg.AddMissingErrorBandsAndFillWithCV(h_data)
     nullMargErrors = h_null_marg.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
     for whichBin in range(0, nullMargErrors.GetXaxis().GetNbins()+1): 
         nullMargErrors.SetBinError(whichBin, max(nullMargErrors.GetBinContent(whichBin), 1e-9))
         nullMargErrors.SetBinContent(whichBin, 1)
     nullMargErrors.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
 
-    #h_osc_marg.PopVertErrorBand("Flux")
-    #oscMargErrors = h_osc_marg.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
-    #for whichBin in range(0, oscMargErrors.GetXaxis().GetNbins()+1): 
-    #    oscMargErrors.SetBinError(whichBin, max(oscMargErrors.GetBinContent(whichBin), 1e-9))
-    #    oscMargErrors.SetBinContent(whichBin, 1)
-    #oscMargErrors.SetFillColorAlpha(ROOT.kBlue + 1, 0.4)
-
+    RatioAxis(nullMargErrors,MNVPLOTTER)
     nullMargErrors.SetMinimum(0)
     nullMargErrors.SetMaximum(2)
-    nullMargErrors.GetYaxis().SetTitle("#splitline{Ratio to}{Marg'd Hypothesis}")
-    nullMargErrors.GetYaxis().SetTitleOffset(1)
-    nullMargErrors.GetYaxis().SetTitleFont(43)
-    nullMargErrors.GetYaxis().SetTitleSize(30)
-    nullMargErrors.GetYaxis().SetLabelFont(43)
-    nullMargErrors.GetYaxis().SetLabelSize(30)
-    nullMargErrors.GetXaxis().SetTitleOffset(2)
-    nullMargErrors.GetXaxis().SetTitleFont(43)
-    nullMargErrors.GetXaxis().SetTitleSize(30)
-    nullMargErrors.GetXaxis().SetLabelFont(43)
-    nullMargErrors.GetXaxis().SetLabelSize(30)
+    nullMargErrors.GetYaxis().SetTitle("#splitline{Ratio to Marg'd}{Null Hypothesis}")
     nullMargRatio.SetFillColor(0)
     nullMargRatio.SetLineWidth(2)
     oscMargRatio.SetFillColor(0)
 
     nullMargErrors.Draw("E2")
-    #oscMargErrors.Draw("E2 SAME")
     nullMargRatio.Draw("same")
     oscMargRatio.Draw("same hist l")
-    straightLine.Draw("HIST L SAME")
+    straightLine.Draw("same hist")
 
     x1, y1, x2, y2 = XtoPad(0.05),YtoPad(0.65),XtoPad(.4),YtoPad(.95)
 
     leg2 = ROOT.TLegend(x1,y1,x2,y2)
     leg2.AddEntry(h_data,"Data","p")
-    leg2.AddEntry(oscMargRatio,"Best Fit #chi^{2}="+"{:.2f}".format(chi2_model_marg),"l")
-    leg2.AddEntry(straightLine,"Null #chi^{2}="+"{:.2f}".format(chi2_null_marg),"l")
+    leg2.AddEntry(oscMargRatio,"Osc. Model #chi^{2}="+"{:.2f}+{:.2f}".format(chi2_model_marg-model_pen,model_pen),"l")
+    leg2.AddEntry(straightLine,"Null #chi^{2}="+"{:.2f}+{:.2f}".format(chi2_null_marg-null_pen,null_pen),"l")
     leg2.Draw()
 
-    c1.Print("{}_ratios_{:.1f}_{:.3f}_{:.4f}.png".format(name,parameters["m"],parameters['ue4'],parameters['umu4']))
+    c1.Print("plots/{}_stitched_ratios_{:.1f}_{:.3f}_{:.4f}.png".format(name,parameters["m"],parameters['ue4'],parameters['umu4']))
 
-def PlotOscillationEffects(histogram,parameters,name="",plotSamples=False,usePseudo=False):
+def PlotOscillationEffects(sample_histogram,parameters,name="",plotSamples=False,usePseudo=False):
+    histogram = copy.deepcopy(sample_histogram)
     invCov=histogram.GetInverseCovarianceMatrix()
 
     h_null = histogram.GetMCHistogram()
@@ -507,21 +359,11 @@ def PlotOscillationEffects(histogram,parameters,name="",plotSamples=False,usePse
     top.cd()
     top.SetLogy()
     
-
-    h_osc.SetLineColor(ROOT.kBlue)
-    h_osc.SetLineWidth(2)
-    h_osc.SetMarkerStyle(0)
-    h_osc_marg.SetLineColor(ROOT.kBlue)
-    h_osc_marg.SetLineWidth(2)
-    h_osc_marg.SetMarkerStyle(0)
     h_osc_marg.SetLineStyle(2)
-
-    h_null.SetLineColor(ROOT.kRed)
-    h_null.SetLineWidth(2)
-    h_null_marg.SetLineColor(ROOT.kPink)
-    h_null_marg.SetLineWidth(2)
     h_null_marg.SetLineStyle(2)
-    h_null.GetYaxis().SetTitle("Nevents")
+
+    h_null.SetTitle(name)
+    
     h_null.Draw("hist")
     h_null_marg.Draw("hist same")
     h_osc.Draw("hist same")
@@ -609,23 +451,14 @@ def PlotOscillationEffects(histogram,parameters,name="",plotSamples=False,usePse
     nullErrors.SetLineWidth(0)
     nullErrors.SetMarkerStyle(0)
     nullErrors.SetFillColorAlpha(ROOT.kBlue + 1, 0.4)
-    nullErrors.Draw("E2")
-
-    nullErrors.GetYaxis().SetTitle("#splitline{Ratio to}{Null Hypothesis}")
-    nullErrors.GetYaxis().SetLabelSize(.13)
-    nullErrors.GetYaxis().SetTitleSize(0.1)
-    nullErrors.GetYaxis().SetTitleOffset(0.6)
-    nullErrors.GetYaxis().SetNdivisions(505) #5 minor divisions between 5 major divisions.  I'm trying to match a specific paper here.
-    nullErrors.GetXaxis().SetTitleSize(0.16)
-    nullErrors.GetXaxis().SetTitleOffset(0.9)
-    nullErrors.GetXaxis().SetLabelSize(.15)
+    nullErrors.GetYaxis().SetTitle("#splitline{Ratio to Null}{Hypothesis}")
+    RatioAxis(nullErrors,MNVPLOTTER)
     nullErrors.GetXaxis().SetTitle("Bin Number")
     nullErrors.SetMinimum(0)
     nullErrors.SetMaximum(2)
-    
+    nullErrors.Draw("E2")
+
     #Draw the data ratios
-    nullRatio.SetMinimum(0)
-    nullRatio.SetMaximum(2)
     nullRatio.Draw("same")
     nullMargRatio.Draw("same hist l")
     oscRatio.Draw('same hist l')
@@ -636,11 +469,14 @@ def PlotOscillationEffects(histogram,parameters,name="",plotSamples=False,usePse
     straightLine.SetLineColor(ROOT.kRed)
     straightLine.SetLineWidth(2)
     straightLine.SetFillColor(0)
-    straightLine.Draw("HIST L SAME")
+    straightLine.Draw("HIST SAME")
 
     top.cd()
 
     overall.Print("plots/{}_stitched_{:.1f}_{:.3f}_{:.4f}.png".format(name,parameters["m"],parameters['ue4'],parameters['umu4']))
+
+    if not plotSamples:
+        return
 
     plots = histogram.keys
     nullSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo)
@@ -678,8 +514,12 @@ def PlotOscillationEffects(histogram,parameters,name="",plotSamples=False,usePse
                     norm_fraction.Add(swap_fraction,-1)
 
                     norm_fraction.SetTitle("#nu_{#mu}/#nu_{e}")
-                    swap_fraction.SetTitle("#nu_{#mu}/"+nue.GetTitle())
+                    norm_fraction.SetFillStyle(3244)
+                    norm_fraction.SetLineColor(ROOT.kRed)
+                    norm_fraction.SetFillColor(ROOT.kRed)
 
+                    swap_fraction.SetTitle("#nu_{#mu}/"+nue.GetTitle())
+                    swap_fraction.SetFillStyle(3244)
                     swap_fraction.SetLineColor(ROOT.kBlue)
                     swap_fraction.SetFillColor(ROOT.kBlue)
 
@@ -713,6 +553,7 @@ def PlotOscillationEffects(histogram,parameters,name="",plotSamples=False,usePse
 
         total_hist.DivideSingle(total_hist,weights)
         total_hist.PopVertErrorBand("Flux")
+        total_hist.AddMissingErrorBandsAndFillWithCV(h_data)
 
         TArray = ROOT.TObjArray()
         for hist in hists:
@@ -724,23 +565,11 @@ def PlotOscillationEffects(histogram,parameters,name="",plotSamples=False,usePse
             TArray.Add(hist)
 
         if "elastic" in plot:
-            if not histogram.data_scaled[plot]:
-                h_data.Scale(2,'width')
-            h_data.GetXaxis().SetTitle("Electron Energy [ GeV ]")
-            h_data.GetYaxis().SetTitle("NEvents / 2 GeV")
+            h_data.Scale(2,'width')
             total_hist.Scale(2,'width')
         elif 'ratio' not in plot:
-            if not histogram.data_scaled[plot]:
-                h_data.Scale(1,'width')
-            if "imd" in plot:
-                h_data.GetXaxis().SetTitle("Muon Energy [ GeV ]")
-            else:
-                h_data.GetXaxis().SetTitle("Neutrino Energy Estimator [ GeV ]")
-
-            h_data.GetYaxis().SetTitle("NEvents / GeV")
+            h_data.Scale(1,'width')
             total_hist.Scale(1,'width')
-        else:
-            h_data.GetXaxis().SetTitle("Neutrino Energy Estimator [ GeV ]")
 
         MNVPLOTTER.DrawDataStackedMC(h_data,TArray,1.,"TR","Data",-1,-1,-1) 
         for obj in top.GetListOfPrimitives():
@@ -760,28 +589,20 @@ def PlotOscillationEffects(histogram,parameters,name="",plotSamples=False,usePse
             mcRatio.SetBinError(whichBin, max(mcRatio.GetBinContent(whichBin), 1e-9))
             mcRatio.SetBinContent(whichBin, 1)
 
-        ratio.SetTitle("")
-
-        ratio.GetYaxis().SetTitle("Data/MC")
-        ratio.GetYaxis().SetLabelSize(.13)
-        ratio.GetYaxis().SetTitleSize(0.1)
-        ratio.GetYaxis().SetTitleOffset(0.6)
-        ratio.GetYaxis().SetNdivisions(505) #5 minor divisions between 5 major divisions.  I'm trying to match a specific paper here.
-        ratio.GetXaxis().SetTitleSize(0.16)
-        ratio.GetXaxis().SetTitleOffset(0.9)
-        ratio.GetXaxis().SetLabelSize(.15)
-        ratio.SetMinimum(0)
-        ratio.SetMaximum(2)
-        ratio.SetLineWidth(1)
-        ratio.Draw('E1 X0')
-
         #Error envelope for the MC
         mcRatio.SetLineColor(ROOT.kRed)
-        mcRatio.SetLineWidth(3)
+        mcRatio.SetLineWidth(2)
         mcRatio.SetMarkerStyle(0)
         mcRatio.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
         mcRatio.SetFillStyle(1001)
-        mcRatio.Draw("E2 SAME")
+        mcRatio.GetYaxis().SetTitle("Data/Model")
+        mcRatio.GetXaxis().SetTitle(ratio.GetXaxis().GetTitle())
+        mcRatio.SetMinimum(0)
+        mcRatio.SetMaximum(2)
+        RatioAxis(mcRatio,MNVPLOTTER)
+        mcRatio.Draw("E2")
+
+        ratio.Draw('E1 X0 SAME')
 
         straightLine = mcRatio.Clone()
         straightLine.SetFillStyle(0)
@@ -873,7 +694,7 @@ def DataMCPlot(mnv_data,mnv_mc,cv_data,cv_mc):
     ratio.SetLineWidth(3)
     ratio.SetTitleSize(0)
 
-    ratio.GetYaxis().SetTitle("#splitline{Ratio to}{Null Hypothesis}")
+    ratio.GetYaxis().SetTitle("#splitline{Ratio to Null}{Hypothesis}")
     ratio.GetYaxis().SetLabelSize(.13)
     ratio.GetYaxis().SetTitleSize(0.1)
     ratio.GetYaxis().SetTitleOffset(0.6)
@@ -902,7 +723,7 @@ def DataMCPlot(mnv_data,mnv_mc,cv_data,cv_mc):
     #Draw a flat line at 1 for ratio of MC to itself
     straightLine = mcRatio.Clone()
     straightLine.SetFillStyle(0)
-    straightLine.Draw("HIST L SAME")
+    straightLine.Draw("HIST SAME")
     ROOT.gStyle.SetOptTitle(1)
     c1.Update()
     #MNVPLOTTER.WritePreliminary(0.4, 0.05, 5e-2, True)
@@ -1006,7 +827,7 @@ def DataMCCVPlot(cv_data,cv_mc,title="mc_stitched.png"):
     #Draw a flat line at 1 for ratio of MC to itself
     straightLine = mcRatio.Clone()
     straightLine.SetFillStyle(0)
-    straightLine.Draw("HIST L SAME")
+    straightLine.Draw("HIST SAME")
     top.cd()
     
     MNVPLOTTER.WritePreliminary(0.4, 0.05, 5e-2, True)
