@@ -23,7 +23,7 @@ import PlotUtils
 from tools.PlotLibrary import HistHolder
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS 
 
-from Tools.OscHistogram import *
+from Tools.Histogram import *
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
 MNVPLOTTER = PlotUtils.MnvPlotter()
@@ -117,7 +117,31 @@ def FluxSolution(histogram,plot=False,invCov=None,useOsc=False,usePseudo=False):
     penalty = solution @ solution
     return(solution,penalty)
 
-def MarginalizeFlux(histogram,plot=False,invCov=None,useOsc=False,usePseudo=False,setHists=False,remakeCov=False,useNewUniverses=False):
+def ReweightCV(histogram,fluxSolution,cv=None,mc=None):
+    if cv is None:
+        cv = np.array(histogram)[1:-1]
+    
+    band = histogram.GetVertErrorBand("Flux")
+    nhists = band.GetNHists()
+    universes = np.array([np.array(band.GetHist(l))[1:-1] for l in range(nhists)])
+    cv_table = np.array([cv for l in range(len(universes))])
+    A = universes - cv_table
+
+    if mc is None:
+        mc = cv
+
+    new_cv = mc + fluxSolution @ A
+
+    weights = histogram.GetCVHistoWithStatError()
+    for j in range(1,weights.GetNbinsX()+1):
+        weight = weights.GetBinContent(j) / new_cv[j-1] if new_cv[j-1] != 0 else weights.GetBinContent(j)
+        weights.SetBinContent(j,weight)
+        weights.SetBinError(j,0)
+
+    histogram.DivideSingle(histogram,weights)
+    return(weights)
+
+def MarginalizeFlux(histogram,plot=False,invCov=None,fluxSolution=None,useOsc=False,usePseudo=False,setHists=False,remakeCov=False,useNewUniverses=False):
     if usePseudo:
         dataHist = histogram.GetPseudoHistogram()
     else:
@@ -147,24 +171,28 @@ def MarginalizeFlux(histogram,plot=False,invCov=None,useOsc=False,usePseudo=Fals
     else:
         A = histogram.GetAMatrix()
 
-    V = invCov    
-    C = data - mc
-    I = np.identity(len(universes))
+    if fluxSolution is None:
+        V = invCov    
+        C = data - mc
+        I = np.identity(len(universes))
 
-    L = 2 * A @ V @ C
-    Q = A @ V @ A.T + I
-    solution = np.linalg.inv(Q) @ L/2
+        L = 2 * A @ V @ C
+        Q = A @ V @ A.T + I
+        solution = np.linalg.inv(Q) @ L/2
+    else:
+        solution = fluxSolution
+
     penalty = solution @ solution
     new_cv = mc + solution @ A
 
-    ##### grab new invCovariance matrix to reflect reweighted MC values #####
-    weights = mcHist.GetCVHistoWithStatError()
-    for i in range(1,weights.GetNbinsX()+1):
-        weight = weights.GetBinContent(i) / new_cv[i-1] if new_cv[i-1] != 0 else weights.GetBinContent(i)
-        weights.SetBinContent(i,weight)
-        weights.SetBinError(i,0)
-
     if remakeCov:
+        ##### grab new invCovariance matrix to reflect reweighted MC values #####
+        weights = mcHist.GetCVHistoWithStatError()
+        for i in range(1,weights.GetNbinsX()+1):
+            weight = weights.GetBinContent(i) / new_cv[i-1] if new_cv[i-1] != 0 else weights.GetBinContent(i)
+            weights.SetBinContent(i,weight)
+            weights.SetBinError(i,0)
+
         #get the invCovariance matrix
         useOnlyShapeErrors = False
         includeStatError   = True
@@ -194,7 +222,7 @@ def MarginalizeFlux(histogram,plot=False,invCov=None,useOsc=False,usePseudo=Fals
         new_mc.DivideSingle(new_mc,weights)
 
         if useOsc:
-            histogram.SetOscHistogram(new_mc)
+            histogram.SetHistogram(new_mc)
         else:
             histogram.SetMCHistogram(new_mc)
 
@@ -232,11 +260,7 @@ def MarginalizeFlux(histogram,plot=False,invCov=None,useOsc=False,usePseudo=Fals
 
     return(new_cv,new_invCov,penalty)
 
-def Chi2DataMC(histogram,marginalize=False,useOsc=False,usePseudo=False,invCov=None,setHists=False,remakeCov=False,useNewUniverses=False):
-    
-    #marginalize=True,useOsc=True,usePseudo=True
-
-
+def Chi2DataMC(histogram,marginalize=False,fluxSolution=None,useOsc=False,usePseudo=False,invCov=None,setHists=False,remakeCov=False,useNewUniverses=False):
     ##### Get histograms to calculate chi2 between #####
     if useOsc:
         mcHist = histogram.GetOscillatedHistogram()
@@ -260,7 +284,7 @@ def Chi2DataMC(histogram,marginalize=False,useOsc=False,usePseudo=False,invCov=N
     # Do we want to marginalize over the flux systematic before calculating chi2
     if marginalize:
         makePlot=False
-        mc,invCov,penalty = MarginalizeFlux(histogram,usePseudo=usePseudo,invCov=invCov,plot=makePlot,useOsc=useOsc,setHists=setHists,remakeCov=remakeCov)
+        mc,invCov,penalty = MarginalizeFlux(histogram,usePseudo=usePseudo,fluxSolution=fluxSolution,invCov=invCov,plot=makePlot,useOsc=useOsc,setHists=setHists,remakeCov=remakeCov)
     else:
         penalty = 0
 
@@ -510,7 +534,7 @@ def OscillateHistogram(histogram, m, U_e4, U_mu4, U_tau4,fitPseudodata=False,fit
     if nutau.Integral() > 0:
         osc.Add(nutau)
 
-    histogram.SetOscHistogram(osc)
+    histogram.SetHistogram(osc)
 
 def sin_average(q=0,dm2=0,template=None,yaxis=True):
     avgsin = 0
