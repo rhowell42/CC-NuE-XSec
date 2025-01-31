@@ -53,7 +53,7 @@ def plotRecoKin(mc, chainwrapper, outfile):
 
 
         for universe in chain.from_iterable(iter(universes.values())):
-            universe.SetEntry(counter)
+            universe.SetCVEntry(counter)
             if mc and AnalysisConfig.skip_2p2h and universe.mc_intType==8:
                 continue
 
@@ -101,7 +101,7 @@ def plotTruthKin(chainwrapper,outfile):
             print(counter)
 
         for universe in chain.from_iterable(iter(universes.values())):
-            universe.SetEntry(counter)
+            universe.SetCVEntry(counter)
 
             #only update kin_cal & eventClassifier when universe in not vertical only.
             if not universe.IsVerticalOnly():
