@@ -36,10 +36,11 @@ M_mu_sqr = M_mu**2
 #universeShortName: lower_case_underscore
 
 # The base universe, define functions to be used for all universes.
-class CVUniverse(ROOT.PythonMinervaUniverse, object):
+class CVUniverse(ROOT.PythonMinervaUniverse):
     is_pc = False
     def __init__(self, chain, nsigma = None): #nsigma is None for data because we don't shift data
-        super(CVUniverse,self).__init__(chain,0 if nsigma is None else nsigma)
+        #super(CVUniverse,self).__init__(chain,0 if nsigma is None else nsigma)
+        ROOT.PythonMinervaUniverse.__init__(self, chain, 0 if nsigma is None else nsigma)
         self.weight = None
         self.tuning_weight = None
         self.InitWithoutSuper(chain,nsigma)
@@ -95,7 +96,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
         self.kin_cal = kinematicCalculator
         self.classifier = eventClassifier
 
-    def SetEntry(self,n_entry):
+    def SetCVEntry(self,n_entry):
         #go to another event, discard weight calculated.
         self.weight = None
         self.tuning_weight = None
@@ -392,95 +393,53 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
             total+=dedx[i]
         return outer/total 
 
-    # def GetLLR(self):
-    #     if CVUniverse.LLR is not None:
-    #         return CVUniverse.LLR
-    #     else:
-    #         CVUniverse.LLR = self.CalculateLLR()
-    #         return CVUniverse.LLR
+class FluxUniverse:
+    def __init__(self, chain, universe_number):
+        self.universe = ROOT.PlotUtils.FluxUniverse[ROOT.PythonMinervaUniverse](chain, 1, universe_number)
+        self.cv_universe = CVUniverse(chain, 1)  
 
-    # def CalculateLLR(self):
-    #     dedx = self.GetVecOfVecDouble("prong_dEdXs")
-    #     dedx_dz  = self.GetVecOfVecDouble("prong_dEdXs_dz")
-    #     dEdX_sum = {}
-    #     LLR = 0
-    #     for i in range(min(dedx[0].size(),dedx_dz[0].size())):
-    #         try: 
-    #             dEdX_sum[dedx_dz[0][i]-dedx_dz[0][0]] += dedx[0][i]
-    #         except KeyError:
-    #             dEdX_sum[dedx_dz[0][i]-dedx_dz[0][0]] = dedx[0][i]
-
-    #     #print dEdX_sum
-    #     for i in range(0,20):
-    #         dEdXstep = dEdX_sum.setdefault(i,0)*math.cos(self.prong_axis_vector[0][0])
-    #         LLR += self.GetLLRStep(i,dEdXstep,self.ElectronEnergy()/1e3)
-
-    #     return LLR
-
-    # @staticmethod
-    # def GetLLRStep(dplane,dEdX,energy):
-    #     energy_index = max(2,min(11,int(math.ceil(energy))))
-    #     try:
-    #         prob_e = CVUniverse.GetLLRStep.emap[dplane*12+energy_index]
-    #         prob_g = CVUniverse.GetLLRStep.gmap[dplane*12+energy_index]
-    #     except AttributeError:
-    #         print "get LLR histograms."
-    #         CVUniverse.GetLLRStep.f = ROOT.TFile.Open("{}/macros/Low_Recoil/studies/hist_IA.root".format(os.environ['CCNUEROOT']))
-    #         CVUniverse.GetLLRStep.f2 = ROOT.TFile.Open("{}/macros/Low_Recoil/studies/hist.root".format(os.environ['CCNUEROOT']))
-    #         CVUniverse.GetLLRStep.emap ={}
-    #         CVUniverse.GetLLRStep.gmap ={}
-
-    #         for i in range(0,30):
-    #             for j in range(1,12):
-    #                 CVUniverse.GetLLRStep.emap[i*12+j]= CVUniverse.GetLLRStep.f2.Get("elikelihood{}_{}".format(i,j))
-    #                 CVUniverse.GetLLRStep.gmap[i*12+j]= CVUniverse.GetLLRStep.f2.Get("glikelihood{}_{}".format(i,j))
-
-    #         return CVUniverse.GetLLRStep(dplane,dEdX,energy)
-
-    #     except KeyError:
-    #         #print dplane, energy_index, energy
-    #         #print self.event.ShortName()
-    #         return 0
-
-    #     pe = max(prob_e.GetBinContent(prob_e.FindBin(dEdX)),1e-5)
-    #     pg = max(prob_g.GetBinContent(prob_g.FindBin(dEdX)),1e-5)
-    #     #print pe,pg
-
-    #     return -math.log(pe)+math.log(pg)
-
-# The order of inheritance decide the method resolution order, thus PlotUtils.XXXXUniverse must be the first.
-class FluxUniverse( ROOT.PlotUtils.FluxUniverse(ROOT.PythonMinervaUniverse),CVUniverse, object):
-
-    def __init__(self,chain,universe_number):
-        super(FluxUniverse,self).__init__(chain,1,universe_number)
-        super(ROOT.PlotUtils.FluxUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,1)
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [FluxUniverse(chain,  i ) for i in range(0,SystematicsConfig.NUM_FLUX_UNIVERSE)]
 
-class GenieUniverse(ROOT.PlotUtils.GenieUniverse(ROOT.PythonMinervaUniverse), CVUniverse, object):
+class GenieUniverse():
     def __init__(self,chain,nsigma,universe_name):
-        super(GenieUniverse,self).__init__(chain,nsigma,universe_name)
-        super(ROOT.PlotUtils.GenieUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.GenieUniverse[ROOT.PythonMinervaUniverse](chain, nsigma, universe_name)
+        self.cv_universe = CVUniverse(chain, nsigma)  
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to GenieUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieUniverse(chain,i,j) for j in SystematicsConfig.GENIE_UNIVERSES for i in OneSigmaShift]
 
-class GenieRvx1piUniverse(ROOT.PlotUtils.GenieRvx1piUniverse(ROOT.PythonMinervaUniverse),CVUniverse,object):
+class GenieRvx1piUniverse():
     def __init__(self,chain,nsigma,universe_name):
-        super(GenieRvx1piUniverse,self).__init__(chain,nsigma,universe_name)
-        super(ROOT.PlotUtils.GenieRvx1piUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.GenieRvx1piUniverse[ROOT.PythonMinervaUniverse](chain, nsigma, universe_name)
+        self.cv_universe = CVUniverse(chain, nsigma)  
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieRvx1piUniverse(chain,i,j) for j in ["Rvn1pi","Rvp1pi"] for i in OneSigmaShift]
 
-class GenieFaCCQEUniverse(ROOT.PlotUtils.GenieFaCCQEUniverse(ROOT.PythonMinervaUniverse),CVUniverse,object):
+class GenieFaCCQEUniverse():
     def __init__(self,chain,nsigma,universe_number):
-        super(GenieFaCCQEUniverse,self).__init__(chain,nsigma,universe_number)
-        super(ROOT.PlotUtils.GenieFaCCQEUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.GenieFaCCQEUniverse[ROOT.PythonMinervaUniverse](chain, nsigma, universe_number)
+        self.cv_universe = CVUniverse(chain, nsigma)  
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
@@ -489,70 +448,89 @@ class GenieFaCCQEUniverse(ROOT.PlotUtils.GenieFaCCQEUniverse(ROOT.PythonMinervaU
         else:
             return [GenieFaCCQEUniverse(chain,i,-1) for i in OneSigmaShift]
 
-class GenieNormCCResUniverse(ROOT.PlotUtils.GenieNormCCResUniverse(ROOT.PythonMinervaUniverse),CVUniverse,object):
+class GenieNormCCResUniverse():
     def __init__(self,chain,nsigma):
-        super(GenieNormCCResUniverse,self).__init__(chain,nsigma)
-        super(ROOT.PlotUtils.GenieNormCCResUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.GenieNormCCResUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
+        self.cv_universe = CVUniverse(chain, nsigma)  
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieNormCCResUniverse(chain,i) for i in OneSigmaShift]
 
-class GenieMaResUniverse(ROOT.PlotUtils.GenieMaResUniverse(ROOT.PythonMinervaUniverse),CVUniverse,object):
+class GenieMaResUniverse():
     def __init__(self,chain,nsigma):
-        super(GenieMaResUniverse,self).__init__(chain,nsigma)
-        super(ROOT.PlotUtils.GenieMaResUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.GenieMaResUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
+        self.cv_universe = CVUniverse(chain, nsigma)  
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieMaResUniverse(chain,i) for i in OneSigmaShift]
 
-class GenieMvResUniverse(ROOT.PlotUtils.GenieMvResUniverse(ROOT.PythonMinervaUniverse),CVUniverse,object):
+class GenieMvResUniverse():
     def __init__(self,chain,nsigma):
-        super(GenieMvResUniverse,self).__init__(chain,nsigma)
-        super(ROOT.PlotUtils.GenieMvResUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.GenieMvResUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
+        self.cv_universe = CVUniverse(chain, nsigma)  
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieMvResUniverse(chain,i) for i in OneSigmaShift]
 
 # I don't think nu_e analysis need minos shift
-# class MinosUniverse(ROOT.PlotUtils.GenieUniverse(ROOT.PythonMinervaUniverse), CVUniverse, object):
+# class MinosUniverse(ROOT.PlotUtils.GenieUniverse(ROOT.PythonMinervaUniverse), CVUniverse):
 
-class Universe2p2h(ROOT.PlotUtils.Universe2p2h(ROOT.PythonMinervaUniverse), CVUniverse, object):
+class Universe2p2h():
     def __init__(self,chain,universe_number):
-        super(Universe2p2h,self).__init__(chain,1,universe_number)
-        super(ROOT.PlotUtils.Universe2p2h(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,1)
+        self.universe = ROOT.PlotUtils.Universe2p2h[ROOT.PythonMinervaUniverse](chain, 1, universe_number)
+        self.cv_universe = CVUniverse(chain, 1)  
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [Universe2p2h(chain, i) for i in SystematicsConfig.UNIVERSES_2P2H]
 
-class RPAUniverse(ROOT.PlotUtils.RPAUniverse(ROOT.PythonMinervaUniverse), CVUniverse, object):
-
+class RPAUniverse():
     def __init__(self,chain, universe_number,q2_region):
-        super(RPAUniverse,self).__init__(chain,1,universe_number,q2_region)
-        super(ROOT.PlotUtils.RPAUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain, 1)
+        self.universe = ROOT.PlotUtils.RPAUniverse[ROOT.PythonMinervaUniverse](chain, 1, universe_number, q2_region)
+        self.cv_universe = CVUniverse(chain, 1)  
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [RPAUniverse(chain, i,j) for j in SystematicsConfig.RPA_UNIVERSES for i in SystematicsConfig.RPA_UNIVERSES[j] ]
 
-class ResponseUniverse(ROOT.PlotUtils.ResponseUniverse(ROOT.PythonMinervaUniverse), CVUniverse, object):
+class ResponseUniverse():
     def __init__(self,chain,nsigma,name):
-        super(ResponseUniverse,self).__init__(chain,nsigma,name)
-        super(ROOT.PlotUtils.ResponseUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,1)
+        self.universe = ROOT.PlotUtils.ResponseUniverse[ROOT.PythonMinervaUniverse](chain, nsigma, name)
+        self.cv_universe = CVUniverse(chain, 1)  
         self.re = "^blob_.*_E_(tracker|ecal|od|nucl|hcal)$"
 
-
-    def __getattr__(self,attrName):
-        if re.match(self.re,attrName) is None:
-            return super(ResponseUniverse,self).__getattr__(attrName)
+    def __getattr__(self, attrName):
+        """Redirect attribute access to ResponseUniverse, then CVUniverse"""
+        if re.match(self.re, attrName) is None:
+            return getattr(self.universe, attrName, getattr(self.cv_universe, attrName, None))
         else:
-            r = super(ResponseUniverse,self).__getattr__(attrName)
-            shift = super(ResponseUniverse,self).__getattr__("{}_{}".format(attrName,self.m_name))* self.m_frac_unc
-            return r+self.nsigma*shift
-
+            # Fetching the attribute and performing the custom calculation
+            r = getattr(self.universe, attrName, None)
+            shift = getattr(self.universe, f"{attrName}_{self.m_name}", None) * self.m_frac_unc
+            return r + self.nsigma * shift
 
     def RecoilClustersCalorimetry(self,splined):
         return super(ResponseUniverse,self).RecoilClustersCalorimetry(splined)+self.GetRecoilShift()
@@ -561,11 +539,15 @@ class ResponseUniverse(ROOT.PlotUtils.ResponseUniverse(ROOT.PythonMinervaUnivers
     def GetSystematicsUniverses(chain):
         return [ResponseUniverse(chain,i,j) for j in SystematicsConfig.RESPONSE_BRANCHES for i in OneSigmaShift]
 
-class LowQ2PionUniverse(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUniverse),CVUniverse, object):
+class LowQ2PionUniverse():
     def __init__(self,chain,nsigma,channel):
-        super(LowQ2PionUniverse,self).__init__(chain,nsigma)
-        super(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.LowQ2PionUniverse[ROOT.PythonMinervaUniverse](chain, nsigma, channel)
+        self.cv_universe = CVUniverse(chain, nsigma)  
         self.channel = channel.upper() if channel is not None else None
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     def GetMyLowQ2PiWeight(self):
         if self.nsigma == 0 or self.channel is None:
@@ -579,81 +561,75 @@ class LowQ2PionUniverse(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUnive
         #cvshifts.extend([LowQ2PionUniverse(chain,i,j) for j in SystematicsConfig.LowQ2PiWeightSysChannel for i in ([-1,1] if j is not None else [0])])
         return cvshifts
 
-class LowQ2PionUniverseAlt(CVUniverse,object):
-    def __init__(self,chain,channel):
-        super(LowQ2PionUniverseAlt,self).__init__(chain, 0)
-        self.channel = channel
-
-    def ShortName(self):
-        return "LowQ2Pi_{}".format(self.channel)
-
-    def LatexName(self):
-        return "Low Q2 Pion Suppression Channel {}".format(self.channel)
-
-    def GetMyLowQ2PiWeight(self):
-        return super(LowQ2PionUniverseAlt,self).GetMyLowQ2PiWeight(self.channel)
-
-    def IsVerticalOnly(self):
-        return True
-
-    @staticmethod
-    def GetSystematicsUniverses(chain):
-        return [LowQ2PionUniverseAlt(chain,i) for i in SystematicsConfig.LowQ2PiWeightSysChannel]
-
-class MuonAngleXResolutionUniverse(ROOT.PlotUtils.MuonAngleXResolutionUniverse(ROOT.PythonMinervaUniverse),CVUniverse, object):
+class MuonAngleXResolutionUniverse():
     def __init__(self,chain,nsigma):
-        super(MuonAngleXResolutionUniverse,self).__init__(chain,nsigma)
-        super(ROOT.PlotUtils.MuonAngleXResolutionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.MuonAngleXResolutionUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
+        self.cv_universe = CVUniverse(chain, nsigma)  
 
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonAngleXResolutionUniverse(chain,i) for i in OneSigmaShift]
 
-class MuonResolutionUniverse(ROOT.PlotUtils.MuonResolutionUniverse(ROOT.PythonMinervaUniverse),CVUniverse, object):
+class MuonResolutionUniverse():
     def __init__(self,chain,nsigma):
-        super(MuonResolutionUniverse,self).__init__(chain,nsigma)
-        super(ROOT.PlotUtils.MuonResolutionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.MuonResolutionUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
+        self.cv_universe = CVUniverse(chain, nsigma)  
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonResolutionUniverse(chain,i) for i in OneSigmaShift]
 
-class MuonAngleYResolutionUniverse(ROOT.PlotUtils.MuonAngleYResolutionUniverse(ROOT.PythonMinervaUniverse),CVUniverse, object):
+class MuonAngleYResolutionUniverse():
     def __init__(self,chain,nsigma):
-        super(MuonAngleYResolutionUniverse,self).__init__(chain,nsigma)
-        super(ROOT.PlotUtils.MuonAngleYResolutionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.MuonAngleYResolutionUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
+        self.cv_universe = CVUniverse(chain, nsigma)  
 
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonAngleYResolutionUniverse(chain,i) for i in OneSigmaShift]
 
-class MuonUniverseMinerva(ROOT.PlotUtils.MuonUniverseMinerva(ROOT.PythonMinervaUniverse),CVUniverse, object):
+class MuonUniverseMinerva():
     def __init__(self,chain,nsigma):
-        super(MuonUniverseMinerva,self).__init__(chain,nsigma)
-        super(ROOT.PlotUtils.MuonUniverseMinerva(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.MuonUniverseMinerva[ROOT.PythonMinervaUniverse](chain, nsigma)
+        self.cv_universe = CVUniverse(chain, nsigma)
 
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonUniverseMinerva(chain,i) for i in OneSigmaShift]
 
-
-class MuonUniverseMinos(ROOT.PlotUtils.MuonUniverseMinos(ROOT.PythonMinervaUniverse),CVUniverse, object):
+class MuonUniverseMinos():
     def __init__(self,chain,nsigma):
-        super(MuonUniverseMinos,self).__init__(chain,nsigma)
-        super(ROOT.PlotUtils.MuonUniverseMinos(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.MuonUniverseMinos[ROOT.PythonMinervaUniverse](chain, nsigma)
+        self.cv_universe = CVUniverse(chain, nsigma)
 
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonUniverseMinos(chain,i) for i in OneSigmaShift]
 
-class MinosEfficiencyUniverse(ROOT.PlotUtils.MinosEfficiencyUniverse(ROOT.PythonMinervaUniverse),CVUniverse, object):
+class MinosEfficiencyUniverse():
     def __init__(self,chain,nsigma):
-        super(MinosEfficiencyUniverse,self).__init__(chain,nsigma)
-        super(ROOT.PlotUtils.MinosEfficiencyUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.MinosEfficiencyUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
+        self.cv_universe = CVUniverse(chain, nsigma)
 
     def GetMyMinosEfficiencyWeight(self):
          if self.HasNoBackExitingTracks:
@@ -661,16 +637,24 @@ class MinosEfficiencyUniverse(ROOT.PlotUtils.MinosEfficiencyUniverse(ROOT.Python
          else:
              return super(MinosEfficiencyUniverse,self).GetMinosEfficiencyWeight()
 
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MinosEfficiencyUniverse(chain,i) for i in OneSigmaShift]
 
 ###########################################################################
-class ElectronEnergyShiftUniverse(CVUniverse):
+class ElectronEnergyShiftUniverse():
     def __init__(self,chain, nsigma,region):
-        super(ElectronEnergyShiftUniverse,self).__init__(chain, nsigma)
+        #super(ElectronEnergyShiftUniverse,self).__init__(chain, nsigma)
+        self.cv_universe = CVUniverse(chain,nsigma)
         self.region = region
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.cv_universe, attr, None)
 
     def GetEMEnergyShift(self):
         return self.nsigma*SystematicsConfig.EM_ENERGY_SCALE_UNCERTAINTY[self.region]*self.GetVecElem("prong_"+self.region+"CalibE",0)
@@ -679,7 +663,7 @@ class ElectronEnergyShiftUniverse(CVUniverse):
         return "elE_"+self.region
 
     def LatexName(self):
-        return "EM Energy Scale in "+ self.region
+        return "EM Energy Scale in "+self.region
 
     @staticmethod
     def GetSystematicsUniverses(chain):
@@ -687,11 +671,16 @@ class ElectronEnergyShiftUniverse(CVUniverse):
 
 
 ###########################################################################
-class ElectronAngleShiftUniverse(CVUniverse):
+class ElectronAngleShiftUniverse():
     def __init__(self,chain, nsigma):
-        super(ElectronAngleShiftUniverse,self).__init__(chain, nsigma)
+        #super(ElectronAngleShiftUniverse,self).__init__(chain, nsigma)
+        self.cv_universe = CVUniverse(chain,nsigma)
         self.axis_angle = random.random()*math.pi
         self.shift_angle = random.gauss(0,self.nsigma*SystematicsConfig.ELECTRON_ANGLE_UNCERTAINTY)
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.cv_universe, attr, None)
 
     def ShortName(self):
         return "eltheta"
@@ -721,9 +710,14 @@ class ElectronAngleShiftUniverse(CVUniverse):
     
 
 ###########################################################################
-class BirksShiftUniverse(CVUniverse):
+class BirksShiftUniverse():
     def __init__(self,chain, nsigma):
-        super(BirksShiftUniverse,self).__init__(chain, nsigma)
+        #super(BirksShiftUniverse,self).__init__(chain, nsigma)
+        self.cv_universe = CVUniverse(chain,nsigma)
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.cv_universe, attr, None)
 
     @property
     def prong_part_score(self):
@@ -749,10 +743,15 @@ class BirksShiftUniverse(CVUniverse):
 
 ###########################################################################
 
-class BeamAngleShiftUniverse(CVUniverse):
+class BeamAngleShiftUniverse():
     def __init__(self,chain, nsigma, x):
-        super(BeamAngleShiftUniverse,self).__init__(chain, nsigma)
+        #super(BeamAngleShiftUniverse,self).__init__(chain, nsigma)
+        self.cv_universe = CVUniverse(chain,nsigma)
         self.rotation =  ROOT.Math.RotationX(SystematicsConfig.BEAM_XANGLE_UNCERTAINTY*nsigma) if x else ROOT.Math.RotationY(SystematicsConfig.BEAM_YANGLE_UNCERTAINTY*nsigma)
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.cv_universe, attr, None)
 
     def ShortName(self):
         return "beam_angle"
@@ -769,32 +768,46 @@ class BeamAngleShiftUniverse(CVUniverse):
         return [BeamAngleShiftUniverse(chain, i, j) for j in [True,False] for i in OneSigmaShift]
 
 
-class GeantHadronUniverse(ROOT.PlotUtils.GeantHadronUniverse(ROOT.PythonMinervaUniverse), CVUniverse, object):
-   def __init__(self,chain,nsigma,pdg):
-       super(GeantHadronUniverse,self).__init__(chain,nsigma,pdg)
-       super(ROOT.PlotUtils.GeantHadronUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+class GeantHadronUniverse():
+    def __init__(self,chain,nsigma,pdg):
+        self.universe = ROOT.PlotUtils.GeantHadronUniverse[ROOT.PythonMinervaUniverse](chain, nsigma, pdg)
+        self.cv_universe = CVUniverse(chain, nsigma)  
 
-   @staticmethod
-   def GetSystematicsUniverses(chain):
-       return [GeantHadronUniverse(chain,i,j) for j in SystematicsConfig.GEANT_PARTICLES for i in OneSigmaShift]
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
-class TargetMassUniverse(ROOT.PlotUtils.TargetMassScintillatorUniverse(ROOT.PythonMinervaUniverse),CVUniverse,object):
+    @staticmethod
+    def GetSystematicsUniverses(chain):
+        return [GeantHadronUniverse(chain,i,j) for j in SystematicsConfig.GEANT_PARTICLES for i in OneSigmaShift]
+
+class TargetMassUniverse():
     def __init__(self,chain,nsigma):
-        super(TargetMassUniverse,self).__init__(chain,nsigma)
-        super(ROOT.PlotUtils.TargetMassScintillatorUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.universe = ROOT.PlotUtils.TargetMassScintillatorUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
+        self.cv_universe = CVUniverse(chain, nsigma)  
+
     def GetStandardWeight(self):
         weight = super(TargetMassUniverse,self).GetStandardWeight()
         weight*= self.GetWeightRatioToCV()
         return weight
 
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
+
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [TargetMassUniverse(chain, i) for i in OneSigmaShift]
 
-class MKModelUniverse(CVUniverse,object):
+class MKModelUniverse():
     def __init__(self,chain,nsigma):
-        super(MKModelUniverse,self).__init__(chain,nsigma)
+        #super(MKModelUniverse,self).__init__(chain,nsigma)
+        self.cv_universe = CVUniverse(chain, nsigma)  
         self.reweighter = ROOT.PlotUtils.MKReweighter(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)()
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.cv_universe, attr, None)
 
     def IsVerticalOnly(self):
         return True
@@ -815,10 +828,15 @@ class MKModelUniverse(CVUniverse,object):
         return [MKModelUniverse(chain,1)]
 
 
-class FSIWeightUniverse(CVUniverse,object):
+class FSIWeightUniverse():
     def __init__(self,chain,nsigma,iweight):
-        super(FSIWeightUniverse,self).__init__(chain,nsigma)
+        #super(FSIWeightUniverse,self).__init__(chain,nsigma)
+        self.cv_universe = CVUniverse(chain,nsigma)
         self.reweighter = ROOT.PlotUtils.FSIReweighter(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)((iweight+1)//2,(iweight+1)%2)
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.cv_universe, attr, None)
 
     def IsVerticalOnly(self):
         return True
@@ -838,10 +856,15 @@ class FSIWeightUniverse(CVUniverse,object):
     def GetSystematicsUniverses(chain):
         return [FSIWeightUniverse(chain,1,i) for i in range(3)]
 
-class SusaValenciaUniverse(CVUniverse,object):
+class SusaValenciaUniverse():
     def __init__(self,chain,nsigma):
-        super(SusaValenciaUniverse,self).__init__(chain,nsigma)
+        #super(SusaValenciaUniverse,self).__init__(chain,nsigma)
+        self.cv_universe = CVUniverse(chain,nsigma)
         self.reweighter = ROOT.PlotUtils.SuSAFromValencia2p2hReweighter(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)()
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.cv_universe, attr, None)
 
     def IsVerticalOnly(self):
         return True
@@ -867,9 +890,14 @@ class SusaValenciaUniverse(CVUniverse,object):
     def GetSystematicsUniverses(chain):
         return [SusaValenciaUniverse(chain,1)]
 
-class LeakageUniverse(CVUniverse,object):
+class LeakageUniverse():
     def __init__(self,chain,nsigma):
-        super(LeakageUniverse,self).__init__(chain,nsigma)
+        #super(LeakageUniverse,self).__init__(chain,nsigma)
+        self.cv_universe = CVUniverse(chain,nsigma)
+
+    def __getattr__(self, attr):
+        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
+        return getattr(self.cv_universe, attr, None)
 
     def GetLeakageCorrection(self): 
         return super(LeakageUniverse,self).GetLeakageCorrection() + ( self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS if abs(self.mc_primaryLepton) ==11 else 0)
@@ -972,7 +1000,7 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             # #universes.extend(NonResonantPionUniverse.GetSystematicsUniverses(chain ))
 
             #LowQ2PionUniverse
-            universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
+            #universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
             #universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain )) used for warping study variant
 
             # #birk shift universe
@@ -1016,11 +1044,10 @@ if __name__ == "__main__":
     #path = "/pnfs/minerva/persistent/users/jyhan/NuECCQE/v21r1p1_recoilE_final/mcme1A/grid/central_value/minerva/ana/v21r1p1/00/11/00/17/SIM_minerva_00110017_Subruns_0325_NuECCQE_Ana_Tuple_v21r1p1.root"
     path = "/pnfs/minerva/persistent/DataPreservation/p4/FullDetector/Merged_mc_ana_me1A_DualVertex_p4/MasterAnaDev_mc_AnaTuple_run00110011_Playlist.root"
     
-    chain = ROOT.TChain("MasterAnaDev")
     chainWrapper = PlotUtils.ChainWrapper("MasterAnaDev")
-    chain.Add(path)
     chainWrapper.Add(path)
     chainWrapper.GetValue("prong_part_score",0)
+
     univs = GetAllSystematicsUniverses(chainWrapper,False)
     cvmin = 0
     cvmax = 0
@@ -1030,11 +1057,9 @@ if __name__ == "__main__":
 
         univ = univs[u][0]
         #univ = univs[u][0]
-        univ.SetEntry(0)
-        chain.GetEntry(0)
+        univ.SetCVEntry(0)
         minsigma = univ.GetWeight(False)
-        univ.SetEntry(1)
-        chain.GetEntry(1)
+        univ.SetCVEntry(1)
         maxsigma = univ.GetWeight(False)
         print(u)
         print(minsigma,maxsigma)
