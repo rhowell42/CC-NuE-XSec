@@ -16,7 +16,7 @@ import threading
 nthreads = 4
 from array import array
 from Tools.FitTools import *
-from Tools.OscHistogram import *
+from Tools.Histogram import *
 from Tools.PlotHelper import *
 
 #insert path for modules of this package.
@@ -32,6 +32,166 @@ MNVPLOTTER.draw_normalized_to_bin_width=False
 # Specifically, w/o this, this script seg faults in the case where I try to instantiate FluxReweighterWithWiggleFit w/ nuE constraint set to False for more than one playlist
 ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
+
+def PlotSampleMarginalizationEffects(sample_histogram):
+    histogram = copy.deepcopy(sample_histogram)
+    samplesToFit = [["elastic"],["elastic","imd"],["numu"],["elastic","imd","numu"],["elastic","imd","ratio"]]
+    names = ["All","elastic","elastic_imd","numu","elastic_imd_numu","elastic_imd_ratio"]
+    titles = ["All Subsamples","#nu+e","#nu+e, IMD","CC #nu_{#mu}","#nu+e, IMD, CC #nu_{#mu}","#nu+e, IMD, CC #nu_{#mu}/#nu_{e}"]
+    colors = [ROOT.kRed,ROOT.kBlue,ROOT.kViolet,ROOT.kOrange,ROOT.kTeal,ROOT.kGray]
+    hists = []
+    chi2s = []
+    pens = []
+
+    full_histogram = copy.deepcopy(sample_histogram)
+    invCov=full_histogram.GetInverseCovarianceMatrix()
+    chi2,penalty = Chi2DataMC(full_histogram,invCov=invCov,setHists=True,marginalize=True)
+    hist = full_histogram.GetMCHistogram()
+    hists.append(hist)
+    chi2s.append(chi2)
+    pens.append(penalty)
+
+    subSample = histogram.mc_samples["fhc_elastic"].Clone()
+    band = subSample.GetVertErrorBand("Flux")
+    nhists = band.GetNHists()
+    universes = np.array([np.array(band.GetHist(l))[1:-1] for l in range(nhists)])
+    fhc_integrals = universes.sum(axis=1)
+    old_fhc = subSample.Integral()
+
+    subSample = histogram.mc_samples["rhc_elastic"].Clone()
+    band = subSample.GetVertErrorBand("Flux")
+    nhists = band.GetNHists()
+    universes = np.array([np.array(band.GetHist(l))[1:-1] for l in range(nhists)])
+    rhc_integrals = universes.sum(axis=1)
+    old_rhc = subSample.Integral()
+
+    c0 = ROOT.TCanvas()
+
+    mg = ROOT.TMultiGraph()
+    mg.SetTitle(";#nu_{#mu}-mode Number of #nue events;#bar{#nu}_{#mu}-mode Number of #nue events")
+    mg.GetHistogram().GetXaxis().SetLimits(1000,1800)
+    mg.GetHistogram().GetYaxis().SetRangeUser(650,1200)
+
+    g1 = ROOT.TGraph(len(fhc_integrals),fhc_integrals,rhc_integrals)
+    ROOT.SetOwnership(g1, False)
+    g1.SetTitle("Flux Universes")
+    g1.SetMarkerStyle(20)
+    g1.SetMarkerColor(ROOT.kBlack)
+    g1.SetLineWidth(0)
+    g2 = ROOT.TGraph()
+    ROOT.SetOwnership(g2, False)
+    g2.SetPoint(0,old_fhc,old_rhc)
+    g2.SetTitle("Central Value")
+    g2.SetMarkerStyle(41)
+    g2.SetMarkerSize(3)
+    g2.SetMarkerColor(ROOT.kRed)
+    g2.SetLineWidth(0)
+
+    mg.Add(g1)
+    mg.Add(g2)
+
+    for j,samples in enumerate(samplesToFit):
+        i = j + 1
+        new_histogram = StitchedHistogram(names[i])
+
+        for key in histogram.keys:
+            for sample in samples:
+                if sample in key:
+                    if 'elastic' in sample:
+                        new_histogram.AddScatteringFlavors("electron_"+key,histogram.samples_nue[key].Clone())
+                        new_histogram.AddScatteringFlavors("muon_"+key,histogram.samples_numu[key].Clone())
+                    new_histogram.AddHistograms(key,histogram.mc_samples[key].Clone(),histogram.data_samples[key].Clone())
+
+        new_histogram.Stitch()
+        invCov=new_histogram.GetInverseCovarianceMatrix()
+
+        fluxSolution,nullPen = FluxSolution(new_histogram,invCov=invCov)
+        #histogram.PlotSamples(fluxSolution=fluxSolution,plotName=sample)
+
+        plot_histogram = copy.deepcopy(histogram)
+        chi2,penalty = Chi2DataMC(plot_histogram,fluxSolution=fluxSolution,invCov=invCov,setHists=True,marginalize=True)
+        
+        hist = plot_histogram.GetMCHistogram()
+        hists.append(hist)
+        chi2s.append(chi2)
+        pens.append(penalty)
+
+        subSample = histogram.mc_samples["fhc_elastic"].Clone()
+        weights = ReweightCV(subSample,fluxSolution=fluxSolution)
+        new_fhc = subSample.Integral()
+
+        subSample = histogram.mc_samples["rhc_elastic"].Clone()
+        weights = ReweightCV(subSample,fluxSolution=fluxSolution)
+        new_rhc = subSample.Integral()
+
+        g_ = ROOT.TGraph()
+        ROOT.SetOwnership(g_, False)
+        g_.SetPoint(0,new_fhc,new_rhc)
+        g_.SetTitle(titles[i])
+        g_.SetMarkerStyle(29)
+        g_.SetMarkerSize(3)
+        g_.SetLineWidth(0)
+        g_.SetMarkerColor(colors[i])
+        mg.Add(g_)
+
+    mg.Draw("AP")
+    pad = ROOT.gPad
+    pad.BuildLegend()
+    c0.Print("plots/integrated_elastic_events.png")
+
+    c1 = ROOT.TCanvas("C2", "canvas2", 1024, 640)
+    c1.cd(1)
+    h_null =  histogram.GetMCHistogram()
+    h_data = histogram.GetDataHistogram()
+    chi2,pen = Chi2DataMC(histogram)
+
+    nullRatio = h_data.Clone()
+    nullRatio.Divide(nullRatio,h_null)
+
+    nullErrors = h_null.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
+    for whichBin in range(0, nullErrors.GetXaxis().GetNbins()+1): 
+        nullErrors.SetBinError(whichBin, max(nullErrors.GetBinContent(whichBin), 1e-9))
+        nullErrors.SetBinContent(whichBin, 1)
+    nullErrors.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
+
+    straightLine = nullErrors.Clone()
+    straightLine.SetFillStyle(0)
+
+    RatioAxis(nullErrors,MNVPLOTTER)
+    nullErrors.SetMinimum(0)
+    nullErrors.SetMaximum(2)
+    nullErrors.GetYaxis().SetTitle("#splitline{Ratio to Null}{Hypothesis}")
+    nullErrors.GetXaxis().SetTitleOffset(1.5)
+    nullErrors.Draw("E2")
+    nullRatio.Draw("SAME")
+
+    c1.SetTopMargin(0.35)
+    c1.SetRightMargin(0.05)
+    leg = ROOT.TLegend(0.05, 0.675, 0.95, .975)
+    leg.SetNColumns(len(titles)//2) # // median N number of rows per column
+    top = "Data"
+    bottom = "#chi^{2}="+"{:.2f}".format(chi2)
+    legend = "#splitline{%s}{%s}" % (top,bottom)
+    leg.AddEntry(nullRatio,legend,"p")
+
+    for i,hist in enumerate(hists):
+        hist.Divide(hist,h_null)
+        hist.SetLineColor(colors[i])
+        hist.SetFillStyle(0)
+        if i == 0:
+            hist.SetLineStyle(2)
+        hist.Draw("same hist l")
+
+        top = titles[i]
+        bottom = "#chi^{2}="+"{:.2f}+".format(chi2s[i]-pens[i])+"{:.2f} pen.".format(pens[i])
+        legend = "#splitline{%s}{%s}" % (top,bottom)
+        leg.AddEntry(hist,legend,"l")
+
+    straightLine.Draw("same hist") 
+
+    leg.Draw()
+
+    c1.Print("plots/stitched_flux_marg_effects.png")
 
 def PlotFluxMarginalizationEffects(sample_histogram,parameters,name="",plotSamples=False,usePseudo=False):
     histogram = copy.deepcopy(sample_histogram)
@@ -537,21 +697,8 @@ def PlotOscillationEffects(sample_histogram,parameters,name="",plotSamples=False
 
         cv = np.array(subSample)[1:-1]
         mc = np.array(total_hist)[1:-1]
-        band = subSample.GetVertErrorBand("Flux")
-        nhists = band.GetNHists()
-        universes = np.array([np.array(band.GetHist(l))[1:-1] for l in range(nhists)])
-        cv_table = np.array([cv for l in range(len(universes))])
-        A = universes - cv_table
 
-        new_cv = mc + nullSolution @ A
-
-        weights = total_hist.GetCVHistoWithStatError()
-        for j in range(1,weights.GetNbinsX()+1):
-            weight = weights.GetBinContent(j) / new_cv[j-1] if new_cv[j-1] != 0 else weights.GetBinContent(j)
-            weights.SetBinContent(j,weight)
-            weights.SetBinError(j,0)
-
-        total_hist.DivideSingle(total_hist,weights)
+        weights = ReweightCV(total_hist,fluxSolution=nullSolution,cv=cv,mc=mc)
         total_hist.PopVertErrorBand("Flux")
         total_hist.AddMissingErrorBandsAndFillWithCV(h_data)
 
