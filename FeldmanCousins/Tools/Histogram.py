@@ -101,7 +101,6 @@ class StitchedHistogram:
         self.ratio_id = None # 1 for ratio, 0 otherwise
 
         self.is_processed = False
-        self.data_scaled = {}
 
     def __del__(self):
         self.data_hists = {}
@@ -187,7 +186,7 @@ class StitchedHistogram:
         else:
             return(np.linalg.inv(self.inv_covariance))
 
-    def SetOscHistogram(self,hist):
+    def SetHistogram(self,hist):
         self.osc_hist = hist.Clone()
 
     def GetMCHistogram(self):
@@ -241,7 +240,6 @@ class StitchedHistogram:
             raise ValueError("Cannot add {} to data histogram dictionary of {}".format(type(hist),type(list(self.mc_hists.values())[0])))
 
         self.data_hists[name] = data_hist
-        self.data_scaled[name] = False
         self.mc_hists[name] = mc_hist
 
         # ----- Set Electron Neutrino Histograms ----- #
@@ -304,7 +302,6 @@ class StitchedHistogram:
             raise ValueError("{} not in mc histogram dictionary".format(name))
 
         del self.data_hists[name]
-        del self.data_scaled[name]
         del self.mc_hists[name]
         del self.nue_hists[name]
         del self.numu_hists[name]
@@ -580,7 +577,6 @@ class StitchedHistogram:
             self.samples_nue_templates[h] = f.Get("nue_temp_"+h)
             self.samples_numu_templates[h] = f.Get("numu_temp_"+h)
             self.samples_swap_templates[h] = f.Get("swap_temp_"+h)
-            self.data_scaled[h] = False
 
 
         f.Close()
@@ -938,7 +934,7 @@ class StitchedHistogram:
         reweight(name,self.mc_hist)
         reweight(name,self.data_hist)
 
-    def PlotSamples(self,fluxSolution=None):
+    def PlotSamples(self,fluxSolution=None,plotName="sample"):
         margin = .12
         bottomFraction = .2
         MNVPLOTTER = PlotUtils.MnvPlotter()
@@ -1025,7 +1021,7 @@ class StitchedHistogram:
             straightLine.SetFillStyle(0)
             straightLine.Draw("HIST SAME")
             ROOT.gStyle.SetOptTitle(1)
-            overall.Print("plots/{}_sample.png".format(name))
+            overall.Print("plots/{}_{}.png".format(name,plotName))
 
 
     def DebugPlots(self,name=""):
