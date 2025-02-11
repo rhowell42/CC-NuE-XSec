@@ -4,7 +4,7 @@ export CCNUEROOT=$DIR
 export PYTHONPATH=$CCNUEROOT:$PYTHONPATH
 # Alternative configuration folder
 if [ -z "$1" ]; then
-config="CCAntiNuEMu"
+config="CCAntiNuMu"
 else 
 config=$1
 fi
