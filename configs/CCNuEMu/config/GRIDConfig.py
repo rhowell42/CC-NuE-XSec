@@ -1,1 +1,0 @@
-../../CCNuE/config/GRIDConfig.py
