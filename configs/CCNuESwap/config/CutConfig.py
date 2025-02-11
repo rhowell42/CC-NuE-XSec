@@ -18,8 +18,8 @@ OD_CAL_VISE_CUT = 0.05
 PSI_FLAT_CUT = 0.1
 FRONT_DEDX_CUT = 2.4  # in MeV/cm
 PID_SCORE_CUT = 0.7
-MIN_VERTEX_TRACK_MULTIPLICITY = 1
-MAX_VERTEX_TRACK_MULTIPLICITY = 6 
+MIN_VERTEX_TRACK_MULTIPLICITY = 2
+MAX_VERTEX_TRACK_MULTIPLICITY = 6
 
 NONMIP_CLUS_FRAC_CUT = 0.4
 TRANSVERSE_GAP_SCORE_CUT = 15
@@ -35,90 +35,73 @@ FIDUCIAL_APOTHEM = 850
 FIDUCIAL_Z_RANGE = [5980,8422]
 
 # Kinematics cutoffs
-ELECTRON_ENERGY_RANGE = [2.5, float('inf')] # in GeV
+ELECTRON_ENERGY_RANGE = [1.5, float("inf")] # in GeV
 NEUTRINO_ENERGY_RANGE = [0, 100] # in GeV.
-ELECTRON_ANGLE_RANGE = [0, 20] # in deg
+LEPTON_ANGLE_RANGE = [0, 20] # in deg
 RECO_Q3_RANGE = [0,4]
-TRUE_Q3_RANGE = [0,4]
 RECO_PT_RANGE= [.2,1.6]
-RECO_VISE_RANGE= [0,1.2]
-RECO_ZDIFF_RANGE= [-30,50]
-RECO_VTX_ZDIFF_RANGE= [-20,20]
-RECO_PROTON_END = 8500
-WEXP_CUT = 1.4
-visE_RANGE = [0.0,0.7]
-visE_FHCRANGE = [0.0,0.7]
-RECO_ANGLE = [20,90]
-FRONT_DEDX_PI0_UPPERBOUND = 5
-PsiEe_CUT = 0.5
-Ethetasquared_CUT = .003
+TRUE_PT_RANGE= [.2,1.6]
+TRUE_Q3_RANGE = [0,4]
 
+PSIEE_FLAT_CUT = 0.5
+WEXP_CUT = 2
+visE_RANGE = [0.0,0.7]
+Ethetasquared_CUT = .003
+FRONT_DEDX_PI0_UPPERBOUND = 5
+
+EAVAIL_LOW = [0.0,0.05]
+EAVAIL_HIGH = [0.0,0.2]
+ELECTRON_ENERGY_CUTOFF = 2.5
 
 ############################################################################
 # choose the cuts you want from cut library
 
 SAMPLE_CUTS = {
-    "Signal" : [
+    "Signal" : [ 
         "NoCut",
+        "HasNoBackExitingTracks",
         "HasTracks",
         "Vertex_Z",
-        "HasNoBackExitingTracks",
+        "Vertex_Apothem",
         "EMLikeTrackScore",
         "DSCalVisE",
         "ODCalVisE",
-        "StartPointVertexMultiplicity",
-        #"HasNoVertexMismatch",
-        "VertexTrackMultiplicity",
-        "Etheta",
-        "MeanFrontdEdX",
-        "Vertex_Apothem",
-        "NonMIPClusFrac",
-        "TransverseGapScore",
         "DeadTime",
         "Afterpulsing",
-        "Eavail_FHC",
+        "NonMIPClusFrac",
+        "TransverseGapScore",
+        "HasNoVertexMismatch", 
+        "StartPointVertexMultiplicity",
+        "VertexTrackMultiplicity",
+        "Eavail",
         "Pt",
-        #"ZDifference",
-        #"ZDifference_vtx",
-        #"ProtonEnd",
-        #"ContainedProton",
+        "Etheta",
+        "MeanFrontdEdX",
     ],
     "dEdX" : [
         "NoCut",
+        "HasNoBackExitingTracks",
         "HasTracks",
         "Vertex_Z",
-        "HasNoBackExitingTracks",
+        "Vertex_Apothem",
         "EMLikeTrackScore",
         "DSCalVisE",
         "ODCalVisE",
-        "StartPointVertexMultiplicity",
-        #"HasNoVertexMismatch",
-        "VertexTrackMultiplicity",
-        "Etheta",
-        "InverseMeanFrontdEdX",
-        "Vertex_Apothem",
-        "NonMIPClusFrac",
-        "TransverseGapScore",
         "DeadTime",
         "Afterpulsing",
-        "Eavail_FHC",
+        "NonMIPClusFrac",
+        "TransverseGapScore",
+        "HasNoVertexMismatch",
+        "StartPointVertexMultiplicity",
+        "VertexTrackMultiplicity",
+        "Eavail",
         "Pt",
-        #"ZDifference",
-        #"ZDifference_vtx",
-        #"ProtonEnd",
-        #"ContainedProton",
-    ],
-    "NoCuts" : [
-        "NoCut",
-        "True Scattering",
-    ],
-    "XSec" : [
-        "NoCut",
+        "Etheta",
+        "InverseMeanFrontdEdX",
     ]
 }
-
-#######################################
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
 ]
+#######################################

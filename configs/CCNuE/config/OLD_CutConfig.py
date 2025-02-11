@@ -56,7 +56,7 @@ FIDUCIAL_Z_RANGE = [5980,8422]
 # Kinematics cutoffs
 ELECTRON_ENERGY_RANGE = [2.5, float('inf')] # in GeV
 NEUTRINO_ENERGY_RANGE = [0, 100] # in GeV.
-ELECTRON_ANGLE_RANGE = [0, 30] # in deg
+LEPTON_ANGLE_RANGE = [0, 30] # in deg
 RECO_Q3_RANGE = [0,4]
 TRUE_Q3_RANGE = [0,4]
 RECO_PT_RANGE= [0,1.0]
