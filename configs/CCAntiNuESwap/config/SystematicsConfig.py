@@ -28,7 +28,8 @@ EM_ENERGY_SCALE_SHIFT_ECAL = -0.058 # downward 5.8%
 # EM scale uncertainty in ECAL,HCAL, quoted from nu+e paper
 EM_ENERGY_SCALE_UNCERTAINTY = {
     "ECAL": 0.015,
-    "HCAL": 0.05
+    "HCAL"   : 0.05,
+    "Tracker": 0.02
 }
 
 BEAM_ANGLE = math.radians(-3.3)
@@ -43,7 +44,7 @@ LEAKAGE_SYSTEMATICS = 2 # MeV
 LEAKAGE_BIAS = 5#MeV
 
 # electron angle uncertainty
-ELECTRON_ANGLE_UNCERTAINTY = 1e-3 # this is muon angular resolution. I am worry about this.
+LEPTON_ANGLE_UNCERTAINTY = 1e-3 # this is muon angular resolution. I am worry about this.
 
 #DEDX_ENERGY_SCALE_UNCERTAINTY = 0.015 # = 1.5% (still fractional).  Based on eyeballing the dE/dx distribution for this analysis in the extra energy sideband.
 

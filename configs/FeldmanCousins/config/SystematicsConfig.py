@@ -43,7 +43,7 @@ LEAKAGE_SYSTEMATICS = 2 # MeV
 LEAKAGE_BIAS = 5#MeV
 
 # electron angle uncertainty
-ELECTRON_ANGLE_UNCERTAINTY = 1e-3 # this is muon angular resolution. I am worry about this.
+LEPTON_ANGLE_UNCERTAINTY = 1e-3 # this is muon angular resolution. I am worry about this.
 
 #DEDX_ENERGY_SCALE_UNCERTAINTY = 0.015 # = 1.5% (still fractional).  Based on eyeballing the dE/dx distribution for this analysis in the extra energy sideband.
 
