@@ -39,7 +39,6 @@ M_mu_sqr = M_mu**2
 class CVUniverse(ROOT.PythonMinervaUniverse):
     is_pc = False
     def __init__(self, chain, nsigma = None): #nsigma is None for data because we don't shift data
-        #super(CVUniverse,self).__init__(chain,0 if nsigma is None else nsigma)
         ROOT.PythonMinervaUniverse.__init__(self, chain, 0 if nsigma is None else nsigma)
         self.weight = None
         self.tuning_weight = None
@@ -558,7 +557,6 @@ class LowQ2PionUniverse():
     @staticmethod
     def GetSystematicsUniverses(chain):
         cvshifts = [LowQ2PionUniverse(chain,i,SystematicsConfig.LowQ2PiWeightChannel) for i in OneSigmaShift] if SystematicsConfig.LowQ2PiWeightChannel is not None else []
-        #cvshifts.extend([LowQ2PionUniverse(chain,i,j) for j in SystematicsConfig.LowQ2PiWeightSysChannel for i in ([-1,1] if j is not None else [0])])
         return cvshifts
 
 class MuonAngleXResolutionUniverse():
@@ -648,7 +646,6 @@ class MinosEfficiencyUniverse():
 ###########################################################################
 class ElectronEnergyShiftUniverse():
     def __init__(self,chain, nsigma,region):
-        #super(ElectronEnergyShiftUniverse,self).__init__(chain, nsigma)
         self.cv_universe = CVUniverse(chain,nsigma)
         self.region = region
 
@@ -673,10 +670,9 @@ class ElectronEnergyShiftUniverse():
 ###########################################################################
 class ElectronAngleShiftUniverse():
     def __init__(self,chain, nsigma):
-        #super(ElectronAngleShiftUniverse,self).__init__(chain, nsigma)
         self.cv_universe = CVUniverse(chain,nsigma)
         self.axis_angle = random.random()*math.pi
-        self.shift_angle = random.gauss(0,self.nsigma*SystematicsConfig.ELECTRON_ANGLE_UNCERTAINTY)
+        self.shift_angle = random.gauss(0,self.nsigma*SystematicsConfig.LEPTON_ANGLE_UNCERTAINTY)
 
     def __getattr__(self, attr):
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
@@ -712,7 +708,6 @@ class ElectronAngleShiftUniverse():
 ###########################################################################
 class BirksShiftUniverse():
     def __init__(self,chain, nsigma):
-        #super(BirksShiftUniverse,self).__init__(chain, nsigma)
         self.cv_universe = CVUniverse(chain,nsigma)
 
     def __getattr__(self, attr):
@@ -745,7 +740,6 @@ class BirksShiftUniverse():
 
 class BeamAngleShiftUniverse():
     def __init__(self,chain, nsigma, x):
-        #super(BeamAngleShiftUniverse,self).__init__(chain, nsigma)
         self.cv_universe = CVUniverse(chain,nsigma)
         self.rotation =  ROOT.Math.RotationX(SystematicsConfig.BEAM_XANGLE_UNCERTAINTY*nsigma) if x else ROOT.Math.RotationY(SystematicsConfig.BEAM_YANGLE_UNCERTAINTY*nsigma)
 
@@ -801,7 +795,6 @@ class TargetMassUniverse():
 
 class MKModelUniverse():
     def __init__(self,chain,nsigma):
-        #super(MKModelUniverse,self).__init__(chain,nsigma)
         self.cv_universe = CVUniverse(chain, nsigma)  
         self.reweighter = ROOT.PlotUtils.MKReweighter(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)()
 
@@ -830,7 +823,6 @@ class MKModelUniverse():
 
 class FSIWeightUniverse():
     def __init__(self,chain,nsigma,iweight):
-        #super(FSIWeightUniverse,self).__init__(chain,nsigma)
         self.cv_universe = CVUniverse(chain,nsigma)
         self.reweighter = ROOT.PlotUtils.FSIReweighter(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)((iweight+1)//2,(iweight+1)%2)
 
@@ -858,7 +850,6 @@ class FSIWeightUniverse():
 
 class SusaValenciaUniverse():
     def __init__(self,chain,nsigma):
-        #super(SusaValenciaUniverse,self).__init__(chain,nsigma)
         self.cv_universe = CVUniverse(chain,nsigma)
         self.reweighter = ROOT.PlotUtils.SuSAFromValencia2p2hReweighter(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)()
 
@@ -892,7 +883,6 @@ class SusaValenciaUniverse():
 
 class LeakageUniverse():
     def __init__(self,chain,nsigma):
-        #super(LeakageUniverse,self).__init__(chain,nsigma)
         self.cv_universe = CVUniverse(chain,nsigma)
 
     def __getattr__(self, attr):
@@ -952,8 +942,6 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             CVUniverse.SetTruth(True)
 
         if exclude is None or "all" not in exclude:
-            # Vertical shift first to skip some cut calculation
-
             # #Electron momentum universe
             if abs(SystematicsConfig.AnaNuPDG)==12:
                 universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))

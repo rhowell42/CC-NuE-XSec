@@ -345,20 +345,17 @@ CUT_CONFIGS = {
     },
     "FHC_proton": {
         "value_getter": lambda event, nprong: event,
-        #"cut_fn": lambda vals: CutConfig.EAVAIL_LOW[0] <= vals[0] < CutConfig.EAVAIL_LOW[1] if vals[1] < CutConfig.ELECTRON_ENERGY_CUTOFF else CutConfig.EAVAIL_HIGH[0] <= vals[0] < CutConfig.EAVAIL_HIGH[1],
         "cut_fn": lambda val: passHybridProtonNodeCut(val,10),
         #"cut_fn": lambda val: passSingleProtonCut(val,0),
         "variable_range": [0.1* i for i in range(0,11)]
     },
     "Eavail_FHC": {
         "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
-        #"cut_fn": lambda vals: CutConfig.EAVAIL_LOW[0] <= vals[0] < CutConfig.EAVAIL_LOW[1] if vals[1] < CutConfig.ELECTRON_ENERGY_CUTOFF else CutConfig.EAVAIL_HIGH[0] <= vals[0] < CutConfig.EAVAIL_HIGH[1],
         "cut_fn": lambda val: CutConfig.visE_FHCRANGE[0] <= val < CutConfig.visE_FHCRANGE[1],
         "variable_range": [0.4* i for i in range(0,11)]
     },
     "Eavail_RHC": {
         "value_getter": lambda event, nprong: (event.kin_cal.reco_visE, event.kin_cal.reco_E_lep),
-        #"cut_fn": lambda vals: CutConfig.EAVAIL_LOW[0] <= vals[0] < CutConfig.EAVAIL_LOW[1] if vals[1] < CutConfig.ELECTRON_ENERGY_CUTOFF else CutConfig.EAVAIL_HIGH[0] <= vals[0] < CutConfig.EAVAIL_HIGH[1],
         "cut_fn": lambda vals: RHC_Cut(vals[0],vals[1]),
         "variable_range": [0.4* i for i in range(0,11)]
     },
@@ -500,7 +497,7 @@ KINEMATICS_CUT_CONFIGS = {
     
     "RecoLeptonAngle": {
         "value_getter": lambda event,nprong: event.kin_cal.reco_theta_lep,
-        "cut_fn": lambda val: CutConfig.ELECTRON_ANGLE_RANGE[0] <= val < CutConfig.ELECTRON_ANGLE_RANGE[1],
+        "cut_fn": lambda val: CutConfig.LEPTON_ANGLE_RANGE[0] <= val < CutConfig.LEPTON_ANGLE_RANGE[1],
     },
 
     "RecoNeutrinoEnergy": {
@@ -524,7 +521,7 @@ KINEMATICS_CUT_CONFIGS = {
     
     "TrueLeptonAngle": {
         "value_getter": lambda event,nprong: event.kin_cal.true_theta_lep,
-        "cut_fn": lambda val: CutConfig.ELECTRON_ANGLE_RANGE[0] <= val < CutConfig.ELECTRON_ANGLE_RANGE[1],
+        "cut_fn": lambda val: CutConfig.LEPTON_ANGLE_RANGE[0] <= val < CutConfig.LEPTON_ANGLE_RANGE[1],
     },
 
     "TrueNeutrinoEnergy": {
