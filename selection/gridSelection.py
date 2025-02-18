@@ -17,8 +17,11 @@ def createTarball(outDir):
 
 def unpackTarball( mywrapper):
   mywrapper.write("cd $CONDOR_DIR_INPUT\n")
-  mywrapper.write("source /cvmfs/larsoft.opensciencegrid.org/products/setup\n")
-  mywrapper.write("setup root v6_22_06a -q e19:p383b:prof\n")
+  mywrapper.write("source /cvmfs/larsoft.opensciencegrid.org/spack-packages/setup-env.sh\n")
+  mywrapper.write("spack load root@6.28.12\n")
+  mywrapper.write("spack load cmake\n")
+  mywrapper.write("spack load gcc\n")
+  mywrapper.write("spack load fife-utils@3.7.4\n")
   mywrapper.write("tar -xvzf {}\n".format(outdir_tarball.split("/")[-1]))
   mywrapper.write("export MINERVA_PREFIX=`pwd`/{}\n".format(MAT))
   mywrapper.write("pushd {}/bin\n".format(MAT))
@@ -26,6 +29,7 @@ def unpackTarball( mywrapper):
   mywrapper.write("popd\n")
   mywrapper.write("pushd {}\n".format(MacroName))
   mywrapper.write("source setup_ccnue.sh {}\n".format(CONFIG))
+  mywrapper.write("export LD_LIBRARY_PATH=${ROOTSYS}/lib/root:${LD_LIBRARY_PATH}\n")
   
   mywrapper.write("popd\n")
 
@@ -54,7 +58,7 @@ def submitJob( tupleName):
   
   os.system( "chmod 777 %s" % wrapper_name )
   
-  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 36, os.environ["PWD"] , wrapper_name )
+  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 36, os.environ["PWD"] , wrapper_name )
   os.system(cmd)
 
   #cmdname = "jobsub_commands/submit_wrapper.sh"
