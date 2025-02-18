@@ -173,7 +173,7 @@ make install
 - This will spit out a bash script in jobsub_commands/ called jobsub_wrapper.sh. Because of recent OS changes from SL7 to Alma9, you can't actually submit jobs inside an SL7 container. What you can do is run jobsub_submit commands in a native Alma9 environment (see next step)
 - Exit your SL7 container and submit your jobs by running source jobsub_wrapper.sh. If everything has worked this will submit your jobs and you can check they're running with jobsub_q -G minerva --user $USER some time later. These take up to an hour to finish running all the way, usually.
 ## Combine Files
-- `python combine_file.py --playlist NewPlaylistName --i  /pnfs/minerva/persistent/users/qvuong/{selection_directory}_hists/ --cal_POT --ntuple_tag MAD --selection_tag thesis`
+- `python combine_file.py --playlist NewPlaylistName --i  /pnfs/minerva/persistent/users/$USER/{selection_directory}_hists/ --cal_POT --ntuple_tag MAD --selection_tag thesis`
 - You pass it a new playlist name that you create yourself, to represent this fully combined event selection. For me I named them to denote them as either RHC or FHC samples. Make sure you pass the same playlist name for MC and data selections of the same sample.
 - This will prompt you for additional paths if you want to add more samples. If you're running this over your base MC selection sample, this is where you would add the path to your special samples selection.
 - If you're running over data you don't need to do anything here, just press enter again.
