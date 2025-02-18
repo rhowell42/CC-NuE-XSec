@@ -66,12 +66,61 @@ Here is a list of files currently used in the macro:
 - The grid processing runs a playlist in separated jobs, hence counting POT in each job doesn't make sense. User should used `--cal_POT` option of gridSelection to count POT.
 
 # Changes from AL9 Upgrade
-- This framework currently does not work in AL9 due to lack of ROOT version availability. Newer ROOT versions make some inheritance between Python and MAT-MINERvA classes impossible, and the AL9 installs do not have older ROOT versions for use. This could be solved with local spack installs of ROOT, but that has not been worked out yet.
-- It is strongly recommended to run this framework in an SL7 container.
-- `/cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer shell --shell=/bin/bash -B /cvmfs,/grid,/exp,/nashome,/pnfs/minerva,/opt,/run/user,/etc/hostname,/etc/hosts,/etc/krb5.conf --ipc --pid /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:latest # setup the SL7 container and enter it`
-- From here, run everything as usual.
+- ~~This framework currently does not work in AL9 due to lack of ROOT version availability. Newer ROOT versions make some inheritance between Python and MAT-MINERvA classes impossible, and the AL9 installs do not have older ROOT versions for use. This could be solved with local spack installs of ROOT, but that has not been worked out yet.~~
+- This framework now supports AL9! Specifically, it supports more modern versions of ROOT that are built with Python3 and change how multi-cross inheritance works. See the following sections for the outdated SL7 container instructions.
 
-# How to Install
+# How to Install in Alma9 OS
+## Install MAT-MINERvA
+```
+source /cvmfs/larsoft.opensciencegrid.org/spack-packages/setup-env.sh
+spack load root@6.28.12
+spack load cmake
+spack load gcc
+spack load fife-utils
+export LD_LIBRARY_PATH=${ROOTSYS}/lib/root:${LD_LIBRARY_PATH}
+
+mkdir /exp/minerva/app/users/$USER/MAT_AL9 && cd /exp/minerva/app/users/$USER/MAT_AL9
+git clone https://github.com/MinervaExpt/MAT.git
+git clone https://github.com/MinervaExpt/MAT-MINERvA.git
+
+mkdir opt && cd opt #install prefixed for OPTimized version of MAT/tutorial libraries and executables
+
+#Build MAT-MINERvA which builds MAT & UnfoldUtils, and also finds the centralized flux files
+mkdir buildMAT-MINERvA && cd buildMAT-MINERvA
+cmake ../../MAT-MINERvA/bootstrap -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Release #installs libraries in ".."
+make install
+source /exp/minerva/app/users/$USER/MAT_AL9/opt/bin/setup.sh
+
+cd /exp/minerva/app/users/$USER/MAT_AL9/
+git clone https://github.com/rhowell42/CC-NuE-XSec.git
+git checkout feature/python3
+cd CVUniversePythonBinding/
+rm -r build && mkdir build/ && cd build/
+cmake ../ -DCMAKE_INSTALL_PREFIX=/exp/minerva/app/users/$USER/MAT_AL9/opt -DCMAKE_BUILD_TYPE=Release
+make install
+```
+The following shell script can be run on login to the gpvms to set everything up:
+```
+source /cvmfs/larsoft.opensciencegrid.org/spack-packages/setup-env.sh
+spack load root@6.28.12
+spack load cmake
+spack load gcc
+spack load fife-utils@3.7.4
+
+export JOBSUB_GROUP=minerva
+
+source /exp/minerva/app/users/$USER/MAT_AL9/opt/bin/setup.sh
+
+voms-proxy-destroy
+kx509
+voms-proxy-init -rfc --voms=fermilab:/fermilab/minerva/Role=Analysis --noregen -valid 72:7
+
+export LD_LIBRARY_PATH=${ROOTSYS}/lib/root:${LD_LIBRARY_PATH}
+
+cd /exp/minerva/app/users/$USER/MAT_AL9/CC-NuE-XSec/
+```
+
+# How to Install with SL7 Containers
 ## Install MAT-MINERvA
 ```
 /cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer shell --shell=/bin/bash -B /cvmfs,/grid,/exp,/nashome,/pnfs/minerva,/opt,/run/user,/etc/hostname,/etc/hosts,/etc/krb5.conf --ipc --pid /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:latest # setup the SL7 container
