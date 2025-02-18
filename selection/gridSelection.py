@@ -22,6 +22,7 @@ def unpackTarball( mywrapper):
   mywrapper.write("spack load cmake\n")
   mywrapper.write("spack load gcc\n")
   mywrapper.write("spack load fife-utils@3.7.4\n")
+  mywrapper.write("spack load py-numpy\n")
   mywrapper.write("tar -xvzf {}\n".format(outdir_tarball.split("/")[-1]))
   mywrapper.write("export MINERVA_PREFIX=`pwd`/{}\n".format(MAT))
   mywrapper.write("pushd {}/bin\n".format(MAT))
