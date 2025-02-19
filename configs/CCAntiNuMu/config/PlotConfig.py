@@ -238,6 +238,5 @@ HISTS_TO_MAKE = [
     "Reco Energy vs L/E",
     "True Energy vs L/E",
     "True Energy vs Biased Neutrino Energy",
-    "Estimator vs Front dEdX",
     "Biased Neutrino Energy",
 ]

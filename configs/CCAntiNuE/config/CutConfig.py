@@ -73,8 +73,6 @@ SAMPLE_CUTS = {
         "HasNoVertexMismatch", 
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
-        "Eavail",
-        "Pt",
         "Etheta",
         "MeanFrontdEdX",
     ],
@@ -94,8 +92,6 @@ SAMPLE_CUTS = {
         "HasNoVertexMismatch",
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
-        "Eavail",
-        "Pt",
         "Etheta",
         "InverseMeanFrontdEdX",
     ]
@@ -103,5 +99,7 @@ SAMPLE_CUTS = {
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
+    "Eavail",
+    "Pt",
 ]
 #######################################

@@ -62,8 +62,6 @@ SAMPLE_CUTS = {
         "InverseHasNoBackExitingTracks",
         "Vertex_Z",
         "Vertex_Apothem",
-        "Eavail",
-        "Pt",
         "Etheta",
         #"ZDifference",
         #"ZDifference_vtx",
@@ -74,6 +72,8 @@ SAMPLE_CUTS = {
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
+    "Eavail",
+    "Pt",
 ]
 
 #######################################
