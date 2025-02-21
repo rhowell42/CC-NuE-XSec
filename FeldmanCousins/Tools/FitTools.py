@@ -17,7 +17,6 @@ from scipy import optimize,linalg
 ccnueroot = os.environ.get('CCNUEROOT')
 
 import ROOT
-from root_numpy import matrix
 import PlotUtils
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder

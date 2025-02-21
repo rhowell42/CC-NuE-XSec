@@ -4,7 +4,6 @@ import copy
 import ROOT
 import PlotUtils
 import numpy as np
-from root_numpy import matrix
 np.set_printoptions(precision=4)
 np.set_printoptions(linewidth=1520)
 np.set_printoptions(threshold=sys.maxsize)
