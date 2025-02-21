@@ -17,6 +17,7 @@ from scipy import optimize,linalg
 ccnueroot = os.environ.get('CCNUEROOT')
 
 import ROOT
+import ctypes
 import PlotUtils
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
@@ -81,10 +82,11 @@ class Fitter():
         if self.remakeCov:
             self.invCov = None
         else:
-            self.invCov = self.hist.GetInverseCovarianceMatrix()
+            self.invCov = self.hist.GetInverseCovarianceMatrix(sansFlux=True)
 
         chi2,penalty = Chi2DataMC(self.hist,invCov=self.invCov,marginalize=True,useOsc=True,remakeCov=self.remakeCov,useNewUniverses=self.useNewUniverses)
         return(chi2)
+
 
 def FluxSolution(histogram,plot=False,invCov=None,useOsc=False,usePseudo=False):
     if usePseudo:
@@ -102,7 +104,7 @@ def FluxSolution(histogram,plot=False,invCov=None,useOsc=False,usePseudo=False):
     universes = histogram.GetFluxUniverses()
 
     if invCov is None:
-        invCov = histogram.GetInverseCovarianceMatrix()
+        invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True)
 
     A = histogram.GetAMatrix()
 
@@ -156,7 +158,7 @@ def MarginalizeFlux(histogram,plot=False,invCov=None,fluxSolution=None,useOsc=Fa
     universes = histogram.GetFluxUniverses()
 
     if invCov is None:
-        invCov = histogram.GetInverseCovarianceMatrix()
+        invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True)
 
     if useNewUniverses:
         if "Flux" in mcHist.GetVertErrorBandNames():
@@ -204,8 +206,8 @@ def MarginalizeFlux(histogram,plot=False,invCov=None,fluxSolution=None,useOsc=Fa
         new_mc.DivideSingle(new_mc,weights)
         dataHist.Add(new_mc,-1)
 
-        new_invCov = np.asarray(matrix(dataHist.GetTotalErrorMatrix(includeStatError,errorAsFraction,useOnlyShapeErrors)))[1:-1,1:-1]
-        new_invCov = new_invCov - np.asarray(matrix(dataHist.GetSysErrorMatrix("Flux")))[1:-1,1:-1]
+        new_invCov = TMatrixD_to_Numpy(dataHist.GetTotalErrorMatrix(includeStatError,errorAsFraction,useOnlyShapeErrors))[1:-1,1:-1]
+        new_invCov = new_invCov - TMatrixD_to_Numpy(dataHist.GetSysErrorMatrix("Flux"))[1:-1,1:-1]
         new_invCov = np.linalg.inv(new_invCov)
     else:
         new_invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True)
@@ -295,7 +297,7 @@ def Chi2DataMC(histogram,marginalize=False,fluxSolution=None,useOsc=False,usePse
 
         h_test = dataHist.Clone()
         h_test.Add(mcHist,-1)
-        invCov = np.asarray(matrix(h_test.GetTotalErrorMatrix(includeStatError,errorAsFraction,useOnlyShapeErrors)))[1:-1,1:-1]
+        invCov = TMatrixD_to_Numpy(h_test.GetTotalErrorMatrix(includeStatError,errorAsFraction,useOnlyShapeErrors))[1:-1,1:-1]
         invCov = np.linalg.inv(invCov)
 
     # ----- Calculate chi2 value ----= #

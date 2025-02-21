@@ -8,7 +8,7 @@ import PlotUtils
 from Tools.FitTools import *
 from Tools.PlotTools import *
 from Tools.StitchTools import *
-from Tools.OscHistogram import *
+from Tools.Histogram import *
 import numpy as np
 
 import math
