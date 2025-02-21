@@ -4,7 +4,6 @@ import logging, sys
 import ROOT
 import PlotUtils
 import numpy as np
-from root_numpy import matrix
 from scipy import optimize, integrate
 import argparse
 ccnueroot = os.environ.get('CCNUEROOT')
