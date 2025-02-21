@@ -18,7 +18,7 @@ from tools import Utilities
 from tools.PlotLibrary import HistHolder
 ccnueroot = os.environ.get('CCNUEROOT')
 
-from Tools.PlotHelper import *
+from Tools.Helper import *
 
 minBinCont = 1
 errorbandDict = { #keys are the errorbands that need to be renamed, values are what to rename them to
@@ -164,8 +164,8 @@ class StitchedHistogram:
             h_test = self.data_hist.Clone()
             h_test.Add(self.mc_hist,-1)
 
-            inv_covariance = h_test.GetTotalErrorMatrix(True,False,False).AsMatrix()[1:-1,1:-1]
-            flux_covariance = h_test.GetSysErrorMatrix("Flux").AsMatrix()[1:-1,1:-1]
+            inv_covariance = TMatrix_to_Numpy(h_test.GetTotalErrorMatrix(True,False,False))[1:-1,1:-1]
+            flux_covariance = TMatrix_to_Numpy(h_test.GetSysErrorMatrix("Flux"))[1:-1,1:-1]
             cov_sans_flux = inv_covariance - flux_covariance
 
             self.inv_covariance = np.linalg.inv(inv_covariance)

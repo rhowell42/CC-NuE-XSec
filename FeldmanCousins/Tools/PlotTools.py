@@ -16,7 +16,7 @@ nthreads = 4
 from array import array
 from Tools.FitTools import *
 from Tools.Histogram import *
-from Tools.PlotHelper import *
+from Tools.Helper import *
 
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
