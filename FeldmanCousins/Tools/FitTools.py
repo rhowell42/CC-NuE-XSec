@@ -24,6 +24,8 @@ from tools.PlotLibrary import HistHolder
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS 
 
 from Tools.Histogram import *
+from Tools.Helper import *
+
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
 MNVPLOTTER = PlotUtils.MnvPlotter()
@@ -124,6 +126,7 @@ def ReweightCV(histogram,fluxSolution,cv=None,mc=None):
     
     band = histogram.GetVertErrorBand("Flux")
     nhists = band.GetNHists()
+    nhists = 100
     universes = np.array([np.array(band.GetHist(l))[1:-1] for l in range(nhists)])
     cv_table = np.array([cv for l in range(len(universes))])
     A = universes - cv_table
@@ -206,8 +209,8 @@ def MarginalizeFlux(histogram,plot=False,invCov=None,fluxSolution=None,useOsc=Fa
         new_mc.DivideSingle(new_mc,weights)
         dataHist.Add(new_mc,-1)
 
-        new_invCov = TMatrixD_to_Numpy(dataHist.GetTotalErrorMatrix(includeStatError,errorAsFraction,useOnlyShapeErrors))[1:-1,1:-1]
-        new_invCov = new_invCov - TMatrixD_to_Numpy(dataHist.GetSysErrorMatrix("Flux"))[1:-1,1:-1]
+        new_invCov = TMatrix_to_Numpy(dataHist.GetTotalErrorMatrix(includeStatError,errorAsFraction,useOnlyShapeErrors))[1:-1,1:-1]
+        new_invCov = new_invCov - TMatrix_to_Numpy(dataHist.GetSysErrorMatrix("Flux"))[1:-1,1:-1]
         new_invCov = np.linalg.inv(new_invCov)
     else:
         new_invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True)
@@ -297,7 +300,8 @@ def Chi2DataMC(histogram,marginalize=False,fluxSolution=None,useOsc=False,usePse
 
         h_test = dataHist.Clone()
         h_test.Add(mcHist,-1)
-        invCov = TMatrixD_to_Numpy(h_test.GetTotalErrorMatrix(includeStatError,errorAsFraction,useOnlyShapeErrors))[1:-1,1:-1]
+        invCov = TMatrix_to_Numpy(h_test.GetTotalErrorMatrix(includeStatError,errorAsFraction,useOnlyShapeErrors))[1:-1,1:-1]
+        print("Should never get here")
         invCov = np.linalg.inv(invCov)
 
     # ----- Calculate chi2 value ----= #

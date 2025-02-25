@@ -7,6 +7,7 @@ import numpy as np
 from scipy import optimize, integrate
 import argparse
 ccnueroot = os.environ.get('CCNUEROOT')
+plotutils = os.environ.get('PLOTUTILSROOT')
 
 import math
 import psutil
@@ -31,24 +32,41 @@ MNVPLOTTER.draw_normalized_to_bin_width=False
 # Specifically, w/o this, this script seg faults in the case where I try to instantiate FluxReweighterWithWiggleFit w/ nuE constraint set to False for more than one playlist
 ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
+legend_text_size = .025
+
+def UndoBinWidthNorm(histogram):
+    for i in range(0,histogram.GetNbinsX()+1):
+        width = histogram.GetBinWidth(i)
+        cont = histogram.GetBinContent(i)
+        new_cont = cont*width
+        if new_cont != 0:
+            histogram.SetBinContent(i,new_cont)
+
+        for name in histogram.GetVertErrorBandNames():
+            band = histogram.GetVertErrorBand(name)
+            cont = band.GetBinContent(i)
+            new_cont = cont*width
+            if new_cont != 0:
+                band.SetBinContent(i,new_cont)
+
+            for j in range(band.GetNHists()):
+                hist = band.GetHist(j)
+                cont = hist.GetBinContent(i)
+                new_cont = cont*width
+                if new_cont != 0:
+                    hist.SetBinContent(i,new_cont)
+
 
 def PlotSampleMarginalizationEffects(sample_histogram):
     histogram = copy.deepcopy(sample_histogram)
-    samplesToFit = [["elastic"],["elastic","imd"],["numu"],["elastic","imd","numu"],["elastic","imd","ratio"]]
+    samplesToFit = [["elastic","imd","numu","ratio"],["elastic"],["elastic","imd"],["numu"],["elastic","imd","numu"],["elastic","imd","ratio"]]
     names = ["All","elastic","elastic_imd","numu","elastic_imd_numu","elastic_imd_ratio"]
-    titles = ["All Subsamples","#nu+e","#nu+e, IMD","CC #nu_{#mu}","#nu+e, IMD, CC #nu_{#mu}","#nu+e, IMD, CC #nu_{#mu}/#nu_{e}"]
-    colors = [ROOT.kRed,ROOT.kBlue,ROOT.kViolet,ROOT.kOrange,ROOT.kTeal,ROOT.kGray]
+    titles = ["#nu+e, IMD, CC #nu_{#mu}, CC #nu_{#mu}/#nu_{e}","#nu+e","#nu+e, IMD","CC #nu_{#mu}","#nu+e, IMD, CC #nu_{#mu}","#nu+e, IMD, CC #nu_{#mu}/#nu_{e}"]
+    colors = [ROOT.kRed,ROOT.kBlue,ROOT.kViolet,ROOT.kOrange,ROOT.kTeal,ROOT.kGreen]
     hists = []
+    flux_hists = []
     chi2s = []
     pens = []
-
-    full_histogram = copy.deepcopy(sample_histogram)
-    invCov=full_histogram.GetInverseCovarianceMatrix()
-    chi2,penalty = Chi2DataMC(full_histogram,invCov=invCov,setHists=True,marginalize=True)
-    hist = full_histogram.GetMCHistogram()
-    hists.append(hist)
-    chi2s.append(chi2)
-    pens.append(penalty)
 
     subSample = histogram.mc_samples["fhc_elastic"].Clone()
     band = subSample.GetVertErrorBand("Flux")
@@ -74,8 +92,8 @@ def PlotSampleMarginalizationEffects(sample_histogram):
     g1 = ROOT.TGraph(len(fhc_integrals),fhc_integrals,rhc_integrals)
     ROOT.SetOwnership(g1, False)
     g1.SetTitle("Flux Universes")
-    g1.SetMarkerStyle(20)
-    g1.SetMarkerColor(ROOT.kBlack)
+    g1.SetMarkerStyle(4)
+    g1.SetMarkerColorAlpha(ROOT.kBlack,1)
     g1.SetLineWidth(0)
     g2 = ROOT.TGraph()
     ROOT.SetOwnership(g2, False)
@@ -85,31 +103,62 @@ def PlotSampleMarginalizationEffects(sample_histogram):
     g2.SetMarkerSize(3)
     g2.SetMarkerColor(ROOT.kRed)
     g2.SetLineWidth(0)
+    g3 = ROOT.TGraphErrors(1,np.array([1338.0]),np.array([838.2]),np.array([99.7]),np.array([63.1]))
+    ROOT.SetOwnership(g3, False)
+    g3.SetTitle("Mean/RMS Before Constraint Result")
+    g3.SetMarkerStyle(20)
+    g3.SetMarkerColor(ROOT.kBlack)
+    g4 = ROOT.TGraphErrors(1,np.array([1239.0]),np.array([778.4]),np.array([41.9]),np.array([31.2]))
+    ROOT.SetOwnership(g4, False)
+    g4.SetTitle("Mean/RMS After Constraint Result")
+    g4.SetMarkerStyle(20)
+    g4.SetMarkerColor(ROOT.kBlack)
 
     mg.Add(g1)
     mg.Add(g2)
+    mg.Add(g3)
+    mg.Add(g4)
 
-    for j,samples in enumerate(samplesToFit):
-        i = j + 1
-        new_histogram = StitchedHistogram(names[i])
+    f_numu = ROOT.TFile.Open(plotutils+'/data/flux/flux-g4numiv6-pdg14-minervame1D1M1NWeightedAve.root')
+    fhc_numu = f_numu.Get("flux_E_unweighted")
+    f_numu.Close()
+    f_nue = ROOT.TFile.Open(plotutils+'/data/flux/flux-g4numiv6-pdg12-minervame1D1M1NWeightedAve.root')
+    fhc_nue = f_nue.Get("flux_E_unweighted")
+    f_nue.Close()
+    fhc_numu_univ = fhc_numu.GetVertErrorBand("Flux")
+    fhc_nue_univ = fhc_nue.GetVertErrorBand("Flux")
 
-        for key in histogram.keys:
+    for i,samples in enumerate(samplesToFit):
+        new_histogram = StitchedHistogram(names[i],True)
+
+        for key in histogram.keys + ["fhc_ratio","rhc_ratio"]:
             for sample in samples:
                 if sample in key:
-                    if 'elastic' in sample:
-                        new_histogram.AddScatteringFlavors("electron_"+key,histogram.samples_nue[key].Clone())
-                        new_histogram.AddScatteringFlavors("muon_"+key,histogram.samples_numu[key].Clone())
-                    new_histogram.AddHistograms(key,histogram.mc_samples[key].Clone(),histogram.data_samples[key].Clone())
+                    #if 'elastic' in sample:
+                    #    new_histogram.AddScatteringFlavors("electron_"+key,histogram.samples_nue[key].Clone())
+                    #    new_histogram.AddScatteringFlavors("muon_"+key,histogram.samples_numu[key].Clone())
+
+                    if 'ratio' in sample:
+                        for beam in ['fhc','rhc']:
+                            h_mc_numu = histogram.mc_samples[beam+"_numu_selection"].Clone()
+                            h_data_numu = histogram.data_samples[beam+"_numu_selection"].Clone()
+                            h_mc_nue = histogram.mc_samples[beam+"_nue_selection"].Clone()
+                            h_data_nue = histogram.data_samples[beam+"_nue_selection"].Clone()
+                            h_mc_numu.Divide(h_mc_numu,h_mc_nue)
+                            h_data_numu.Divide(h_data_numu,h_data_nue)
+                            new_histogram.AddHistograms(beam+"_ratio",h_mc_numu.Clone(),h_data_numu.Clone())
+                    else:
+                        new_histogram.AddHistograms(key,histogram.mc_samples[key].Clone(),histogram.data_samples[key].Clone())
 
         new_histogram.Stitch()
-        invCov=new_histogram.GetInverseCovarianceMatrix()
+        invCov=new_histogram.GetInverseCovarianceMatrix(sansFlux=True)
 
         fluxSolution,nullPen = FluxSolution(new_histogram,invCov=invCov)
         #histogram.PlotSamples(fluxSolution=fluxSolution,plotName=sample)
-
+        invCov = new_histogram.GetInverseCovarianceMatrix(sansFlux=True)
         plot_histogram = copy.deepcopy(histogram)
         chi2,penalty = Chi2DataMC(plot_histogram,fluxSolution=fluxSolution,invCov=invCov,setHists=True,marginalize=True)
-        
+
         hist = plot_histogram.GetMCHistogram()
         hists.append(hist)
         chi2s.append(chi2)
@@ -123,6 +172,13 @@ def PlotSampleMarginalizationEffects(sample_histogram):
         weights = ReweightCV(subSample,fluxSolution=fluxSolution)
         new_rhc = subSample.Integral()
 
+        new_fhc_numu = fhc_numu.Clone()
+        new_fhc_nue = fhc_nue.Clone()
+        weights = ReweightCV(new_fhc_numu,fluxSolution=fluxSolution)
+        weights = ReweightCV(new_fhc_nue,fluxSolution=fluxSolution)
+
+        flux_hists.append(new_fhc_nue)
+
         g_ = ROOT.TGraph()
         ROOT.SetOwnership(g_, False)
         g_.SetPoint(0,new_fhc,new_rhc)
@@ -130,7 +186,7 @@ def PlotSampleMarginalizationEffects(sample_histogram):
         g_.SetMarkerStyle(29)
         g_.SetMarkerSize(3)
         g_.SetLineWidth(0)
-        g_.SetMarkerColor(colors[i])
+        g_.SetMarkerColorAlpha(colors[i],0.4)
         mg.Add(g_)
 
     mg.Draw("AP")
@@ -142,7 +198,8 @@ def PlotSampleMarginalizationEffects(sample_histogram):
     c1.cd(1)
     h_null =  histogram.GetMCHistogram()
     h_data = histogram.GetDataHistogram()
-    chi2,pen = Chi2DataMC(histogram)
+    invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True)
+    chi2,pen = Chi2DataMC(histogram,invCov=invCov)
 
     nullRatio = h_data.Clone()
     nullRatio.Divide(nullRatio,h_null)
@@ -167,6 +224,7 @@ def PlotSampleMarginalizationEffects(sample_histogram):
     c1.SetTopMargin(0.35)
     c1.SetRightMargin(0.05)
     leg = ROOT.TLegend(0.05, 0.675, 0.95, .975)
+    leg.SetTextSize(legend_text_size);
     leg.SetNColumns(len(titles)//2) # // median N number of rows per column
     top = "Data"
     bottom = "#chi^{2}="+"{:.2f}".format(chi2)
@@ -192,11 +250,35 @@ def PlotSampleMarginalizationEffects(sample_histogram):
 
     c1.Print("plots/stitched_flux_marg_effects.png")
 
+    new_bins = array('d',list(range(0,21)))
+    UndoBinWidthNorm(fhc_nue)
+    UndoBinWidthNorm(fhc_numu)
+
+    fhc_numu = fhc_nue.Rebin(20,"hnew",new_bins)
+    fhc_numu.Scale(1,"width")
+    fhc_nue = fhc_nue.Rebin(20,"hnew",new_bins)
+    fhc_nue.Scale(1,"width")
+
+    for i,hist in enumerate(flux_hists):
+        UndoBinWidthNorm(flux_hists[i])
+        flux_hists[i] = hist.Rebin(20,str(i),new_bins)
+        flux_hists[i].Scale(1,'width')
+
+    fhc_numu.GetXaxis().SetRangeUser(0,20)
+    fhc_numu.GetXaxis().SetTitle("Neutrino Energy")
+    fhc_numu.SetTitle("FHC #nu_{#mu} Flux Prediction")
+
+    fhc_nue.GetXaxis().SetRangeUser(0,20)
+    fhc_nue.GetXaxis().SetTitle("Neutrino Energy")
+    fhc_nue.SetTitle("FHC #nu_{e} Flux Prediction")
+
+    PlotWithRatio(MNVPLOTTER,"plots/FluxReweighting.png",fhc_nue,hists=flux_hists,titles=titles,colors=colors)
+
 def PlotFluxMarginalizationEffects(sample_histogram,parameters,name="",plotSamples=False,usePseudo=False):
     histogram = copy.deepcopy(sample_histogram)
     histogram.SetPlottingStyle()
     
-    invCov=histogram.GetInverseCovarianceMatrix()
+    invCov=histogram.GetInverseCovarianceMatrix(sansFlux=True)
 
     nullSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo)
     oscSolution,oscPen   = FluxSolution(histogram,invCov=invCov,useOsc=True,usePseudo=usePseudo)
@@ -322,7 +404,7 @@ def PlotOscillationRatios(sample_histogram,parameters,name="",plotSamples=False,
     histogram = copy.deepcopy(sample_histogram)
     histogram.SetPlottingStyle()
     
-    invCov=histogram.GetInverseCovarianceMatrix()
+    invCov=histogram.GetInverseCovarianceMatrix(sansFlux=True)
 
     nullSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo)
     oscSolution,oscPen   = FluxSolution(histogram,invCov=invCov,useOsc=True,usePseudo=usePseudo)
@@ -490,7 +572,7 @@ def PlotOscillationRatios(sample_histogram,parameters,name="",plotSamples=False,
 
 def PlotOscillationEffects(sample_histogram,parameters,name="",plotSamples=False,usePseudo=False):
     histogram = copy.deepcopy(sample_histogram)
-    invCov=histogram.GetInverseCovarianceMatrix()
+    invCov=histogram.GetInverseCovarianceMatrix(sansFlux=True)
 
     h_null = histogram.GetMCHistogram()
     h_osc = histogram.GetOscillatedHistogram()

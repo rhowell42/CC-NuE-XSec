@@ -2,6 +2,7 @@ import ROOT
 import numpy as np
 import ctypes
 
+legend_text_size = .025
 
 def TMatrix_to_Numpy(matrix):
     rows = matrix.GetNrows()
@@ -11,6 +12,83 @@ def TMatrix_to_Numpy(matrix):
         for j in range(cols):
             arr[i, j] = matrix(i, j)
     return arr
+
+def PlotWithRatio(MNVPLOTTER,plotName,h_cv,hists=[],titles=[],colors=[],styles=[]):
+    canvas = ROOT.TCanvas()
+    margin = .12
+    bottomFraction = .2
+    top = ROOT.TPad("DATAMC", "DATAMC", 0, bottomFraction, 1, 1)
+    bottom = ROOT.TPad("Ratio", "Ratio", 0, 0, 1, bottomFraction+margin)
+
+    top.Draw()
+    bottom.Draw()
+
+    top.cd()
+    
+    h_cv.Draw("hist")
+
+    null = h_cv.GetCVHistoWithError()
+    null.SetLineColor(ROOT.kBlack)
+    null.SetLineWidth(2)
+    null.SetMarkerStyle(0)
+    null.SetFillColorAlpha(ROOT.kGray+1, 0.4)
+    null.Draw("E2 SAME")
+
+    leg = ROOT.TLegend(.4,.3)
+    leg.SetTextSize(legend_text_size);
+    leg.AddEntry(h_cv,"CV Prediction","l")
+
+    for i,hist in enumerate(hists):
+        if i < len(titles):
+            hist.SetTitle(titles[i])
+        if i < len(colors):
+                hist.SetLineColor(colors[i])
+        if i < len(styles):
+            hist.SetLineStyle(styles[i])
+        hist.Draw("hist same")
+        leg.AddEntry(hist,hist.GetTitle(),"l")
+
+    leg.Draw()
+
+    nullRatio =  h_cv.Clone()
+    nullRatio.Divide(nullRatio,h_cv)
+
+    bottom.cd()
+    bottom.SetTopMargin(0)
+    bottom.SetBottomMargin(0.3)
+
+    nullErrors = h_cv.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
+    for whichBin in range(0, nullErrors.GetXaxis().GetNbins()+1): 
+        nullErrors.SetBinError(whichBin, max(nullErrors.GetBinContent(whichBin), 1e-9))
+        nullErrors.SetBinContent(whichBin, 1)
+
+    nullRatio.SetLineColor(ROOT.kBlack)
+    nullRatio.SetLineWidth(3)
+
+    #Error envelope for the MC
+    nullErrors.SetLineWidth(0)
+    nullErrors.SetMarkerStyle(0)
+    nullErrors.SetFillColorAlpha(ROOT.kGray+1, 0.4)
+    nullErrors.GetYaxis().SetTitle("#splitline{Ratio to CV}{Prediction}")
+    RatioAxis(nullErrors,MNVPLOTTER)
+    nullErrors.SetMinimum(0.4)
+    nullErrors.SetMaximum(1.6)
+    nullErrors.Draw("E2")
+
+    #Draw the data ratios
+    nullRatio.Draw("same")
+
+    for hist in hists:
+        i_ratio = hist.Clone()
+        i_ratio.Divide(i_ratio,h_cv)
+        i_ratio.DrawClone("same hist")
+
+    straightLine = nullErrors.Clone()
+    straightLine.SetLineColor(ROOT.kBlack)
+    straightLine.SetLineWidth(2)
+    straightLine.SetFillColor(0)
+    straightLine.Draw("HIST SAME")
+    canvas.Print(plotName)
 
 def RatioAxis(hist,MNVPLOTTER):
     #MNVPLOTTER.ApplyAxisStyle(hist)
