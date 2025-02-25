@@ -53,6 +53,35 @@ MNVPLOTTER.legend_offset_x           = .15
 ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 
+def CompareResults(histogram):
+    dataHist = histogram.GetDataHistogram()
+    mcHist = histogram.GetMCHistogram()
+
+    data = np.array(dataHist)[1:-1]
+    mc = np.array(mcHist)[1:-1]
+
+    universes = histogram.GetFluxUniverses()
+    invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True) 
+
+    A = histogram.GetAMatrix()
+    V = invCov    
+    C = data - mc
+    I = np.identity(len(universes))
+
+    L = 2 * A @ V @ C
+    Q = A @ V @ A.T + I
+    solution = np.linalg.inv(Q) @ L/2
+
+    np.savetxt("ryan_quadraticTerm.csv",Q,delimiter=',')
+    np.savetxt("ryan_linearTerm.csv",L,delimiter=',')
+    np.savetxt("ryan_invQuadraticTerm.csv",np.linalg.inv(Q),delimiter=',')
+    np.savetxt("ryan_invCVcovariance.csv",invCov,delimiter=',')
+    np.savetxt("ryan_Cvector.csv",C,delimiter=',')
+    np.savetxt("ryan_CVcovariance.csv",histogram.GetCovarianceMatrix(sansFlux=True),delimiter=',')
+    np.savetxt("ryan_CVcovariance_NoFlux.csv",histogram.GetCovarianceMatrix(sansFlux=True),delimiter=',')
+    np.savetxt("ryan_Fluxcovariance.csv",histogram.GetCovarianceMatrix(sansFlux=True) - histogram.GetCovarianceMatrix(sansFlux=True),delimiter=',')
+    np.savetxt("ryan_Amatrix.csv",A,delimiter=',')
+
 if __name__ == "__main__":
     BLUEARC = "/exp/minerva/data/users/{}/surfaces".format(os.environ["USER"])
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -120,14 +149,17 @@ if __name__ == "__main__":
             'umu4':.003,
             'utau4':0.5
         }
+
     OscillateHistogram(sample_histogram, n4['m'], n4['ue4'], n4['umu4'], n4['utau4'])
 
-    invCov=sample_histogram.GetInverseCovarianceMatrix()
-    nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
-    PrintCorrelations(sample_histogram)
+    #CompareResults(sample_histogram)
+    #exit()
 
-    #sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="AllSamples")
-    #PlotOscillationEffects(sample_histogram,n4,"Neutrino4",plotSamples=True)
-    #PlotOscillationRatios(sample_histogram,n4,"Neutrino4")
-    #PlotFluxMarginalizationEffects(sample_histogram,n4,"Neutrino4")
+    invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
+    nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
+
+    sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="AllSamples")
+    PlotOscillationEffects(sample_histogram,n4,"Neutrino4",plotSamples=True)
+    PlotOscillationRatios(sample_histogram,n4,"Neutrino4")
+    PlotFluxMarginalizationEffects(sample_histogram,n4,"Neutrino4")
     PlotSampleMarginalizationEffects(sample_histogram)

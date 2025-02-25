@@ -7,7 +7,6 @@ import ROOT
 import PlotUtils
 from Tools.FitTools import *
 from Tools.PlotTools import *
-from Tools.StitchTools import *
 from Tools.Histogram import *
 import numpy as np
 
@@ -391,18 +390,14 @@ if __name__ == "__main__":
             for i in range(h_univ.GetNbinsX()+1):
                 hist_vals.append(h_univ.GetBinContent(i))
             err_hists.append(hist_vals)
-        #np.savetxt("errorband_hists_{}.csv".format(name),np.array(err_hists),delimiter=',')
             
-
-    GetCovarianceMatrix(mnv_mc,mnv_data,ftag)
-
     filename = "{}/FeldmanCousins/NuE_stitched_hists.root".format(ccnueroot)
 
     sample_histogram.Write(filename)
     sample_histogram.SetPlottingStyle()
     #sample_histogram.DebugPlots()
     
-    invCov=sample_histogram.GetInverseCovarianceMatrix()
+    invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
     nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
 
     sample_histogram.PlotSamples(fluxSolution=nullSolution)
