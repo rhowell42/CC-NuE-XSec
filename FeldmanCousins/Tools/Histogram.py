@@ -43,8 +43,9 @@ errorbandDict = { #keys are the errorbands that need to be renamed, values are w
         }
 
 class StitchedHistogram:
-    def __init__(self,name):
+    def __init__(self,name,dirty=False):
         self.name = name
+        self.dirty = dirty
 
         self.keys = ["fhc_elastic","fhc_imd","fhc_numu_selection","fhc_nue_selection","rhc_elastic","rhc_imd","rhc_numu_selection","rhc_nue_selection"]
         self.titles = ["FHC #nu+e","FHC IMD","FHC CC #nu_{#mu}","FHC CC #nu_{e}","RHC #nu+e","RHC IMD","RHC CC anti #nu_{#mu}","RHC CC anti #nu_{e}"]
@@ -80,6 +81,8 @@ class StitchedHistogram:
 
         self.inv_covariance = None
         self.inv_covariance_sans_flux = None
+        self.covariance = None
+        self.covariance_sans_flux = None
 
         self.mc_hist = None
         self.data_hist = None
@@ -164,11 +167,14 @@ class StitchedHistogram:
             h_test = self.data_hist.Clone()
             h_test.Add(self.mc_hist,-1)
 
-            inv_covariance = TMatrix_to_Numpy(h_test.GetTotalErrorMatrix(True,False,False))[1:-1,1:-1]
+            covariance = TMatrix_to_Numpy(h_test.GetTotalErrorMatrix(True,False,False))[1:-1,1:-1]
             flux_covariance = TMatrix_to_Numpy(h_test.GetSysErrorMatrix("Flux"))[1:-1,1:-1]
-            cov_sans_flux = inv_covariance - flux_covariance
+            cov_sans_flux = covariance - flux_covariance
 
-            self.inv_covariance = np.linalg.inv(inv_covariance)
+            self.covariance = covariance
+            self.covariance_sans_flux = cov_sans_flux
+
+            self.inv_covariance = np.linalg.inv(covariance)
             self.inv_covariance_sans_flux = np.linalg.inv(cov_sans_flux)
         else:
             raise ValueError("MC and Data histograms must be defined before setting inv_covariance matrix")
@@ -181,9 +187,9 @@ class StitchedHistogram:
 
     def GetCovarianceMatrix(self,sansFlux=False):
         if sansFlux:
-            return(np.linalg.inv(self.inv_covariance_sans_flux))
+            return(self.covariance_sans_flux)
         else:
-            return(np.linalg.inv(self.inv_covariance))
+            return(self.covariance)
 
     def SetHistogram(self,hist):
         self.osc_hist = hist.Clone()
@@ -241,55 +247,59 @@ class StitchedHistogram:
         self.data_hists[name] = data_hist
         self.mc_hists[name] = mc_hist
 
-        # ----- Set Electron Neutrino Histograms ----- #
-        if "nue_selection" in name:
-            self.nue_hists[name] = mc_hist.Clone()
-        elif "elastic" in name:
-            if 'electron_'+name not in self.nueel_flavors.keys():
-                raise ValueError("{} has not been added to nueel flavor dictionary. Do this before AddingHistogram()".format('electron_'+name))
-            self.nue_hists[name] = self.nueel_flavors['electron_'+name]
-        elif "ratio" in name:
-            self.nue_hists[name] = self.nue_hists[name[:4]+'nue_selection'].Clone()
-        else:
-            self.nue_hists[name] = self.EmptyHist(mc_hist)
+        if not self.dirty:
+            beam = name[:4]
+            # ----- Set Electron Neutrino Histograms ----- #
+            if "nue_selection" in name:
+                self.nue_hists[name] = mc_hist.Clone()
+            elif "elastic" in name:
+                if 'electron_'+name not in self.nueel_flavors.keys():
+                    raise ValueError("{} has not been added to nueel flavor dictionary. Do this before AddingHistogram()".format('electron_'+name))
+                self.nue_hists[name] = self.nueel_flavors['electron_'+name]
+            elif "ratio" in name:
+                if beam+'nue_selection' in self.nue_hists.keys():
+                    self.nue_hists[name] = self.nue_hists[beam+'nue_selection'].Clone()
+            else:
+                self.nue_hists[name] = self.EmptyHist(mc_hist)
 
-        # ----- Set Muon Neutrino Histograms ----- #
-        if "numu_selection" in name or "imd" in name:
-            self.numu_hists[name] = mc_hist.Clone()
-        elif "elastic" in name:
-            if 'muon_'+name not in self.nueel_flavors.keys():
-                raise ValueError("{} has not been added to nueel flavor dictionary. Do this before AddingHistogram()".format('muon_'+name))
-            self.numu_hists[name] = self.nueel_flavors['muon_'+name]
-        elif "ratio" in name:
-            self.numu_hists[name] = self.numu_hists[name[:4]+'numu_selection'].Clone()
-        else:
-            self.numu_hists[name] = self.EmptyHist(mc_hist)
+            # ----- Set Muon Neutrino Histograms ----- #
+            if "numu_selection" in name or "imd" in name:
+                self.numu_hists[name] = mc_hist.Clone()
+            elif "elastic" in name:
+                if 'muon_'+name not in self.nueel_flavors.keys():
+                    raise ValueError("{} has not been added to nueel flavor dictionary. Do this before AddingHistogram()".format('muon_'+name))
+                self.numu_hists[name] = self.nueel_flavors['muon_'+name]
+            elif "ratio" in name:
+                if beam+'numu_selection' in self.numu_hists.keys():
+                    self.numu_hists[name] = self.numu_hists[beam+'numu_selection'].Clone()
+            else:
+                self.numu_hists[name] = self.EmptyHist(mc_hist)
 
-        # ----- Set Flavor Swapped Neutrino Histograms ----- #
-        if "nue_selection" in name:
-            if name not in self.swap_hists.keys():
-                raise ValueError("{} has not been added to swapped flavor dictionary. Do this before AddingHistogram()".format(name))
-            self.swap_hists[name] = self.swap_hists[name]
-        elif "ratio" in name:
-            self.swap_hists[name] = self.swap_hists[name[:4]+'nue_selection'].Clone()
-        elif "elastic" in name:
-            self.swap_hists[name] = self.nueel_flavors['muon_'+name]
-        else:
-            self.swap_hists[name] = self.EmptyHist(mc_hist)
+            # ----- Set Flavor Swapped Neutrino Histograms ----- #
+            if "nue_selection" in name:
+                if name in self.swap_hists.keys():
+                    self.swap_hists[name] = self.swap_hists[name]
+            elif "ratio" in name:
+                if beam+'nue_selection' in self.swap_hists.keys():
+                    self.swap_hists[name] = self.swap_hists[beam+'nue_selection'].Clone()
+            elif "elastic" in name:
+                self.swap_hists[name] = self.nueel_flavors['muon_'+name]
+            else:
+                self.swap_hists[name] = self.EmptyHist(mc_hist)
 
-        # ----- Set ID Histograms ----- #
-        if "elastic" in name or "imd" in name:
-            self.elastic_ids[name] = self.UnityHist(mc_hist)
-        else:
-            self.elastic_ids[name] = self.EmptyHist(mc_hist)
-        if "ratio" in name:
-            self.ratio_ids[name] = self.UnityHist(mc_hist)
-        else:
-            self.ratio_ids[name] = self.EmptyHist(mc_hist)
-        if "fhc" in name:
-            self.beam_ids[name] = self.UnityHist(mc_hist)
-        else:
-            self.beam_ids[name] = self.EmptyHist(mc_hist)
+            # ----- Set ID Histograms ----- #
+            if "elastic" in name or "imd" in name:
+                self.elastic_ids[name] = self.UnityHist(mc_hist)
+            else:
+                self.elastic_ids[name] = self.EmptyHist(mc_hist)
+            if "ratio" in name:
+                self.ratio_ids[name] = self.UnityHist(mc_hist)
+            else:
+                self.ratio_ids[name] = self.EmptyHist(mc_hist)
+            if "fhc" in name:
+                self.beam_ids[name] = self.UnityHist(mc_hist)
+            else:
+                self.beam_ids[name] = self.EmptyHist(mc_hist)
 
         self.UpdateKeys()
         self.is_processed = False
@@ -300,14 +310,22 @@ class StitchedHistogram:
         if name not in list(self.mc_hists.keys()):
             raise ValueError("{} not in mc histogram dictionary".format(name))
 
-        del self.data_hists[name]
-        del self.mc_hists[name]
-        del self.nue_hists[name]
-        del self.numu_hists[name]
-        del self.swap_hists[name]
-        del self.elastic_ids[name]
-        del self.ratio_ids[name]
-        del self.beam_ids[name]
+        if name in self.data_hists:
+            del self.data_hists[name]
+        if name in self.mc_hists:
+            del self.mc_hists[name]
+        if name in self.nue_hists:
+            del self.nue_hists[name]
+        if name in self.numu_hists:
+            del self.numu_hists[name]
+        if name in self.swap_hists:
+            del self.swap_hists[name]
+        if name in self.elastic_ids:
+            del self.elastic_ids[name]
+        if name in self.ratio_ids:
+            del self.ratio_ids[name]
+        if name in self.beam_ids:
+            del self.beam_ids[name]
         
         if len(list(self.nue_templates.keys())) > 0:
             if name not in list(self.nue_templates.keys()):
@@ -328,10 +346,12 @@ class StitchedHistogram:
         self.keys = list(self.mc_hists.keys())
         if self.keys != list(self.data_hists.keys()):
             raise ValueError("MC dictionary incompatable with data dictionary")
-        if self.keys != list(self.nue_hists.keys()):
-            raise ValueError("MC dictionary incompatable with nue hists")
-        if self.keys != list(self.numu_hists.keys()):
-            raise ValueError("MC dictionary incompatable with numu hists")
+
+        if not self.dirty:
+            if self.keys != list(self.nue_hists.keys()):
+                raise ValueError("MC dictionary incompatable with nue hists")
+            if self.keys != list(self.numu_hists.keys()):
+                raise ValueError("MC dictionary incompatable with numu hists")
 
     def MakeRatio(self,beam):
         beam = beam.lower()
@@ -345,7 +365,10 @@ class StitchedHistogram:
             data_clone.Divide(data_clone,self.data_hists[elecname])
 
             self.AddHistograms('{}_ratio'.format(beam),mc_clone,data_clone)
-            self.AddTemplates("{}_ratio".format(beam),numu=self.numu_templates[beam+"_numu_selection"],nue=self.nue_templates[beam+"_nue_selection"],swap=self.swap_templates[beam+"_nue_selection"])
+
+            if beam+"_numu_selection" in self.numu_templates:
+                self.AddTemplates("{}_ratio".format(beam),numu=self.numu_templates[beam+"_numu_selection"],nue=self.nue_templates[beam+"_nue_selection"],swap=self.swap_templates[beam+"_nue_selection"])
+
             self.RemoveHistograms(elecname)
             if beam == 'fhc':
                 self.titles.remove("FHC CC #nu_{e}")
@@ -360,12 +383,13 @@ class StitchedHistogram:
     def ApplyExclusion(self,exclude):
         self.data_samples = copy.deepcopy(self.data_hists)
         self.mc_samples = copy.deepcopy(self.mc_hists)
-        self.samples_nue = copy.deepcopy(self.nue_hists)
-        self.samples_numu = copy.deepcopy(self.numu_hists)
-        self.samples_swap = copy.deepcopy(self.swap_hists)
-        self.samples_nue_templates = copy.deepcopy(self.nue_templates)
-        self.samples_numu_templates = copy.deepcopy(self.numu_templates)
-        self.samples_swap_templates = copy.deepcopy(self.swap_templates)
+        if not self.dirty:
+            self.samples_nue = copy.deepcopy(self.nue_hists)
+            self.samples_numu = copy.deepcopy(self.numu_hists)
+            self.samples_swap = copy.deepcopy(self.swap_hists)
+            self.samples_nue_templates = copy.deepcopy(self.nue_templates)
+            self.samples_numu_templates = copy.deepcopy(self.numu_templates)
+            self.samples_swap_templates = copy.deepcopy(self.swap_templates)
 
         for h in self.keys:
             if "fhc" in exclude:
@@ -425,9 +449,10 @@ class StitchedHistogram:
         for h in self.keys:
             separate(self.data_hists[h])
             separate(self.mc_hists[h])
-            separate(self.nue_hists[h])
-            separate(self.numu_hists[h])
-            separate(self.swap_hists[h])
+            if not self.dirty:
+                separate(self.nue_hists[h])
+                separate(self.numu_hists[h])
+                separate(self.swap_hists[h])
 
     def LateralToVertical(self):
         def lateral(hist):
@@ -440,9 +465,10 @@ class StitchedHistogram:
         for h in self.keys:
             lateral(self.data_hists[h])
             lateral(self.mc_hists[h])
-            lateral(self.nue_hists[h])
-            lateral(self.numu_hists[h])
-            lateral(self.swap_hists[h])
+            if not self.dirty:
+                lateral(self.nue_hists[h])
+                lateral(self.numu_hists[h])
+                lateral(self.swap_hists[h])
 
     def Stitch(self):
         # ----- Create empty ROOT histograms to fill with stitched content ----- #
@@ -580,7 +606,7 @@ class StitchedHistogram:
 
         f.Close()
         
-        #self.SyncErrorBands()
+        self.SyncErrorBands()
         self.SetCovarianceMatrices()
 
         self.SetPlottingStyle()
@@ -770,13 +796,14 @@ class StitchedHistogram:
                 self.data_hist.SetBinContent(i_new,bin_c)
 
                 # ----- do other stitching ----- #
-                self.nue_hist.SetBinContent(i_new,self.nue_hists[h].GetBinContent(i))
-                self.numu_hist.SetBinContent(i_new,self.numu_hists[h].GetBinContent(i))
-                self.swap_hist.SetBinContent(i_new,self.swap_hists[h].GetBinContent(i))
+                if not self.dirty:
+                    self.nue_hist.SetBinContent(i_new,self.nue_hists[h].GetBinContent(i))
+                    self.numu_hist.SetBinContent(i_new,self.numu_hists[h].GetBinContent(i))
+                    self.swap_hist.SetBinContent(i_new,self.swap_hists[h].GetBinContent(i))
 
-                self.beam_id.SetBinContent(i_new,self.beam_ids[h].GetBinContent(i))
-                self.ratio_id.SetBinContent(i_new,self.ratio_ids[h].GetBinContent(i))
-                self.elastic_id.SetBinContent(i_new,self.elastic_ids[h].GetBinContent(i))
+                    self.beam_id.SetBinContent(i_new,self.beam_ids[h].GetBinContent(i))
+                    self.ratio_id.SetBinContent(i_new,self.ratio_ids[h].GetBinContent(i))
+                    self.elastic_id.SetBinContent(i_new,self.elastic_ids[h].GetBinContent(i))
 
     def FillErrorBandsFromDict(self):
         offset = 1
@@ -814,9 +841,10 @@ class StitchedHistogram:
                         sys_mc = h_mc.GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
                         sys_data = h_data.GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
 
-                        sys_nue = self.nue_hists[h].GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
-                        sys_numu = self.numu_hists[h].GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
-                        sys_swap = self.swap_hists[h].GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
+                        if not self.dirty:
+                            sys_nue = self.nue_hists[h].GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
+                            sys_numu = self.numu_hists[h].GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
+                            sys_swap = self.swap_hists[h].GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
 
                         ratio = sys_data/bin_data if bin_data != 0 else 0
                         sys_pseudo = bin_mc*ratio
@@ -827,9 +855,10 @@ class StitchedHistogram:
                         self.data_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_data)
                         self.pseudo_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_pseudo)
 
-                        self.nue_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_nue)
-                        self.numu_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_numu)
-                        self.swap_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_swap)
+                        if not self.dirty:
+                            self.nue_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_nue)
+                            self.numu_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_numu)
+                            self.swap_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_swap)
 
             for i in range(1,Nbins):
                 if self.mc_hists[h].GetBinContent(i) <= minBinCont:
@@ -865,15 +894,17 @@ class StitchedHistogram:
                         self.mc_hists[h1].AddMissingErrorBandsAndFillWithCV(self.data_hists[h2])
                         self.mc_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h2])
                         self.data_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
-                        self.nue_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
-                        self.numu_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
-                        self.swap_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
+                        if not self.dirty:
+                            self.nue_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
+                            self.numu_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
+                            self.swap_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
 
                 self.ShortFlux(self.mc_hists[h1])
                 self.ShortFlux(self.data_hists[h1])
-                self.ShortFlux(self.nue_hists[h1])
-                self.ShortFlux(self.numu_hists[h1])
-                self.ShortFlux(self.swap_hists[h1])
+                if not self.dirty:
+                    self.ShortFlux(self.nue_hists[h1])
+                    self.ShortFlux(self.numu_hists[h1])
+                    self.ShortFlux(self.swap_hists[h1])
 
         for h in self.mc_samples:
             self.ShortFlux(self.mc_samples[h])
@@ -937,6 +968,7 @@ class StitchedHistogram:
         margin = .12
         bottomFraction = .2
         MNVPLOTTER = PlotUtils.MnvPlotter()
+        MNVPLOTTER.draw_normalized_to_bin_width=False
         self.SetPlottingStyle()
 
         useSamples = len(self.data_samples) > 0
@@ -1025,25 +1057,25 @@ class StitchedHistogram:
 
     def DebugPlots(self,name=""):
         c1 = ROOT.TCanvas()
-
+        dirname = 'plots/'
         self.nue_hist.Draw("hist")
-        c1.Print("nue_hist"+name+".png")
+        c1.Print(dirname+"nue_hist"+name+".png")
         self.numu_hist.Draw("hist")
-        c1.Print("numu_hist"+name+".png")
+        c1.Print(dirname+"numu_hist"+name+".png")
         self.swap_hist.Draw("hist")
-        c1.Print("swap_hist"+name+".png")
+        c1.Print(dirname+"swap_hist"+name+".png")
         self.beam_id.Draw("hist")
-        c1.Print("beam_id"+name+".png")
+        c1.Print(dirname+"beam_id"+name+".png")
         self.ratio_id.Draw("hist")
-        c1.Print("ratio_id"+name+".png")
+        c1.Print(dirname+"ratio_id"+name+".png")
         self.elastic_id.Draw("hist")
-        c1.Print("elastic_id"+name+".png")
+        c1.Print(dirname+"elastic_id"+name+".png")
         self.nue_template.Draw("colz")
-        c1.Print("nue_template"+name+".png")
+        c1.Print(dirname+"nue_template"+name+".png")
         self.numu_template.Draw("colz")
-        c1.Print("numu_template"+name+".png")
+        c1.Print(dirname+"numu_template"+name+".png")
         self.swap_template.Draw("colz")
-        c1.Print("swap_template"+name+".png")
+        c1.Print(dirname+"swap_template"+name+".png")
 
         MNVPLOTTER = PlotUtils.MnvPlotter()
         MNVPLOTTER.error_summary_group_map.clear();
@@ -1054,7 +1086,7 @@ class StitchedHistogram:
             MNVPLOTTER.error_summary_group_map[k]= vec
 
         MNVPLOTTER.DrawErrorSummary(self.data_hist,"TR",True,True,0)
-        c1.Print("data_errsummary.png")
+        c1.Print(dirname+"data_errsummary.png")
         MNVPLOTTER.DrawErrorSummary(self.mc_hist,"TR",True,True,0)
-        c1.Print("mc_errsummary.png")
+        c1.Print(dirname+"mc_errsummary.png")
 
