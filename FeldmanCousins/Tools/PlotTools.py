@@ -134,10 +134,6 @@ def PlotSampleMarginalizationEffects(sample_histogram):
         for key in histogram.keys + ["fhc_ratio","rhc_ratio"]:
             for sample in samples:
                 if sample in key:
-                    #if 'elastic' in sample:
-                    #    new_histogram.AddScatteringFlavors("electron_"+key,histogram.samples_nue[key].Clone())
-                    #    new_histogram.AddScatteringFlavors("muon_"+key,histogram.samples_numu[key].Clone())
-
                     if 'ratio' in sample:
                         for beam in ['fhc','rhc']:
                             h_mc_numu = histogram.mc_samples[beam+"_numu_selection"].Clone()
@@ -154,7 +150,6 @@ def PlotSampleMarginalizationEffects(sample_histogram):
         invCov=new_histogram.GetInverseCovarianceMatrix(sansFlux=True)
 
         fluxSolution,nullPen = FluxSolution(new_histogram,invCov=invCov)
-        #histogram.PlotSamples(fluxSolution=fluxSolution,plotName=sample)
         invCov = new_histogram.GetInverseCovarianceMatrix(sansFlux=True)
         plot_histogram = copy.deepcopy(histogram)
         chi2,penalty = Chi2DataMC(plot_histogram,fluxSolution=fluxSolution,invCov=invCov,setHists=True,marginalize=True)
