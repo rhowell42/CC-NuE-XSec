@@ -48,7 +48,8 @@ class StitchedHistogram:
         self.dirty = dirty
 
         self.keys = ["fhc_elastic","fhc_imd","fhc_numu_selection","fhc_nue_selection","rhc_elastic","rhc_imd","rhc_numu_selection","rhc_nue_selection"]
-        self.titles = ["FHC #nu+e","FHC IMD","FHC CC #nu_{#mu}","FHC CC #nu_{e}","RHC #nu+e","RHC IMD","RHC CC anti #nu_{#mu}","RHC CC anti #nu_{e}"]
+        self.titles = {"fhc_elastic":"FHC #nu+e","fhc_imd":"FHC IMD","fhc_numu_selection":"FHC CC #nu_{#mu}","fhc_nue_selection":"FHC CC #nu_{e}",
+                "rhc_elastic":"RHC #nu+e","rhc_imd":"RHC IMD","rhc_numu_selection":"RHC CC anti #nu_{#mu}","rhc_nue_selection":"RHC CC anti #nu_{e}"}
 
         self.data_hists = OrderedDict()
         self.mc_hists = OrderedDict()
@@ -66,15 +67,6 @@ class StitchedHistogram:
         self.nue_templates = {}
         self.numu_templates = {}
         self.swap_templates = {}
-
-        self.data_samples = {}
-        self.mc_samples = {}
-        self.samples_nue = {}
-        self.samples_numu = {}
-        self.samples_swap = {}
-        self.samples_nue_templates = {}
-        self.samples_numu_templates = {}
-        self.samples_swap_templates = {}
 
         self.mc_flux_universes = []
         self.A = None # matrix of universes - MC CV
@@ -310,37 +302,9 @@ class StitchedHistogram:
         if name not in list(self.mc_hists.keys()):
             raise ValueError("{} not in mc histogram dictionary".format(name))
 
-        if name in self.data_hists:
-            del self.data_hists[name]
-        if name in self.mc_hists:
-            del self.mc_hists[name]
-        if name in self.nue_hists:
-            del self.nue_hists[name]
-        if name in self.numu_hists:
-            del self.numu_hists[name]
-        if name in self.swap_hists:
-            del self.swap_hists[name]
-        if name in self.elastic_ids:
-            del self.elastic_ids[name]
-        if name in self.ratio_ids:
-            del self.ratio_ids[name]
-        if name in self.beam_ids:
-            del self.beam_ids[name]
-        
-        if len(list(self.nue_templates.keys())) > 0:
-            if name not in list(self.nue_templates.keys()):
-                raise ValueError("{} not in nue_templates dictionary".format(name))
-            del self.nue_templates[name]
-
-            if name not in list(self.numu_templates.keys()):
-                raise ValueError("{} not in numu_templates dictionary".format(name))
-            del self.numu_templates[name]
-
-            if name not in list(self.swap_templates.keys()):
-                raise ValueError("{} not in swap_templates dictionary".format(name))
-            del self.swap_templates[name]
-
-        self.UpdateKeys()
+        del self.data_hists[name]
+        del self.mc_hists[name]
+        del self.titles[name]
 
     def UpdateKeys(self):
         self.keys = list(self.mc_hists.keys())
@@ -367,30 +331,18 @@ class StitchedHistogram:
             self.AddHistograms('{}_ratio'.format(beam),mc_clone,data_clone)
 
             if beam+"_numu_selection" in self.numu_templates:
-                self.AddTemplates("{}_ratio".format(beam),numu=self.numu_templates[beam+"_numu_selection"],nue=self.nue_templates[beam+"_nue_selection"],swap=self.swap_templates[beam+"_nue_selection"])
+                self.AddTemplates("{}_ratio".format(beam),
+                        numu=self.numu_templates[beam+"_numu_selection"],
+                        nue=self.nue_templates[beam+"_nue_selection"],
+                        swap=self.swap_templates[beam+"_nue_selection"])
+                self.titles['{}_ratio'.format(beam)] = "%s CC #nu_{#mu}/#nu_{e} Ratio" % (beam.upper())
 
-            self.RemoveHistograms(elecname)
-            if beam == 'fhc':
-                self.titles.remove("FHC CC #nu_{e}")
-                self.titles.append("FHC CC #nu_{#mu}/#nu_{e} Ratio")
-            elif beam == 'rhc':
-                self.titles.remove("RHC CC anti #nu_{e}")
-                self.titles.append("RHC CC anti #nu_{#mu}/#nu_{e} Ratio")
+        self.CleanErrorBands()
 
     def Copy(self):
         return(copy.deepcopy(self))
 
     def ApplyExclusion(self,exclude):
-        self.data_samples = copy.deepcopy(self.data_hists)
-        self.mc_samples = copy.deepcopy(self.mc_hists)
-        if not self.dirty:
-            self.samples_nue = copy.deepcopy(self.nue_hists)
-            self.samples_numu = copy.deepcopy(self.numu_hists)
-            self.samples_swap = copy.deepcopy(self.swap_hists)
-            self.samples_nue_templates = copy.deepcopy(self.nue_templates)
-            self.samples_numu_templates = copy.deepcopy(self.numu_templates)
-            self.samples_swap_templates = copy.deepcopy(self.swap_templates)
-
         for h in self.keys:
             if "fhc" in exclude:
                 if "fhc" in h and "selection" in h:
@@ -473,7 +425,7 @@ class StitchedHistogram:
     def Stitch(self):
         # ----- Create empty ROOT histograms to fill with stitched content ----- #
         n_bins_new = 0
-        for h in self.keys:
+        for h in self.mc_hists:
             for i in range(0,self.mc_hists[h].GetNbinsX()+1):
                 if self.mc_hists[h].GetBinContent(i) > minBinCont:
                     n_bins_new+=1
@@ -496,6 +448,7 @@ class StitchedHistogram:
 
         # ----- Do some errorband cleaning ----- #
         if not self.is_processed:
+            print("getting here?")
             self.SeparateBeamAngle() # make beam angle systematics consistent across samples
             self.LateralToVertical() # convert lateral errorbands (deprecated) from old samples to vertical
             self.SyncErrorBands()  # make sure all samples have the same errorbands, reduce flux universes to 100
@@ -545,25 +498,27 @@ class StitchedHistogram:
         self.numu_template.Write()
         self.swap_template.Write()
 
-        for h in self.data_samples:
-            self.data_samples[h].SetName("data_"+h)
-            self.data_samples[h].Write()
+        for h in self.mc_hists:
+            self.data_hists[h].SetName("data_"+h)
+            self.mc_hists[h].SetName("mc_"+h)
 
-            self.mc_samples[h].SetName("mc_"+h)
-            self.mc_samples[h].Write()
+            self.data_hists[h].Write()
+            self.mc_hists[h].Write()
 
-            self.samples_nue[h].SetName("nue_"+h)
-            self.samples_nue[h].Write()
-            self.samples_numu[h].SetName("numu_"+h)
-            self.samples_numu[h].Write()
-            self.samples_swap[h].SetName("swap_"+h)
-            self.samples_swap[h].Write()
-            self.samples_nue_templates[h].SetName("nue_temp_"+h)
-            self.samples_nue_templates[h].Write()
-            self.samples_numu_templates[h].SetName("numu_temp_"+h)
-            self.samples_numu_templates[h].Write()
-            self.samples_swap_templates[h].SetName("swap_temp_"+h)
-            self.samples_swap_templates[h].Write()
+        for h in self.keys:
+            self.nue_hists[h].SetName("nue_"+h)
+            self.numu_hists[h].SetName("numu_"+h)
+            self.swap_hists[h].SetName("swap_"+h)
+            self.nue_templates[h].SetName("nue_temp_"+h)
+            self.numu_templates[h].SetName("numu_temp_"+h)
+            self.swap_templates[h].SetName("swap_temp_"+h)
+
+            self.nue_hists[h].Write()
+            self.numu_hists[h].Write()
+            self.swap_hists[h].Write()
+            self.nue_templates[h].Write()
+            self.numu_templates[h].Write()
+            self.swap_templates[h].Write()
 
         f.Close()
 
@@ -593,19 +548,20 @@ class StitchedHistogram:
         self.swap_template  = f.Get(name+"_swap_template")
 
         for h in self.keys:
-            self.data_samples[h] = f.Get("data_"+h)
-            self.mc_samples[h] = f.Get("mc_"+h)
+            self.data_hists[h] = f.Get("data_"+h)
+            self.mc_hists[h] = f.Get("mc_"+h)
 
-            self.samples_nue[h] = f.Get("nue_"+h)
-            self.samples_numu[h] = f.Get("numu_"+h)
-            self.samples_swap[h] = f.Get("swap_"+h)
-            self.samples_nue_templates[h] = f.Get("nue_temp_"+h)
-            self.samples_numu_templates[h] = f.Get("numu_temp_"+h)
-            self.samples_swap_templates[h] = f.Get("swap_temp_"+h)
-
+            self.nue_hists[h] = f.Get("nue_"+h)
+            self.numu_hists[h] = f.Get("numu_"+h)
+            self.swap_hists[h] = f.Get("swap_"+h)
+            self.nue_templates[h] = f.Get("nue_temp_"+h)
+            self.numu_templates[h] = f.Get("numu_temp_"+h)
+            self.swap_templates[h] = f.Get("swap_temp_"+h)
 
         f.Close()
-        
+
+        print(self.data_hists)
+
         self.SyncErrorBands()
         self.SetCovarianceMatrices()
 
@@ -614,50 +570,50 @@ class StitchedHistogram:
     def SetPlottingStyle(self):
         MNVPLOTTER = PlotUtils.MnvPlotter()
 
-        for i,name in enumerate(self.data_samples):
-            self.data_samples[name].SetLineColor(ROOT.kBlack)
-            self.data_samples[name].SetMarkerStyle(20)
-            self.data_samples[name].SetMarkerSize(1)
-            self.data_samples[name].SetTitle(self.titles[i])
-            self.data_samples[name].SetTitleFont(62)
-            self.data_samples[name].SetTitleSize(0.06)
-            MNVPLOTTER.ApplyAxisStyle(self.data_samples[name])
-            self.data_samples[name].GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
+        for i,name in enumerate(self.data_hists):
+            self.data_hists[name].SetLineColor(ROOT.kBlack)
+            self.data_hists[name].SetMarkerStyle(20)
+            self.data_hists[name].SetMarkerSize(1)
+            self.data_hists[name].SetTitle(self.titles[name])
+            self.data_hists[name].SetTitleFont(62)
+            self.data_hists[name].SetTitleSize(0.06)
+            MNVPLOTTER.ApplyAxisStyle(self.data_hists[name])
+            self.data_hists[name].GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
 
             if "elastic" in name:
-                self.data_samples[name].GetXaxis().SetTitle("Electron Energy [ GeV ]")
-                self.data_samples[name].GetYaxis().SetTitle("NEvents / 2 GeV")
+                self.data_hists[name].GetXaxis().SetTitle("Electron Energy [ GeV ]")
+                self.data_hists[name].GetYaxis().SetTitle("NEvents / 2 GeV")
             elif "imd" in name:
-                self.data_samples[name].GetXaxis().SetTitle("Muon Energy [ GeV ]")
-                self.data_samples[name].GetYaxis().SetTitle("NEvents / GeV")
+                self.data_hists[name].GetXaxis().SetTitle("Muon Energy [ GeV ]")
+                self.data_hists[name].GetYaxis().SetTitle("NEvents / GeV")
             else:
-                self.data_samples[name].GetXaxis().SetTitle("Neutrino Energy Estimator [ GeV ]")
-                self.data_samples[name].GetYaxis().SetTitle("NEvents / GeV")
+                self.data_hists[name].GetXaxis().SetTitle("Neutrino Energy Estimator [ GeV ]")
+                self.data_hists[name].GetYaxis().SetTitle("NEvents / GeV")
 
-            self.mc_samples[name].SetLineColor(ROOT.kRed)
-            self.mc_samples[name].SetLineWidth(2)
-            self.mc_samples[name].SetMarkerStyle(0)
-            self.mc_samples[name].SetLineStyle(1)
-            self.mc_samples[name].SetTitle(self.titles[i])
-            MNVPLOTTER.ApplyAxisStyle(self.mc_samples[name])
-            self.mc_samples[name].GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
+            self.mc_hists[name].SetLineColor(ROOT.kRed)
+            self.mc_hists[name].SetLineWidth(2)
+            self.mc_hists[name].SetMarkerStyle(0)
+            self.mc_hists[name].SetLineStyle(1)
+            self.mc_hists[name].SetTitle(self.titles[name])
+            MNVPLOTTER.ApplyAxisStyle(self.mc_hists[name])
+            self.mc_hists[name].GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
 
             if "elastic" in name:
-                self.mc_samples[name].GetXaxis().SetTitle("Electron Energy [ GeV ]")
-                self.mc_samples[name].GetYaxis().SetTitle("NEvents / 2 GeV")
+                self.mc_hists[name].GetXaxis().SetTitle("Electron Energy [ GeV ]")
+                self.mc_hists[name].GetYaxis().SetTitle("NEvents / 2 GeV")
             elif "imd" in name:
-                self.mc_samples[name].GetXaxis().SetTitle("Muon Energy [ GeV ]")
-                self.mc_samples[name].GetYaxis().SetTitle("NEvents / GeV")
+                self.mc_hists[name].GetXaxis().SetTitle("Muon Energy [ GeV ]")
+                self.mc_hists[name].GetYaxis().SetTitle("NEvents / GeV")
             else:
-                self.mc_samples[name].GetXaxis().SetTitle("Neutrino Energy Estimator [ GeV ]")
-                self.mc_samples[name].GetYaxis().SetTitle("NEvents / GeV")
+                self.mc_hists[name].GetXaxis().SetTitle("Neutrino Energy Estimator [ GeV ]")
+                self.mc_hists[name].GetYaxis().SetTitle("NEvents / GeV")
 
         for i,name in enumerate(self.mc_hists):
             self.mc_hists[name].SetLineColor(ROOT.kRed)
             self.mc_hists[name].SetLineWidth(2)
             self.mc_hists[name].SetMarkerStyle(0)
             self.mc_hists[name].SetLineStyle(1)
-            self.mc_hists[name].SetTitle(self.titles[i])
+            self.mc_hists[name].SetTitle(self.titles[name])
             MNVPLOTTER.ApplyAxisStyle(self.mc_hists[name])
             self.mc_hists[name].GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
             
@@ -674,7 +630,7 @@ class StitchedHistogram:
             self.data_hists[name].SetLineColor(ROOT.kBlack)
             self.data_hists[name].SetMarkerStyle(20)
             self.data_hists[name].SetMarkerSize(1)
-            self.data_hists[name].SetTitle(self.titles[i])
+            self.data_hists[name].SetTitle(self.titles[name])
             MNVPLOTTER.ApplyAxisStyle(self.data_hists[name])
             self.data_hists[name].GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
 
@@ -720,7 +676,7 @@ class StitchedHistogram:
 
     def StitchThis2D(self):
         i_new = 0
-        for h in self.keys:
+        for h in self.mc_hists:
             h_nue = self.nue_templates[h]
             h_numu = self.numu_templates[h]
             h_swap = self.swap_templates[h]
@@ -771,7 +727,7 @@ class StitchedHistogram:
 
     def StitchThis(self):
         i_new = 0
-        for h in self.keys:
+        for h in self.mc_hists:
             h_mc = self.mc_hists[h]
             h_data = self.data_hists[h]
 
@@ -807,7 +763,7 @@ class StitchedHistogram:
 
     def FillErrorBandsFromDict(self):
         offset = 1
-        for h in self.keys:
+        for h in self.mc_hists:
             h_mc = self.mc_hists[h]
             h_data = self.data_hists[h]
             Nbins = h_mc.GetNbinsX()+1
@@ -885,8 +841,8 @@ class StitchedHistogram:
         if len(self.mc_hists) > 0:
             if rename_bands:
                 for h in self.keys:
-                    self.RenameBands(self.mc_hists[h])
                     self.RenameBands(self.data_hists[h])
+                    self.RenameBands(self.mc_hists[h])
             for h1 in self.keys:
                 for h2 in self.keys:
                     if h1 != h2:
@@ -906,8 +862,8 @@ class StitchedHistogram:
                     self.ShortFlux(self.numu_hists[h1])
                     self.ShortFlux(self.swap_hists[h1])
 
-        for h in self.mc_samples:
-            self.ShortFlux(self.mc_samples[h])
+        for h in self.mc_hists:
+            self.ShortFlux(self.mc_hists[h])
 
         if type(self.mc_hist) == PlotUtils.MnvH1D:
             if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist):
@@ -971,16 +927,16 @@ class StitchedHistogram:
         MNVPLOTTER.draw_normalized_to_bin_width=False
         self.SetPlottingStyle()
 
-        useSamples = len(self.data_samples) > 0
-        names = self.data_samples.keys() if useSamples else self.data_hists.keys()
+        useSamples = len(self.data_hists) > 0
+        names = self.data_hists.keys() if useSamples else self.data_hists.keys()
         
         for name in names:
             if not useSamples:
                 h_mc = self.mc_hists[name].Clone()
                 h_data = self.data_hists[name].Clone()
             else:
-                h_mc = self.mc_samples[name].Clone()
-                h_data = self.data_samples[name].Clone()
+                h_mc = self.mc_hists[name].Clone()
+                h_data = self.data_hists[name].Clone()
 
             if fluxSolution is not None:
                 mc = np.array(h_mc)[1:-1]

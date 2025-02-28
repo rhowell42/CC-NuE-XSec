@@ -357,17 +357,14 @@ if __name__ == "__main__":
     # ----- Process Systematics and Synchronize across histograms ----- #
     sample_histogram.CleanErrorBands(errsToRemove)
 
-    # ----- Remove samples that we want to exclude from analysis ----- #
-    sample_histogram.ApplyExclusion(exclude)
-
     if doratio: # do we want to replace selection samples with flavor ratios
         if "fhc" not in exclude: # do we care about the fhc component
             sample_histogram.MakeRatio('fhc')
         if "rhc" not in exclude: # do we care about the rhc component
             sample_histogram.MakeRatio('rhc')
-        if not fit_muons: # do we want to keep the muon selections in addition to flavor ratios
-            sample_histogram.RemoveHistogram('fhc_numu_selection')
-            sample_histogram.RemoveHistogram('rhc_numu_selection')
+
+    # ----- Remove samples that we want to exclude from analysis ----- #
+    sample_histogram.ApplyExclusion(exclude)
 
     # ----- Stitch histograms together ----- #
     sample_histogram.Stitch()
@@ -395,7 +392,7 @@ if __name__ == "__main__":
 
     sample_histogram.Write(filename)
     sample_histogram.SetPlottingStyle()
-    #sample_histogram.DebugPlots()
+    sample_histogram.DebugPlots()
     
     invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
     nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
