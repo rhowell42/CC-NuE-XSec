@@ -90,51 +90,51 @@ if __name__ == "__main__":
     rhc_scale_p1sig = rhc_scale_p1sig/rhc_scale_CV
     rhc_scale_m1sig = rhc_scale_m1sig/rhc_scale_CV
 
-    type_path_map = {'data':'/exp/minerva/data/users/rhowell/nu_e/kin_dist_dataFHC_Selection_100Univ_thesis_MAD.root','mc':'/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Selection_100Univ_thesis_MAD.root'}
-    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection_100Univ",type_path_map,"MAD",True)
+    type_path_map = {'data':'/exp/minerva/data/users/rhowell/nu_e/kin_dist_dataFHC_Selection_paper_MAD.root','mc':'/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Selection_paper_MAD.root'}
+    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection",type_path_map,"MAD",True)
     standPOT = data_pot if data_pot is not None else mc_pot 
-    fhc_nue_selection_mc = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/bkgfit_FHC_Selection_100Univ_N4_tune_thesis_MAD.root")
+    fhc_nue_selection_mc = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/bkgfit_FHC_Selection_N4_tune_paper_MAD.root")
     fhc_nue_selection_mcHold = HistHolder("Predicted MC",fhc_nue_selection_mc,"Signal",True,mc_pot,standPOT)
-    h_fhc_nue_selection_data = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/bkgfit_FHC_Selection_100Univ_N4_tune_thesis_MAD.root").Get("EN4_data_bkgSubbed")
-    fhc_sel = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Selection_100Univ_Genie_thesis_MAD.root")
+    h_fhc_nue_selection_data = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/bkgfit_FHC_Selection_N4_tune_paper_MAD.root").Get("EN4_data_bkgSubbed")
+    fhc_sel = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Selection_Genie_paper_MAD.root")
     fhc_sel_template = HistHolder("Reco Energy vs L/E",fhc_sel,"Signal",True,mc_pot,standPOT)
 
 
-    type_path_map = {'mc':'/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_100Univ_thesis_swap_MAD.root'}
-    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection_100Univ",type_path_map,"MAD",True)
+    type_path_map = {'mc':'/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_paper_MAD.root'}
+    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection",type_path_map,"MAD",True)
     print("fhc_swap: ",mc_pot,data_pot)
-    fhc_sel_swap = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_100Univ_thesis_swap_MAD.root")
+    fhc_sel_swap = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_paper_MAD.root")
     fhc_swap_sel_template = HistHolder("Reco Energy vs L/E",fhc_sel_swap,"Signal",True,mc_pot,standPOT)
     fhc_swap_selection_mc = HistHolder("Biased Neutrino Energy",fhc_sel_swap,"Signal",True,mc_pot,standPOT)
     
-    type_path_map = {'data':'/exp/minerva/data/users/rhowell/antinu_e/kin_dist_dataRHC_Selection_1000Univ_thesis_MAD.root','mc':'/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Selection_1000Univ_thesis_MAD.root'}
-    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("RHC_Selection_1000Univ",type_path_map,"MAD",True)
+    type_path_map = {'data':'/exp/minerva/data/users/rhowell/antinu_e/kin_dist_dataRHC_Selection_paper_MAD.root','mc':'/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Selection_paper_MAD.root'}
+    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("RHC_Selection",type_path_map,"MAD",True)
     standPOT = data_pot if data_pot is not None else mc_pot 
-    rhc_nue_selection_mc = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/bkgfit_RHC_Selection_1000Univ_N4_tune_thesis_MAD.root")
+    rhc_nue_selection_mc = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/bkgfit_RHC_Selection_N4_tune_paper_MAD.root")
     rhc_nue_selection_mcHold = HistHolder("Predicted MC",rhc_nue_selection_mc,"Signal",True,mc_pot,standPOT)
-    h_rhc_nue_selection_data = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/bkgfit_RHC_Selection_1000Univ_N4_tune_thesis_MAD.root").Get("EN4_data_bkgSubbed")
-    rhc_sel = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Selection_Genie_thesis_MAD.root")
+    h_rhc_nue_selection_data = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/bkgfit_RHC_Selection_N4_tune_paper_MAD.root").Get("EN4_data_bkgSubbed")
+    rhc_sel = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Selection_Genie_paper_MAD.root")
     rhc_sel_template = HistHolder("Reco Energy vs L/E",rhc_sel,"Signal",True,mc_pot,standPOT)
 
-    type_path_map = {'mc':'/exp/minerva/data/users/rhowell/antinu_e_swap/kin_dist_mcRHC_Selection_1000Univ_thesis_swap_MAD.root'}
-    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("RHC_Selection_1000Univ",type_path_map,"MAD",True)
+    type_path_map = {'mc':'/exp/minerva/data/users/rhowell/antinu_e_swap/kin_dist_mcRHC_Selection_paper_MAD.root'}
+    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("RHC_Selection",type_path_map,"MAD",True)
     print("rhc_swap: ",mc_pot,data_pot)
-    rhc_sel_swap = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e_swap/kin_dist_mcRHC_Selection_1000Univ_thesis_swap_MAD.root")
+    rhc_sel_swap = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e_swap/kin_dist_mcRHC_Selection_paper_MAD.root")
     rhc_swap_sel_template = HistHolder("Reco Energy vs L/E",rhc_sel_swap,"Signal",True,mc_pot,standPOT)
     rhc_swap_selection_mc = HistHolder("Biased Neutrino Energy",rhc_sel_swap,"Signal",True,mc_pot,standPOT)
 
     ### NuMu Selection ###
     cates = ["CCQE","CCDelta","CCDIS","CC2p2h","CCOther","CCWrongSign"]
 
-    type_path_map = {'data':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_dataFHC_Selection_100Univ_thesis_muon_MAD.root','mc':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_mcFHC_Selection_100Univ_thesis_muon_MAD.root'}
-    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection_100Univ",type_path_map,"MAD",True)
+    type_path_map = {'data':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_dataFHC_Selection_paper_muon_MAD.root','mc':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_mcFHC_Selection_paper_muon_MAD.root'}
+    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection",type_path_map,"MAD",True)
     standPOT = data_pot if data_pot is not None else mc_pot 
     fhc_numu_selection_mcHold = HistHolder("Biased Neutrino Energy",mc_file,"Signal",True,mc_pot,standPOT)
     fhc_numu_selection_dataHold = HistHolder("Biased Neutrino Energy",data_file,"Signal",False,data_pot,standPOT)
     fhc_musel_template = HistHolder("Reco Energy vs L/E",mc_file,"Signal",True,mc_pot,standPOT)
 
-    type_path_map = {'data':'/exp/minerva/data/users/rhowell/antinu_mu/kin_dist_dataRHC_Selection_1000Univ_thesis_muon_MAD.root','mc':'/exp/minerva/data/users/rhowell/antinu_mu/kin_dist_mcRHC_Selection_1000Univ_thesis_muon_MAD.root'}
-    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("RHC_Selection_1000Univ",type_path_map,"MAD",True)
+    type_path_map = {'data':'/exp/minerva/data/users/rhowell/antinu_mu/kin_dist_dataRHC_Selection_paper_muon_MAD.root','mc':'/exp/minerva/data/users/rhowell/antinu_mu/kin_dist_mcRHC_Selection_paper_muon_MAD.root'}
+    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("RHC_Selection",type_path_map,"MAD",True)
     standPOT = data_pot if data_pot is not None else mc_pot 
     rhc_numu_selection_mcHold = HistHolder("Biased Neutrino Energy",mc_file,"Signal",True,mc_pot,standPOT)
     rhc_numu_selection_dataHold = HistHolder("Biased Neutrino Energy",data_file,"Signal",False,data_pot,standPOT)
