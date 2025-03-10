@@ -152,9 +152,6 @@ if __name__ == "__main__":
 
     OscillateHistogram(sample_histogram, n4['m'], n4['ue4'], n4['umu4'], n4['utau4'])
 
-    #CompareResults(sample_histogram)
-    #exit()
-
     invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
     nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
 

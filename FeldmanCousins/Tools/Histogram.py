@@ -153,7 +153,6 @@ class StitchedHistogram:
 
             cv = np.array(self.mc_hist)[1:-1]
             self.A = self.mc_flux_universes - np.array([cv for i in range(nhists)])
-            np.savetxt("1000Univ_AMatrix.csv",self.A,delimiter=',')
 
     def SetCovarianceMatrices(self):
         if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist) and type(self.mc_hist) == PlotUtils.MnvH1D:
@@ -449,6 +448,7 @@ class StitchedHistogram:
 
         # ----- Do some errorband cleaning ----- #
         if not self.is_processed:
+            print("getting here?")
             self.SeparateBeamAngle() # make beam angle systematics consistent across samples
             self.LateralToVertical() # convert lateral errorbands (deprecated) from old samples to vertical
             self.SyncErrorBands()  # make sure all samples have the same errorbands, reduce flux universes to 100
@@ -521,7 +521,6 @@ class StitchedHistogram:
             self.swap_templates[h].Write()
 
         f.Close()
-        self.SetAMatrix()
 
     def Load(self,filename):
         f = ROOT.TFile.Open(filename)
@@ -551,6 +550,9 @@ class StitchedHistogram:
         for h in self.keys:
             self.data_hists[h] = f.Get("data_"+h)
             self.mc_hists[h] = f.Get("mc_"+h)
+            if type(self.data_hists[h]) != PlotUtils.MnvH1D:
+                del self.data_hists[h]
+                del self.mc_hists[h]
 
             self.nue_hists[h] = f.Get("nue_"+h)
             self.numu_hists[h] = f.Get("numu_"+h)
@@ -561,12 +563,12 @@ class StitchedHistogram:
 
         f.Close()
 
-        print(self.data_hists)
+        #print(self.data_hists)
 
-        self.SyncErrorBands()
+        #self.SyncErrorBands()
         self.SetCovarianceMatrices()
 
-        self.SetPlottingStyle()
+        #self.SetPlottingStyle()
 
     def SetPlottingStyle(self):
         MNVPLOTTER = PlotUtils.MnvPlotter()
@@ -731,6 +733,7 @@ class StitchedHistogram:
         for h in self.mc_hists:
             h_mc = self.mc_hists[h]
             h_data = self.data_hists[h]
+
             for i in range(1,h_mc.GetNbinsX()+1):
                 if h_mc.GetBinContent(i) <= minBinCont:
                     continue # skip empty MC bins
@@ -855,15 +858,15 @@ class StitchedHistogram:
                             self.numu_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
                             self.swap_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
 
-                self.LongFlux(self.mc_hists[h1])
-                self.LongFlux(self.data_hists[h1])
+                self.ShortFlux(self.mc_hists[h1])
+                self.ShortFlux(self.data_hists[h1])
                 if not self.dirty:
-                    self.LongFlux(self.nue_hists[h1])
-                    self.LongFlux(self.numu_hists[h1])
-                    self.LongFlux(self.swap_hists[h1])
+                    self.ShortFlux(self.nue_hists[h1])
+                    self.ShortFlux(self.numu_hists[h1])
+                    self.ShortFlux(self.swap_hists[h1])
 
         for h in self.mc_hists:
-            self.LongFlux(self.mc_hists[h])
+            self.ShortFlux(self.mc_hists[h])
 
         if type(self.mc_hist) == PlotUtils.MnvH1D:
             if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist):
@@ -880,21 +883,6 @@ class StitchedHistogram:
         if h.GetVertErrorBand(name).GetNHists() > 100:
             h_hists = h.GetVertErrorBand(name).GetHists()
             h_hists = [h_hists[i] for i in range(100)]
-            useSpread = h.GetVertErrorBand(name).GetUseSpreadError()
-            errband = h.GetVertErrorBand(name)
-            h.PopVertErrorBand(name)
-            h.AddVertErrorBand(name,h_hists)
-            h.GetVertErrorBand(name).SetUseSpreadError(useSpread)
-            for i in range(h.GetNbinsX()+1):
-                h.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
-                
-    def LongFlux(self,h):
-        name = "Flux"
-        cv = h.GetCVHistoWithStatError()
-        if h.GetVertErrorBand(name).GetNHists() < 1000:
-            h_hists = h.GetVertErrorBand(name).GetHists()
-            h_hists = [h_hists[i] for i in range(100)]
-            h_hists.extend([cv for i in range(900)])
             useSpread = h.GetVertErrorBand(name).GetUseSpreadError()
             errband = h.GetVertErrorBand(name)
             h.PopVertErrorBand(name)
@@ -919,7 +907,7 @@ class StitchedHistogram:
             weights = np.loadtxt(name)
             cv = np.array(hist.GetCVHistoWithError())[1:-1]
             summed_dev = np.zeros(cv.shape)
-            for i in range(0,1000):
+            for i in range(0,100):
                 weight = weights[i]
                 flux_univ = np.array(hist.GetVertErrorBand("Flux").GetHist(i))[1:-1]
                 dev = flux_univ - cv

@@ -58,6 +58,11 @@ if __name__ == "__main__":
                         default = False,
                         action = "store_true",
     )
+    parser.add_argument("--fit_muons",
+                        dest ="fit_muons",
+                        default = False,
+                        action = "store_true",
+    )
 
     args = parser.parse_args()
     binwidthScale = args.binwidth
@@ -65,6 +70,7 @@ if __name__ == "__main__":
     exclude = str(args.exclude).lower()
     doratio = args.ratio
     thesis_plots = args.thesis_plots
+    fit_muons = args.fit_muons
     if thesis_plots:
         binwidthScale = True
     if doratio:
@@ -73,62 +79,62 @@ if __name__ == "__main__":
     else:
         ftag = "stitched"
 
-    #fhc_scale_CV = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Electron_Scale_electron_scale_MAD.root").Get("EN4")
-    #fhc_scale_p1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_p1sig")
-    #fhc_scale_m1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_m1sig")
-    #fhc_scale_p1sig = fhc_scale_p1sig/fhc_scale_CV
-    #fhc_scale_m1sig = fhc_scale_m1sig/fhc_scale_CV
-    #rhc_scale_CV = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Electron_Scale_electron_scale_MAD.root").Get("EN4")
-    #rhc_scale_p1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_p1sig")
-    #rhc_scale_m1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_m1sig")
-    #rhc_scale_p1sig = rhc_scale_p1sig/rhc_scale_CV
-    #rhc_scale_m1sig = rhc_scale_m1sig/rhc_scale_CV
+    fhc_scale_CV = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Electron_Scale_electron_scale_MAD.root").Get("EN4")
+    fhc_scale_p1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_p1sig")
+    fhc_scale_m1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_m1sig")
+    fhc_scale_p1sig = fhc_scale_p1sig/fhc_scale_CV
+    fhc_scale_m1sig = fhc_scale_m1sig/fhc_scale_CV
+    rhc_scale_CV = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Electron_Scale_electron_scale_MAD.root").Get("EN4")
+    rhc_scale_p1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_p1sig")
+    rhc_scale_m1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_m1sig")
+    rhc_scale_p1sig = rhc_scale_p1sig/rhc_scale_CV
+    rhc_scale_m1sig = rhc_scale_m1sig/rhc_scale_CV
 
-    type_path_map = {'data':'/exp/minerva/data/users/rhowell/nu_e/kin_dist_dataFHC_Selection_paper_MAD.root','mc':'/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Selection_paper_MAD.root'}
-    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection",type_path_map,"MAD",True)
+    type_path_map = {'data':'/exp/minerva/data/users/rhowell/nu_e/kin_dist_dataFHC_Selection_100Univ_thesis_MAD.root','mc':'/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Selection_100Univ_thesis_MAD.root'}
+    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection_100Univ",type_path_map,"MAD",True)
     standPOT = data_pot if data_pot is not None else mc_pot 
-    fhc_nue_selection_mc = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/bkgfit_FHC_Selection_N4_tune_paper_MAD.root")
+    fhc_nue_selection_mc = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/bkgfit_FHC_Selection_100Univ_N4_tune_thesis_MAD.root")
     fhc_nue_selection_mcHold = HistHolder("Predicted MC",fhc_nue_selection_mc,"Signal",True,mc_pot,standPOT)
-    h_fhc_nue_selection_data = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/bkgfit_FHC_Selection_N4_tune_paper_MAD.root").Get("EN4_data_bkgSubbed")
-    fhc_sel = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Selection_Genie_paper_MAD.root")
+    h_fhc_nue_selection_data = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/bkgfit_FHC_Selection_100Univ_N4_tune_thesis_MAD.root").Get("EN4_data_bkgSubbed")
+    fhc_sel = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Selection_100Univ_Genie_thesis_MAD.root")
     fhc_sel_template = HistHolder("Reco Energy vs L/E",fhc_sel,"Signal",True,mc_pot,standPOT)
 
 
-    type_path_map = {'mc':'/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_paper_MAD.root'}
-    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection",type_path_map,"MAD",True)
+    type_path_map = {'mc':'/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_100Univ_thesis_swap_MAD.root'}
+    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection_100Univ",type_path_map,"MAD",True)
     print("fhc_swap: ",mc_pot,data_pot)
-    fhc_sel_swap = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_paper_MAD.root")
+    fhc_sel_swap = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_100Univ_thesis_swap_MAD.root")
     fhc_swap_sel_template = HistHolder("Reco Energy vs L/E",fhc_sel_swap,"Signal",True,mc_pot,standPOT)
     fhc_swap_selection_mc = HistHolder("Biased Neutrino Energy",fhc_sel_swap,"Signal",True,mc_pot,standPOT)
     
-    type_path_map = {'data':'/exp/minerva/data/users/rhowell/antinu_e/kin_dist_dataRHC_Selection_paper_MAD.root','mc':'/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Selection_paper_MAD.root'}
-    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("RHC_Selection",type_path_map,"MAD",True)
+    type_path_map = {'data':'/exp/minerva/data/users/rhowell/antinu_e/kin_dist_dataRHC_Selection_1000Univ_thesis_MAD.root','mc':'/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Selection_1000Univ_thesis_MAD.root'}
+    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("RHC_Selection_1000Univ",type_path_map,"MAD",True)
     standPOT = data_pot if data_pot is not None else mc_pot 
-    rhc_nue_selection_mc = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/bkgfit_RHC_Selection_N4_tune_paper_MAD.root")
+    rhc_nue_selection_mc = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/bkgfit_RHC_Selection_1000Univ_N4_tune_thesis_MAD.root")
     rhc_nue_selection_mcHold = HistHolder("Predicted MC",rhc_nue_selection_mc,"Signal",True,mc_pot,standPOT)
-    h_rhc_nue_selection_data = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/bkgfit_RHC_Selection_N4_tune_paper_MAD.root").Get("EN4_data_bkgSubbed")
-    rhc_sel = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Selection_Genie_paper_MAD.root")
+    h_rhc_nue_selection_data = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/bkgfit_RHC_Selection_1000Univ_N4_tune_thesis_MAD.root").Get("EN4_data_bkgSubbed")
+    rhc_sel = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Selection_Genie_thesis_MAD.root")
     rhc_sel_template = HistHolder("Reco Energy vs L/E",rhc_sel,"Signal",True,mc_pot,standPOT)
 
-    type_path_map = {'mc':'/exp/minerva/data/users/rhowell/antinu_e_swap/kin_dist_mcRHC_Selection_paper_MAD.root'}
-    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("RHC_Selection",type_path_map,"MAD",True)
+    type_path_map = {'mc':'/exp/minerva/data/users/rhowell/antinu_e_swap/kin_dist_mcRHC_Selection_1000Univ_thesis_swap_MAD.root'}
+    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("RHC_Selection_1000Univ",type_path_map,"MAD",True)
     print("rhc_swap: ",mc_pot,data_pot)
-    rhc_sel_swap = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e_swap/kin_dist_mcRHC_Selection_paper_MAD.root")
+    rhc_sel_swap = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e_swap/kin_dist_mcRHC_Selection_1000Univ_thesis_swap_MAD.root")
     rhc_swap_sel_template = HistHolder("Reco Energy vs L/E",rhc_sel_swap,"Signal",True,mc_pot,standPOT)
     rhc_swap_selection_mc = HistHolder("Biased Neutrino Energy",rhc_sel_swap,"Signal",True,mc_pot,standPOT)
 
     ### NuMu Selection ###
-    cates = ["CCNuMuQE","CCNuMuDelta","CCNuMuDIS","CCNuMu2p2h","CCNuMuOther","CCNuMuWrongSign"]
+    cates = ["CCQE","CCDelta","CCDIS","CC2p2h","CCOther","CCWrongSign"]
 
-    type_path_map = {'data':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_dataFHC_Selection_paper_muon_MAD.root','mc':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_mcFHC_Selection_paper_muon_MAD.root'}
-    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection",type_path_map,"MAD",True)
+    type_path_map = {'data':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_dataFHC_Selection_100Univ_thesis_muon_MAD.root','mc':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_mcFHC_Selection_100Univ_thesis_muon_MAD.root'}
+    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection_100Univ",type_path_map,"MAD",True)
     standPOT = data_pot if data_pot is not None else mc_pot 
     fhc_numu_selection_mcHold = HistHolder("Biased Neutrino Energy",mc_file,"Signal",True,mc_pot,standPOT)
     fhc_numu_selection_dataHold = HistHolder("Biased Neutrino Energy",data_file,"Signal",False,data_pot,standPOT)
     fhc_musel_template = HistHolder("Reco Energy vs L/E",mc_file,"Signal",True,mc_pot,standPOT)
 
-    type_path_map = {'data':'/exp/minerva/data/users/rhowell/antinu_mu/kin_dist_dataRHC_Selection_paper_muon_MAD.root','mc':'/exp/minerva/data/users/rhowell/antinu_mu/kin_dist_mcRHC_Selection_paper_muon_MAD.root'}
-    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("RHC_Selection",type_path_map,"MAD",True)
+    type_path_map = {'data':'/exp/minerva/data/users/rhowell/antinu_mu/kin_dist_dataRHC_Selection_1000Univ_thesis_muon_MAD.root','mc':'/exp/minerva/data/users/rhowell/antinu_mu/kin_dist_mcRHC_Selection_1000Univ_thesis_muon_MAD.root'}
+    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("RHC_Selection_1000Univ",type_path_map,"MAD",True)
     standPOT = data_pot if data_pot is not None else mc_pot 
     rhc_numu_selection_mcHold = HistHolder("Biased Neutrino Energy",mc_file,"Signal",True,mc_pot,standPOT)
     rhc_numu_selection_dataHold = HistHolder("Biased Neutrino Energy",data_file,"Signal",False,data_pot,standPOT)
@@ -150,13 +156,12 @@ if __name__ == "__main__":
     h_fhc_swap_selection = fhc_swap_selection_mc.hists["Total"].Clone("sigTotal") 
     h_rhc_swap_selection = rhc_swap_selection_mc.hists["Total"].Clone("sigTotal") 
 
+    h_fhc_numu_selection_mc = fhc_numu_selection_mcHold.GetHist()
+    h_rhc_numu_selection_mc = rhc_numu_selection_mcHold.GetHist()
     h_fhc_numu_selection_data = fhc_numu_selection_dataHold.GetHist()
     h_rhc_numu_selection_data = rhc_numu_selection_dataHold.GetHist()
-
-    h2_fhc_musel_template = fhc_musel_template.hists["Total"].Clone("sigTotal")
-    h2_rhc_musel_template = rhc_musel_template.hists["Total"].Clone("sigTotal")
-    h2_fhc_musel_template.Add(fhc_musel_template.hists["NonPhaseSpace"],-1)
-    h2_rhc_musel_template.Add(rhc_musel_template.hists["NonPhaseSpace"],-1)
+    h2_fhc_musel_template = fhc_musel_template.GetHist()
+    h2_rhc_musel_template = rhc_musel_template.GetHist()
 
     h2_fhc_template = fhc_sel_template.hists["Total"].Clone("sigTotal")
     h2_rhc_template = rhc_sel_template.hists["Total"].Clone("sigTotal")
@@ -170,12 +175,6 @@ if __name__ == "__main__":
     fhc_swap_selection_mc.POTScale(binwidthScale)
     rhc_swap_selection_mc.POTScale(binwidthScale)
 
-    h_fhc_numu_selection_mc = fhc_numu_selection_mcHold.hists["Total"].Clone("sigTotal")
-    h_rhc_numu_selection_mc = rhc_numu_selection_mcHold.hists["Total"].Clone("sigTotal")
-
-    h_fhc_numu_selection_mc.Add(fhc_numu_selection_mcHold.hists["NonPhaseSpace"],-1)
-    h_rhc_numu_selection_mc.Add(rhc_numu_selection_mcHold.hists["NonPhaseSpace"],-1)
-
     h_fhc_swap_selection.Reset()
     h_rhc_swap_selection.Reset()
 
@@ -183,6 +182,11 @@ if __name__ == "__main__":
     h2_rhc_template.Reset()
     h2_fhc_swap_template.Reset()
     h2_rhc_swap_template.Reset()
+
+    h_fhc_numu_selection_mc.Reset()
+    h_rhc_numu_selection_mc.Reset()
+    h2_fhc_musel_template.Reset()
+    h2_rhc_musel_template.Reset()
 
     for group in fhc_sel_template.hists:
         if group == "Total":
@@ -214,34 +218,48 @@ if __name__ == "__main__":
                 h_rhc_swap_selection.Add(rhc_swap_selection_mc.hists[group])
                 h2_rhc_swap_template.Add(rhc_swap_sel_template.hists[group])
 
+    for group in fhc_numu_selection_mcHold.hists:
+        if group == "Total":
+            continue
+        elif group in cates:
+            h_fhc_numu_selection_mc.Add(fhc_numu_selection_mcHold.hists[group])
+            h2_fhc_musel_template.Add(fhc_musel_template.hists[group])
+
+    for group in fhc_numu_selection_mcHold.hists:
+        if group == "Total":
+            continue
+        elif group in cates:
+            h_rhc_numu_selection_mc.Add(rhc_numu_selection_mcHold.hists[group])
+            h2_rhc_musel_template.Add(rhc_musel_template.hists[group])
+
     h_fhc_nue_selection_mc = fhc_nue_selection_mcHold.GetHist()
     h_rhc_nue_selection_mc = rhc_nue_selection_mcHold.GetHist()
     
-    #h_fhc_nue_selection_mc.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
-    #h_fhc_swap_selection.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
-    #sys_p = h_fhc_nue_selection_mc.GetCVHistoWithError() * fhc_scale_p1sig
-    #sys_m = h_fhc_nue_selection_mc.GetCVHistoWithError() * fhc_scale_m1sig
-    #swap_p = h_fhc_swap_selection.GetCVHistoWithError() * fhc_scale_p1sig
-    #swap_m = h_fhc_swap_selection.GetCVHistoWithError() * fhc_scale_m1sig
-    #for i in range(h_fhc_nue_selection_mc.GetNbinsX()+1):
-    #    h_fhc_nue_selection_mc.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,sys_p.GetBinContent(i))
-    #    h_fhc_nue_selection_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,sys_m.GetBinContent(i))
+    h_fhc_nue_selection_mc.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
+    h_fhc_swap_selection.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
+    sys_p = h_fhc_nue_selection_mc.GetCVHistoWithError() * fhc_scale_p1sig
+    sys_m = h_fhc_nue_selection_mc.GetCVHistoWithError() * fhc_scale_m1sig
+    swap_p = h_fhc_swap_selection.GetCVHistoWithError() * fhc_scale_p1sig
+    swap_m = h_fhc_swap_selection.GetCVHistoWithError() * fhc_scale_m1sig
+    for i in range(h_fhc_nue_selection_mc.GetNbinsX()+1):
+        h_fhc_nue_selection_mc.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,sys_p.GetBinContent(i))
+        h_fhc_nue_selection_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,sys_m.GetBinContent(i))
 
-    #    h_fhc_swap_selection.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,swap_p.GetBinContent(i))
-    #    h_fhc_swap_selection.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,swap_m.GetBinContent(i))
+        h_fhc_swap_selection.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,swap_p.GetBinContent(i))
+        h_fhc_swap_selection.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,swap_m.GetBinContent(i))
 
-    #h_rhc_nue_selection_mc.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
-    #h_rhc_swap_selection.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
-    #sys_p = h_rhc_nue_selection_mc.GetCVHistoWithError() * rhc_scale_p1sig
-    #sys_m = h_rhc_nue_selection_mc.GetCVHistoWithError() * rhc_scale_m1sig
-    #swap_p = h_rhc_swap_selection.GetCVHistoWithError() * rhc_scale_p1sig
-    #swap_m = h_rhc_swap_selection.GetCVHistoWithError() * rhc_scale_m1sig
-    #for i in range(h_rhc_nue_selection_mc.GetNbinsX()+1):
-    #    h_rhc_nue_selection_mc.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,sys_p.GetBinContent(i))
-    #    h_rhc_nue_selection_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,sys_m.GetBinContent(i))
+    h_rhc_nue_selection_mc.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
+    h_rhc_swap_selection.AddVertErrorBandAndFillWithCV("ElectronScale", 2)
+    sys_p = h_rhc_nue_selection_mc.GetCVHistoWithError() * rhc_scale_p1sig
+    sys_m = h_rhc_nue_selection_mc.GetCVHistoWithError() * rhc_scale_m1sig
+    swap_p = h_rhc_swap_selection.GetCVHistoWithError() * rhc_scale_p1sig
+    swap_m = h_rhc_swap_selection.GetCVHistoWithError() * rhc_scale_m1sig
+    for i in range(h_rhc_nue_selection_mc.GetNbinsX()+1):
+        h_rhc_nue_selection_mc.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,sys_p.GetBinContent(i))
+        h_rhc_nue_selection_mc.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,sys_m.GetBinContent(i))
 
-    #    h_rhc_swap_selection.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,swap_p.GetBinContent(i))
-    #    h_rhc_swap_selection.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,swap_m.GetBinContent(i))
+        h_rhc_swap_selection.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,swap_p.GetBinContent(i))
+        h_rhc_swap_selection.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,swap_m.GetBinContent(i))
 
     #get FHC electron energy hist
     h_fhc_elastic_mc = ROOT.TFile('/exp/minerva/data/users/rhowell/nueel/DeepikaMc_LauraData_Mnv.root').Get('mnv_eff_cor_mc')
@@ -374,7 +392,7 @@ if __name__ == "__main__":
 
     sample_histogram.Write(filename)
     sample_histogram.SetPlottingStyle()
-    sample_histogram.DebugPlots()
+    #sample_histogram.DebugPlots()
     
     invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
     nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)

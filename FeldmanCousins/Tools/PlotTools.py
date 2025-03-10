@@ -718,11 +718,11 @@ def PlotOscillationEffects(sample_histogram,parameters,name="",plotSamples=False
     nullSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo)
     plots.append("fhc_ratio")
     plots.append("rhc_ratio")
-    histogram.titles.append("FHC CC #nu_{#mu}/#nu_{e} Ratio")
-    histogram.titles.append("RHC CC anti #nu_{#mu}/#nu_{e} Ratio")
+    histogram.titles["fhc_ratio"] = "FHC CC #nu_{#mu}/#nu_{e} Ratio"
+    histogram.titles["rhc_ratio"] = "RHC CC anti #nu_{#mu}/#nu_{e} Ratio"
 
     for i,plot in enumerate(plots):
-        title = histogram.titles[i]
+        title = histogram.titles[plot]
         margin = .12
         bottomFraction = .2
         overall = ROOT.TCanvas(plot)

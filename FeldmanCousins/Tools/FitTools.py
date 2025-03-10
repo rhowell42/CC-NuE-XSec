@@ -329,15 +329,19 @@ def OscillateSubHistogram(histogram,name,m,U_e4,U_mu4,U_tau4):
     # elastic_id is 1 only for the nueel samples
     # ratio_id is 1 only for the ratio samples
     # if 0 is False, if 1 is True
-    hist_nueTemp = histogram.samples_nue_templates[name]
-    hist_numuTemp = histogram.samples_numu_templates[name]
-    hist_swapTemp = histogram.samples_swap_templates[name]
+    hist_nueTemp = histogram.nue_templates[name]
+    hist_numuTemp = histogram.numu_templates[name]
+    hist_swapTemp = histogram.swap_templates[name]
 
-    hist_nue_energy = histogram.samples_nue[name].Clone()
-    hist_numu_energy = histogram.samples_numu[name].Clone()
-    hist_swap_energy = histogram.samples_swap[name].Clone()
+    print(histogram.nue_hists)
+    print(histogram.numu_hists)
+    exit()
 
-    hist = histogram.samples_nue[name].Clone()
+    hist_nue_energy = histogram.nue_hists[name].Clone()
+    hist_numu_energy = histogram.numu_hists[name].Clone()
+    hist_swap_energy = histogram.swap_hists[name].Clone()
+
+    hist = histogram.nue_hists[name].Clone()
 
     nue_weights = hist.GetCVHistoWithStatError().Clone()
     numu_weights = hist.GetCVHistoWithStatError().Clone()
