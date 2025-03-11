@@ -12,7 +12,7 @@ from array import array
 #os.environ["OMP_NUM_THREADS"] = "1"
 #os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 import numpy as np
-from scipy import optimize,linalg
+from scipy import optimize
 
 ccnueroot = os.environ.get('CCNUEROOT')
 
@@ -300,9 +300,8 @@ def Chi2DataMC(histogram,marginalize=False,fluxSolution=None,useOsc=False,usePse
 
         h_test = dataHist.Clone()
         h_test.Add(mcHist,-1)
-        invCov = TMatrix_to_Numpy(h_test.GetTotalErrorMatrix(includeStatError,errorAsFraction,useOnlyShapeErrors))[1:-1,1:-1]
-        print("Should never get here")
-        invCov = np.linalg.inv(invCov)
+        toInvCov = TMatrix_to_Numpy(h_test.GetTotalErrorMatrix(includeStatError,errorAsFraction,useOnlyShapeErrors))[1:-1,1:-1]
+        invCov = np.linalg.inv(toInvCov)
 
     # ----- Calculate chi2 value ----= #
     diff = data - mc
@@ -332,10 +331,6 @@ def OscillateSubHistogram(histogram,name,m,U_e4,U_mu4,U_tau4):
     hist_nueTemp = histogram.nue_templates[name]
     hist_numuTemp = histogram.numu_templates[name]
     hist_swapTemp = histogram.swap_templates[name]
-
-    print(histogram.nue_hists)
-    print(histogram.numu_hists)
-    exit()
 
     hist_nue_energy = histogram.nue_hists[name].Clone()
     hist_numu_energy = histogram.numu_hists[name].Clone()
@@ -410,7 +405,7 @@ def OscillateSubHistogram(histogram,name,m,U_e4,U_mu4,U_tau4):
     numu.SetLineWidth(0)
     numunue.SetLineWidth(0)
     nutau.SetLineWidth(0)
-    histogram.data_samples[name].SetLineWidth(1)
+    histogram.data_hists[name].SetLineWidth(1)
 
     nue.SetFillStyle(3244)
     numu.SetFillStyle(3744)
@@ -422,7 +417,7 @@ def OscillateSubHistogram(histogram,name,m,U_e4,U_mu4,U_tau4):
     numu.SetTitle("#nu_{#mu}")
     numunue.SetTitle("#nu_{#mu}#rightarrow #nu_{e}")
     nutau.SetTitle("#nu_{#tau}")
-    histogram.data_samples[name].SetTitle("Oscillated {}".format(name))
+    histogram.data_hists[name].SetTitle("Oscillated {}".format(name))
 
     if 'elastic' in name:
         oscHists.append(nue)

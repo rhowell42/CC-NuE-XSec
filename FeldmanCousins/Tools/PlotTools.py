@@ -68,14 +68,14 @@ def PlotSampleMarginalizationEffects(sample_histogram):
     chi2s = []
     pens = []
 
-    subSample = histogram.mc_samples["fhc_elastic"].Clone()
+    subSample = histogram.mc_hists["fhc_elastic"].Clone()
     band = subSample.GetVertErrorBand("Flux")
     nhists = band.GetNHists()
     universes = np.array([np.array(band.GetHist(l))[1:-1] for l in range(nhists)])
     fhc_integrals = universes.sum(axis=1)
     old_fhc = subSample.Integral()
 
-    subSample = histogram.mc_samples["rhc_elastic"].Clone()
+    subSample = histogram.mc_hists["rhc_elastic"].Clone()
     band = subSample.GetVertErrorBand("Flux")
     nhists = band.GetNHists()
     universes = np.array([np.array(band.GetHist(l))[1:-1] for l in range(nhists)])
@@ -136,15 +136,15 @@ def PlotSampleMarginalizationEffects(sample_histogram):
                 if sample in key:
                     if 'ratio' in sample:
                         for beam in ['fhc','rhc']:
-                            h_mc_numu = histogram.mc_samples[beam+"_numu_selection"].Clone()
-                            h_data_numu = histogram.data_samples[beam+"_numu_selection"].Clone()
-                            h_mc_nue = histogram.mc_samples[beam+"_nue_selection"].Clone()
-                            h_data_nue = histogram.data_samples[beam+"_nue_selection"].Clone()
+                            h_mc_numu = histogram.mc_hists[beam+"_numu_selection"].Clone()
+                            h_data_numu = histogram.data_hists[beam+"_numu_selection"].Clone()
+                            h_mc_nue = histogram.mc_hists[beam+"_nue_selection"].Clone()
+                            h_data_nue = histogram.data_hists[beam+"_nue_selection"].Clone()
                             h_mc_numu.Divide(h_mc_numu,h_mc_nue)
                             h_data_numu.Divide(h_data_numu,h_data_nue)
                             new_histogram.AddHistograms(beam+"_ratio",h_mc_numu.Clone(),h_data_numu.Clone())
                     else:
-                        new_histogram.AddHistograms(key,histogram.mc_samples[key].Clone(),histogram.data_samples[key].Clone())
+                        new_histogram.AddHistograms(key,histogram.mc_hists[key].Clone(),histogram.data_hists[key].Clone())
 
         new_histogram.Stitch()
         invCov=new_histogram.GetInverseCovarianceMatrix(sansFlux=True)
@@ -159,11 +159,11 @@ def PlotSampleMarginalizationEffects(sample_histogram):
         chi2s.append(chi2)
         pens.append(penalty)
 
-        subSample = histogram.mc_samples["fhc_elastic"].Clone()
+        subSample = histogram.mc_hists["fhc_elastic"].Clone()
         weights = ReweightCV(subSample,fluxSolution=fluxSolution)
         new_fhc = subSample.Integral()
 
-        subSample = histogram.mc_samples["rhc_elastic"].Clone()
+        subSample = histogram.mc_hists["rhc_elastic"].Clone()
         weights = ReweightCV(subSample,fluxSolution=fluxSolution)
         new_rhc = subSample.Integral()
 
@@ -762,14 +762,14 @@ def PlotOscillationEffects(sample_histogram,parameters,name="",plotSamples=False
                     hists.append(norm_fraction)
                     hists.append(swap_fraction)
 
-            h_data = histogram.data_samples[plot[:3]+'_numu_selection'].Clone()
-            h_data.Divide(h_data,histogram.data_samples[plot[:3]+'_nue_selection'])
-            subSample = histogram.mc_samples[plot[:3]+'_numu_selection'].Clone()
-            subSample.Divide(subSample,histogram.mc_samples[plot[:3]+'_nue_selection'])
+            h_data = histogram.data_hists[plot[:3]+'_numu_selection'].Clone()
+            h_data.Divide(h_data,histogram.data_hists[plot[:3]+'_nue_selection'])
+            subSample = histogram.mc_hists[plot[:3]+'_numu_selection'].Clone()
+            subSample.Divide(subSample,histogram.mc_hists[plot[:3]+'_nue_selection'])
         else:
             hists,total_hist = OscillateSubHistogram(histogram,plot,parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
-            h_data = histogram.data_samples[plot].Clone()
-            subSample = histogram.mc_samples[plot].Clone()
+            h_data = histogram.data_hists[plot].Clone()
+            subSample = histogram.mc_hists[plot].Clone()
 
         cv = np.array(subSample)[1:-1]
         mc = np.array(total_hist)[1:-1]
