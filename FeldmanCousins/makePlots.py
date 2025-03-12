@@ -125,11 +125,16 @@ if __name__ == "__main__":
                         default = False,
                         action="store_true",
     )
+    parser.add_argument("--exclude",
+                        dest ="exclude",
+                        default = "",
+    )
 
     args = parser.parse_args()
     outdir_surface = args.output_dir
     delta_m = args.delta_m
     runongrid = args.grid
+    exclude = args.exclude.lower()
     U_e4 = args.U_e4
     U_mu4 = args.U_mu4
     U_tau4 = args.U_tau4
@@ -153,6 +158,11 @@ if __name__ == "__main__":
     OscillateHistogram(sample_histogram, n4['m'], n4['ue4'], n4['umu4'], n4['utau4'])
 
     invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
+
+    chi2,penalty = Chi2DataMC(sample_histogram,invCov=invCov,marginalize=True,exclude=exclude)
+    print(chi2,penalty)
+    exit()
+
     nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
 
     sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="AllSamples")

@@ -2,6 +2,7 @@ import os
 import copy
 from collections import OrderedDict
 from itertools import compress
+import json
 import argparse
 import logging, sys
 import ROOT
@@ -371,9 +372,14 @@ class StitchedHistogram:
             for h in self.keys:
                 if errname in self.data_hists[h].GetVertErrorBandNames():
                     self.data_hists[h].PopVertErrorBand(errname)
-            for h in self.keys:
                 if errname in self.mc_hists[h].GetVertErrorBandNames():
                     self.mc_hists[h].PopVertErrorBand(errname)
+                if errname in self.nue_hists[h].GetVertErrorBandNames():
+                    self.nue_hists[h].PopVertErrorBand(errname)
+                if errname in self.numu_hists[h].GetVertErrorBandNames():
+                    self.numu_hists[h].PopVertErrorBand(errname)
+                if errname in self.swap_hists[h].GetVertErrorBandNames():
+                    self.swap_hists[h].PopVertErrorBand(errname)
 
         if "fhc_elastic" in self.keys and "rhc_elastic" in self.keys:
             for i in range(self.data_hists["fhc_elastic"].GetNbinsX()+1):
@@ -565,7 +571,18 @@ class StitchedHistogram:
 
         f.Close()
 
-        #self.SyncErrorBands()
+        test_hist = f.Get("mc_fhc_ratio")
+        if type(test_hist) == PlotUtils.MnvH1D:
+            self.mc_hists["fhc_ratio"] = test_hist
+            self.mc_hists["rhc_ratio"] = f.Get("mc_rhc_ratio")
+            self.data_hists["fhc_ratio"] = f.Get("data_fhc_ratio")
+            self.data_hists["rhc_ratio"] = f.Get("data_rhc_ratio")
+            self.keys.extend(["fhc_ratio","rhc_ratio"])
+            self.stitchKeys = self.keys.copy()
+            self.titles["fhc_ratio"] = "FHC Ratio"
+            self.titles["rhc_ratio"] = "RHC Ratio"
+
+        self.SyncErrorBands()
         self.SetCovarianceMatrices()
 
         #self.SetPlottingStyle()
@@ -679,6 +696,7 @@ class StitchedHistogram:
 
     def StitchThis2D(self):
         i_new = 0
+        
         for h in self.stitchKeys:
             h_nue = self.nue_templates[h].Clone()
             h_numu = self.numu_templates[h].Clone()
@@ -729,15 +747,18 @@ class StitchedHistogram:
                     self.swap_template.SetBinContent(i_new, c, bin_c/colInt if colInt > 0 else 0)
 
     def StitchThis(self):
-        i_new = 0
+        i_new = 1
+
+        histogram_config = {}
+
         for h in self.stitchKeys:
             h_mc = self.mc_hists[h]
             h_data = self.data_hists[h]
+            histogram_config[h] = {"start" : i_new}
 
             for i in range(1,h_mc.GetNbinsX()+1):
                 if h_mc.GetBinContent(i) <= minBinCont:
                     continue # skip empty MC bins
-                i_new += 1
 
                 # ----- do MC stitching ----- #
                 bin_c = h_mc.GetBinContent(i)
@@ -763,6 +784,13 @@ class StitchedHistogram:
                     self.beam_id.SetBinContent(i_new,self.beam_ids[h].GetBinContent(i))
                     self.ratio_id.SetBinContent(i_new,self.ratio_ids[h].GetBinContent(i))
                     self.elastic_id.SetBinContent(i_new,self.elastic_ids[h].GetBinContent(i))
+
+                i_new += 1
+
+            histogram_config[h]["end"] = i_new
+
+        with open("HIST_CONFIG.json","w") as file:
+            json.dump(histogram_config,file,indent=4)
 
     def FillErrorBandsFromDict(self):
         offset = 1

@@ -4,6 +4,8 @@ import logging, sys
 import argparse
 import math
 import psutil
+import json
+
 from array import array
 
 #os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -43,12 +45,14 @@ ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 
 class Fitter():
-    def __init__(self,histogram,invCov=None,remakeCov=False,useNewUniverses=False):
+    def __init__(self,histogram,invCov=None,remakeCov=False,useNewUniverses=False,exclude=None,lam=1):
         self.hist = histogram
         self.remakeCov = remakeCov
         self.useNewUniverses = useNewUniverses
         self.invCov = invCov
         self.tol = 1e-12
+        self.exclude = exclude
+        self.lam = lam
 
     def DoFit(self):
         x0 = [0.0,0.0,0.0,0.0]
@@ -86,11 +90,11 @@ class Fitter():
         else:
             self.invCov = self.hist.GetInverseCovarianceMatrix(sansFlux=True)
 
-        chi2,penalty = Chi2DataMC(self.hist,invCov=self.invCov,marginalize=True,useOsc=True,remakeCov=self.remakeCov,useNewUniverses=self.useNewUniverses)
+        chi2,penalty = Chi2DataMC(self.hist,invCov=self.invCov,marginalize=True,useOsc=True,remakeCov=self.remakeCov,useNewUniverses=self.useNewUniverses,exclude=self.exclude,lam=self.lam)
         return(chi2)
 
 
-def FluxSolution(histogram,plot=False,invCov=None,useOsc=False,usePseudo=False):
+def FluxSolution(histogram,invCov=None,useOsc=False,usePseudo=False):
     if usePseudo:
         dataHist = histogram.GetPseudoHistogram()
     else:
@@ -145,7 +149,32 @@ def ReweightCV(histogram,fluxSolution,cv=None,mc=None):
     histogram.DivideSingle(histogram,weights)
     return(weights)
 
-def MarginalizeFlux(histogram,plot=False,invCov=None,fluxSolution=None,useOsc=False,usePseudo=False,setHists=False,remakeCov=False,useNewUniverses=False):
+def MarginalizeFlux(histogram,invCov=None,fluxSolution=None,useOsc=False,usePseudo=False,setHists=False,remakeCov=False,useNewUniverses=False,exclude=None,lam=1):
+    def slicer(arr,inds):
+        return(np.delete(arr,inds))
+
+    def slicer2D(arr,inds):
+        arr = np.delete(arr,inds,0)
+        arr = np.delete(arr,inds,1)
+        return(arr)
+    def checkRemove(exclude,h):
+        if "fhc" in exclude:
+            if "fhc" in h and "selection" in h:
+                return(True)
+        if "rhc" in exclude:
+            if "rhc" in h and "selection" in h:
+                return(True)
+        if "numu" in exclude and "numu" in h:
+            return(True)
+        if "nue" in exclude and "nue" in h:
+            return(True)
+        if "elastic" in exclude and "elastic" in h:
+            return(True)
+        if "imd" in exclude:
+            return(True)
+        if "ratio" in exclude:
+            return(True)
+
     if usePseudo:
         dataHist = histogram.GetPseudoHistogram()
     else:
@@ -175,13 +204,32 @@ def MarginalizeFlux(histogram,plot=False,invCov=None,fluxSolution=None,useOsc=Fa
     else:
         A = histogram.GetAMatrix()
 
+    if exclude:
+        bin_config = {}
+        with open("HIST_CONFIG.json", "r") as file:
+            bin_config = json.load(file)
+
+        sliceInds = []
+        for h in histogram.keys:
+            if h not in bin_config.keys():
+                continue
+            if checkRemove(exclude,h):
+                sliceInds.extend(list(range(bin_config[h]["start"],bin_config[h]["end"]+1)))
+
+        data = slicer(data,sliceInds)
+        mc   = slicer(mc,sliceInds)
+        A    = slicer2D(A,sliceInds)
+        invCov    = slicer2D(invCov,sliceInds)
+
+    print(mc)
+
     if fluxSolution is None:
         V = invCov    
         C = data - mc
         I = np.identity(len(universes))
 
         L = 2 * A @ V @ C
-        Q = A @ V @ A.T + I
+        Q = A @ V @ A.T + I * lam
         solution = np.linalg.inv(Q) @ L/2
     else:
         solution = fluxSolution
@@ -230,41 +278,9 @@ def MarginalizeFlux(histogram,plot=False,invCov=None,fluxSolution=None,useOsc=Fa
         else:
             histogram.SetMCHistogram(new_mc)
 
-    if plot:
-        cv_ratio = data/new_cv
-        mc_ratio = data/mc
-
-        x = np.arange(len(mc),dtype=float)
-
-        c1 = ROOT.TCanvas()
-
-        mg = ROOT.TMultiGraph()
-
-        g1 = ROOT.TGraph(len(x), x, cv_ratio)
-        g3 = ROOT.TGraph(len(x), x, mc_ratio)
-
-        g1.SetLineColor(ROOT.kRed)
-        g3.SetLineColor(ROOT.kBlue)
-
-        g1.SetLineWidth(3)
-        g3.SetLineWidth(3)
-
-        g1.SetTitle("After Flux Calc.")
-        g3.SetTitle("Before Flux Calc.")
-
-        mg.Add(g1)
-        mg.Add(g3)
-
-        mg.GetYaxis().SetTitle("Data Ratio")
-
-        mg.Draw("AL")
-        c1.BuildLegend()
-
-        c1.Print("flux_fit_results.png")
-
     return(new_cv,new_invCov,penalty)
 
-def Chi2DataMC(histogram,marginalize=False,fluxSolution=None,useOsc=False,usePseudo=False,invCov=None,setHists=False,remakeCov=False,useNewUniverses=False):
+def Chi2DataMC(histogram,marginalize=False,fluxSolution=None,useOsc=False,usePseudo=False,invCov=None,setHists=False,remakeCov=False,useNewUniverses=False,exclude=None,lam=1):
     ##### Get histograms to calculate chi2 between #####
     if useOsc:
         mcHist = histogram.GetOscillatedHistogram()
@@ -287,8 +303,7 @@ def Chi2DataMC(histogram,marginalize=False,fluxSolution=None,useOsc=False,usePse
     
     # Do we want to marginalize over the flux systematic before calculating chi2
     if marginalize:
-        makePlot=False
-        mc,invCov,penalty = MarginalizeFlux(histogram,usePseudo=usePseudo,fluxSolution=fluxSolution,invCov=invCov,plot=makePlot,useOsc=useOsc,setHists=setHists,remakeCov=remakeCov)
+        mc,invCov,penalty = MarginalizeFlux(histogram,usePseudo=usePseudo,fluxSolution=fluxSolution,invCov=invCov,useOsc=useOsc,setHists=setHists,remakeCov=remakeCov,exclude=exclude,lam=1)
     else:
         penalty = 0
 
