@@ -8,11 +8,6 @@ import json
 
 from array import array
 
-#os.environ["OPENBLAS_NUM_THREADS"] = "1"
-#os.environ["MKL_NUM_THREADS"] = "1"
-#os.environ["NUMEXPR_NUM_THREADS"] = "1"
-#os.environ["OMP_NUM_THREADS"] = "1"
-#os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 import numpy as np
 from scipy import optimize
 
@@ -151,12 +146,18 @@ def ReweightCV(histogram,fluxSolution,cv=None,mc=None):
 
 def MarginalizeFlux(histogram,invCov=None,fluxSolution=None,useOsc=False,usePseudo=False,setHists=False,remakeCov=False,useNewUniverses=False,exclude=None,lam=1):
     def slicer(arr,inds):
-        return(np.delete(arr,inds))
+        return(arr[inds])
 
-    def slicer2D(arr,inds):
-        arr = np.delete(arr,inds,0)
-        arr = np.delete(arr,inds,1)
-        return(arr)
+    def slicer2D(arr,inds,axis=None):
+        if axis==0:
+            return(arr[inds,:])
+        elif axis==1:
+            return(arr[:,inds])
+        else:
+            ret = arr[:,inds]
+            ret = ret[inds,:]
+            return(ret)
+
     def checkRemove(exclude,h):
         if "fhc" in exclude:
             if "fhc" in h and "selection" in h:
@@ -170,10 +171,12 @@ def MarginalizeFlux(histogram,invCov=None,fluxSolution=None,useOsc=False,usePseu
             return(True)
         if "elastic" in exclude and "elastic" in h:
             return(True)
-        if "imd" in exclude:
+        if "imd" in exclude and "imd" in h:
             return(True)
-        if "ratio" in exclude:
+        if "ratio" in exclude and "ratio" in h:
             return(True)
+
+        return(False)
 
     if usePseudo:
         dataHist = histogram.GetPseudoHistogram()
@@ -204,24 +207,22 @@ def MarginalizeFlux(histogram,invCov=None,fluxSolution=None,useOsc=False,usePseu
     else:
         A = histogram.GetAMatrix()
 
-    if exclude:
-        bin_config = {}
-        with open("HIST_CONFIG.json", "r") as file:
-            bin_config = json.load(file)
+    np.savetxt("rA.csv",A,delimiter=',')
+    bin_config = {}
+    with open("HIST_CONFIG.json", "r") as file:
+        bin_config = json.load(file)
 
-        sliceInds = []
-        for h in histogram.keys:
-            if h not in bin_config.keys():
-                continue
-            if checkRemove(exclude,h):
-                sliceInds.extend(list(range(bin_config[h]["start"],bin_config[h]["end"]+1)))
+    sliceInds = []
+    for h in histogram.keys:
+        if h not in bin_config.keys():
+            continue
+        if not checkRemove(exclude,h):
+           sliceInds.extend(list(range(bin_config[h]["start"],bin_config[h]["end"]+1)))
 
-        data = slicer(data,sliceInds)
-        mc   = slicer(mc,sliceInds)
-        A    = slicer2D(A,sliceInds)
-        invCov    = slicer2D(invCov,sliceInds)
-
-    print(mc)
+    data = slicer(data,sliceInds)
+    mc   = slicer(mc,sliceInds)
+    A    = slicer2D(A,sliceInds,axis=1)
+    invCov    = slicer2D(invCov,sliceInds)
 
     if fluxSolution is None:
         V = invCov    
@@ -235,7 +236,7 @@ def MarginalizeFlux(histogram,invCov=None,fluxSolution=None,useOsc=False,usePseu
         solution = fluxSolution
 
     penalty = solution @ solution
-    new_cv = mc + solution @ A
+    new_cv = np.array(mcHist)[1:-1] + solution @ histogram.GetAMatrix()
 
     if remakeCov:
         ##### grab new invCovariance matrix to reflect reweighted MC values #####

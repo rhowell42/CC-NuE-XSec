@@ -178,15 +178,15 @@ class StitchedHistogram:
 
     def GetInverseCovarianceMatrix(self,sansFlux=False):
         if sansFlux:
-            return(self.inv_covariance_sans_flux)
+            return(np.copy(self.inv_covariance_sans_flux))
         else:
-            return(self.inv_covariance)
+            return(np.copy(self.inv_covariance))
 
     def GetCovarianceMatrix(self,sansFlux=False):
         if sansFlux:
-            return(self.covariance_sans_flux)
+            return(np.copy(self.covariance_sans_flux))
         else:
-            return(self.covariance)
+            return(np.copy(self.covariance))
 
     def SetHistogram(self,hist):
         self.osc_hist = hist.Clone()
@@ -207,10 +207,10 @@ class StitchedHistogram:
             raise ValueError("Oscillation histogram not set.")
 
     def GetFluxUniverses(self):
-        return(self.mc_flux_universes)
+        return(np.copy(self.mc_flux_universes))
 
     def GetAMatrix(self):
-        return(self.A)
+        return(np.copy(self.A))
 
     def EmptyHist(self,h):
         h_ret = h.Clone()
@@ -569,8 +569,6 @@ class StitchedHistogram:
             self.numu_templates[h] = f.Get("numu_temp_"+h)
             self.swap_templates[h] = f.Get("swap_temp_"+h)
 
-        f.Close()
-
         test_hist = f.Get("mc_fhc_ratio")
         if type(test_hist) == PlotUtils.MnvH1D:
             self.mc_hists["fhc_ratio"] = test_hist
@@ -582,7 +580,9 @@ class StitchedHistogram:
             self.titles["fhc_ratio"] = "FHC Ratio"
             self.titles["rhc_ratio"] = "RHC Ratio"
 
-        self.SyncErrorBands()
+        f.Close()
+
+        #self.SyncErrorBands()
         self.SetCovarianceMatrices()
 
         #self.SetPlottingStyle()
@@ -747,7 +747,7 @@ class StitchedHistogram:
                     self.swap_template.SetBinContent(i_new, c, bin_c/colInt if colInt > 0 else 0)
 
     def StitchThis(self):
-        i_new = 1
+        i_new = 0
 
         histogram_config = {}
 
@@ -759,6 +759,7 @@ class StitchedHistogram:
             for i in range(1,h_mc.GetNbinsX()+1):
                 if h_mc.GetBinContent(i) <= minBinCont:
                     continue # skip empty MC bins
+                i_new += 1
 
                 # ----- do MC stitching ----- #
                 bin_c = h_mc.GetBinContent(i)
@@ -785,9 +786,8 @@ class StitchedHistogram:
                     self.ratio_id.SetBinContent(i_new,self.ratio_ids[h].GetBinContent(i))
                     self.elastic_id.SetBinContent(i_new,self.elastic_ids[h].GetBinContent(i))
 
-                i_new += 1
 
-            histogram_config[h]["end"] = i_new
+            histogram_config[h]["end"] = i_new-1
 
         with open("HIST_CONFIG.json","w") as file:
             json.dump(histogram_config,file,indent=4)
