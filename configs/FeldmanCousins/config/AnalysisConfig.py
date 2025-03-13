@@ -21,7 +21,7 @@ import sys
 import pprint
 import re
 
-BLUEARC = "/exp/minerva/data/users/{}/antinu_e".format(os.environ["USER"])
+BLUEARC = "/exp/minerva/data/users/{}/surfaces/".format(os.environ["USER"])
 GIRDOUTPUT ="/pnfs/minerva/persistent/"
 
 
@@ -328,21 +328,72 @@ parser.add_argument("--truth",
 parser.add_argument("--pseudodata",
                     help="Use MC predicted pseudodata in signal region.",
                     action="store_true",
+                    dest = 'pseudodata',
                     default=False)
 parser.add_argument("--blinded",
                         dest = "blinded",
                         default = False,
                         action="store_true",
-
+)
 parser.add_argument("--extra_weighter",
                     help="Name of extra weighter you want to use",
-                    default=None)
+                    default=None
+)
+parser.add_argument("--bin_width",
+                    dest = "binwidth",
+                    default = False,
+                    action="store_true",
+)
+parser.add_argument("--thesis_plots",
+                    dest = "thesis_plots",
+                    default = False,
+                    action="store_true",
+)
+parser.add_argument("--exclude",
+                    dest ="exclude",
+                    default = "None",
+)
+parser.add_argument("--ratio",
+                    dest ="ratio",
+                    default = False,
+                    action = "store_true",
+)
+parser.add_argument("--lambda",
+                    dest ="lambdaValue",
+                    default = 1,
+                    type=float
+)
+parser.add_argument("-m", "--delta_m",
+                    dest = "delta_m",
+                    help="Delta m^2 value to probe.",
+                    type=float,
+                    default=0
+)
+parser.add_argument("-Ue4", "--U_e4",
+                    dest = "U_e4",
+                    help="U_e4 parameter to probe.",
+                    type=int,
+                    default=0
+)
+parser.add_argument("-Umu4", "--U_mu4",
+                    dest = "U_mu4",
+                    help="U_mu4 parameter to probe.",
+                    type=float,
+                    default=0
+)
+parser.add_argument("-U", "--U_tau4",
+                    dest = "U_tau4",
+                    help="U_tau4 parameter to probe.",
+                    type=float,
+                    default=0
+)
 
 options = parser.parse_args()
 
 if options.data_only and options.mc_only:
     options.data_only = False
 
+options.exclude = options.exclude.lower()
 #if options.playlist is None:
     #print "Please specify a playlist."
     #sys.exit(1)
@@ -351,10 +402,10 @@ if options.data_only and options.mc_only:
 if not options.run_reco:
     options.POT_cal=True
 
-if options.grid:
+#if options.grid:
     #override start variable by $PROCESS variable
-    nth_job = int(os.environ["PROCESS"])
-    options.count[0]=nth_job*options.count[1]+options.count[0]
+    #nth_job = int(os.environ["PROCESS"])
+    #options.count[0]=nth_job*options.count[1]+options.count[0]
 
 if options.testing:
     options.count = [0,1]
