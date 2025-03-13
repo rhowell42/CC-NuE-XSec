@@ -1,7 +1,6 @@
 import os
 import copy
 from collections import OrderedDict
-import argparse
 import logging, sys
 import ROOT
 import PlotUtils
@@ -15,6 +14,7 @@ from array import array
 
 from config.SignalDef import SWAP_SIGNAL_DEFINITION, SIGNAL_DEFINITION
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS 
+from config.AnalysisConfig import AnalysisConfig
 from tools import Utilities
 from tools.PlotLibrary import HistHolder
 ccnueroot = os.environ.get('CCNUEROOT')
@@ -33,47 +33,11 @@ errsToRemove = ["LowQ2Pi"]
 ROOT.TH1.AddDirectory(False)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--bin_width",
-                        dest = "binwidth",
-                        default = False,
-                        action="store_true",
-    )
-    parser.add_argument("--thesis_plots",
-                        dest = "thesis_plots",
-                        default = False,
-                        action="store_true",
-    )
-    parser.add_argument("--pseudodata",
-                        dest = "pseudodata",
-                        default = False,
-                        action="store_true",
-    )
-    parser.add_argument("--exclude",
-                        dest ="exclude",
-                        default = "None",
-    )
-    parser.add_argument("--ratio",
-                        dest ="ratio",
-                        default = False,
-                        action = "store_true",
-    )
-    parser.add_argument("--fit_muons",
-                        dest ="fit_muons",
-                        default = False,
-                        action = "store_true",
-    )
+    binwidthScale = AnalysisConfig.binwidth
 
-    args = parser.parse_args()
-    binwidthScale = args.binwidth
-    pseudodata = args.pseudodata
-    exclude = str(args.exclude).lower()
-    doratio = args.ratio
-    thesis_plots = args.thesis_plots
-    fit_muons = args.fit_muons
-    if thesis_plots:
+    if AnalysisConfig.thesis_plots:
         binwidthScale = True
-    if doratio:
+    if AnalysisConfig.ratio:
         ftag = "ratio"
         binwidthScale = False
     else:
@@ -270,20 +234,20 @@ if __name__ == "__main__":
     h_rhc_elastic_data =  ROOT.TFile("/exp/minerva/data/users/rhowell/nueel/electronE_bkgsub_FullSetFinalv2_nobinnorm.root").Get('data_bkgsub_effcor')
 
     #get IMD histograms
-    h_fhc_imd_mc = ROOT.TFile.Open("IMD/PubResult_v18_Combined.root").Get("FHC_MC")
-    h_fhc_imd_data = ROOT.TFile.Open("IMD/PubResult_v18_Combined.root").Get("FHC_Data")
+    h_fhc_imd_mc = ROOT.TFile.Open("rootfiles/IMD/PubResult_v18_Combined.root").Get("FHC_MC")
+    h_fhc_imd_data = ROOT.TFile.Open("rootfiles/IMD/PubResult_v18_Combined.root").Get("FHC_Data")
 
-    h_rhc_imd_mc = ROOT.TFile.Open("IMD/PubResult_v18_Combined.root").Get("RHC_MC")
-    h_rhc_imd_data = ROOT.TFile.Open("IMD/PubResult_v18_Combined.root").Get("RHC_Data")
+    h_rhc_imd_mc = ROOT.TFile.Open("rootfiles/IMD/PubResult_v18_Combined.root").Get("RHC_MC")
+    h_rhc_imd_data = ROOT.TFile.Open("rootfiles/IMD/PubResult_v18_Combined.root").Get("RHC_Data")
 
-    fhcnueelnue = ROOT.TFile.Open("NuEnumberEvents/ElectronEnergySpectrum_FHC_withoutconstraint.root").Get('electron_energy_nue')
-    fhcnueelnumu = ROOT.TFile.Open("NuEnumberEvents/ElectronEnergySpectrum_FHC_withoutconstraint.root").Get('electron_energy_numu')
-    fhcnueelanue = ROOT.TFile.Open("NuEnumberEvents/ElectronEnergySpectrum_FHC_withoutconstraint.root").Get('electron_energy_anue')
-    fhcnueelanumu = ROOT.TFile.Open("NuEnumberEvents/ElectronEnergySpectrum_FHC_withoutconstraint.root").Get('electron_energy_anumu')
-    rhcnueelnue = ROOT.TFile.Open("NuEnumberEvents/ElectronEnergySpectrum_RHC_withoutconstraint.root").Get('electron_energy_nue')
-    rhcnueelnumu = ROOT.TFile.Open("NuEnumberEvents/ElectronEnergySpectrum_RHC_withoutconstraint.root").Get('electron_energy_numu')
-    rhcnueelanue = ROOT.TFile.Open("NuEnumberEvents/ElectronEnergySpectrum_RHC_withoutconstraint.root").Get('electron_energy_anue')
-    rhcnueelanumu = ROOT.TFile.Open("NuEnumberEvents/ElectronEnergySpectrum_RHC_withoutconstraint.root").Get('electron_energy_anumu')
+    fhcnueelnue = ROOT.TFile.Open("rootfiles/NuEnumberEvents/ElectronEnergySpectrum_FHC_withoutconstraint.root").Get('electron_energy_nue')
+    fhcnueelnumu = ROOT.TFile.Open("rootfiles/NuEnumberEvents/ElectronEnergySpectrum_FHC_withoutconstraint.root").Get('electron_energy_numu')
+    fhcnueelanue = ROOT.TFile.Open("rootfiles/NuEnumberEvents/ElectronEnergySpectrum_FHC_withoutconstraint.root").Get('electron_energy_anue')
+    fhcnueelanumu = ROOT.TFile.Open("rootfiles/NuEnumberEvents/ElectronEnergySpectrum_FHC_withoutconstraint.root").Get('electron_energy_anumu')
+    rhcnueelnue = ROOT.TFile.Open("rootfiles/NuEnumberEvents/ElectronEnergySpectrum_RHC_withoutconstraint.root").Get('electron_energy_nue')
+    rhcnueelnumu = ROOT.TFile.Open("rootfiles/NuEnumberEvents/ElectronEnergySpectrum_RHC_withoutconstraint.root").Get('electron_energy_numu')
+    rhcnueelanue = ROOT.TFile.Open("rootfiles/NuEnumberEvents/ElectronEnergySpectrum_RHC_withoutconstraint.root").Get('electron_energy_anue')
+    rhcnueelanumu = ROOT.TFile.Open("rootfiles/NuEnumberEvents/ElectronEnergySpectrum_RHC_withoutconstraint.root").Get('electron_energy_anumu')
 
     # ---------------------- Fix Flavor Weights -----------------------------
     f1 = fhcnueelnue.Clone()
@@ -357,14 +321,14 @@ if __name__ == "__main__":
     # ----- Process Systematics and Synchronize across histograms ----- #
     sample_histogram.CleanErrorBands(errsToRemove)
 
-    if doratio: # do we want to replace selection samples with flavor ratios
-        if "fhc" not in exclude: # do we care about the fhc component
+    if AnalysisConfig.ratio: # do we want to replace selection samples with flavor ratios
+        if "fhc" not in AnalysisConfig.exclude: # do we care about the fhc component
             sample_histogram.MakeRatio('fhc')
-        if "rhc" not in exclude: # do we care about the rhc component
+        if "rhc" not in AnalysisConfig.exclude: # do we care about the rhc component
             sample_histogram.MakeRatio('rhc')
 
     # ----- Remove samples that we want to exclude from analysis ----- #
-    sample_histogram.ApplyExclusion(exclude)
+    sample_histogram.ApplyExclusion(AnalysisConfig.exclude)
 
     # ----- Stitch histograms together ----- #
     sample_histogram.Stitch()
@@ -388,11 +352,11 @@ if __name__ == "__main__":
                 hist_vals.append(h_univ.GetBinContent(i))
             err_hists.append(hist_vals)
             
-    filename = "{}/FeldmanCousins/NuE_stitched_hists.root".format(ccnueroot)
+    filename = "{}/FeldmanCousins/rootfiles/NuE_stitched_hists.root".format(ccnueroot)
 
     sample_histogram.Write(filename)
     sample_histogram.SetPlottingStyle()
-    #sample_histogram.DebugPlots()
+    sample_histogram.DebugPlots()
     
     invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
     nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)

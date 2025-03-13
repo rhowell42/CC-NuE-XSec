@@ -565,7 +565,7 @@ def PlotOscillationRatios(sample_histogram,parameters,name="",plotSamples=False,
 
     c1.Print("plots/{}_stitched_ratios_{:.1f}_{:.3f}_{:.4f}.png".format(name,parameters["m"],parameters['ue4'],parameters['umu4']))
 
-def PlotOscillationEffects(sample_histogram,parameters,name="",plotSamples=False,usePseudo=False):
+def PlotOscillationEffects(sample_histogram,parameters,name="",plotSamples=False,usePseudo=False,exclude="",lam=1):
     histogram = copy.deepcopy(sample_histogram)
     invCov=histogram.GetInverseCovarianceMatrix(sansFlux=True)
 
@@ -573,11 +573,11 @@ def PlotOscillationEffects(sample_histogram,parameters,name="",plotSamples=False
     h_osc = histogram.GetOscillatedHistogram()
     h_data = histogram.GetPseudoHistogram() if usePseudo else histogram.GetDataHistogram()
 
-    chi2_null,_ = Chi2DataMC(histogram,invCov=invCov,marginalize=False,usePseudo=usePseudo)
-    chi2_model,_ = Chi2DataMC(histogram,invCov=invCov,marginalize=False,useOsc=True,usePseudo=usePseudo)
+    chi2_null,_ = Chi2DataMC(histogram,invCov=invCov,marginalize=False,usePseudo=usePseudo,exclude=exclude,lam=lam)
+    chi2_model,_ = Chi2DataMC(histogram,invCov=invCov,marginalize=False,useOsc=True,usePseudo=usePseudo,exclude=exclude,lam=lam)
 
-    chi2_model_marg,model_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,useOsc=True,usePseudo=usePseudo,setHists=True)
-    chi2_null_marg,null_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,usePseudo=usePseudo,setHists=True)
+    chi2_model_marg,model_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,useOsc=True,usePseudo=usePseudo,setHists=True,exclude=exclude)
+    chi2_null_marg,null_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,usePseudo=usePseudo,setHists=True,lam=lam,exclude=exclude)
 
     h_null_marg = histogram.GetMCHistogram()
     h_osc_marg = histogram.GetOscillatedHistogram()
@@ -715,7 +715,7 @@ def PlotOscillationEffects(sample_histogram,parameters,name="",plotSamples=False
         return
 
     plots = histogram.keys
-    nullSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo)
+    nullSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo,exclude=exclude,lam=lam)
     plots.append("fhc_ratio")
     plots.append("rhc_ratio")
     histogram.titles["fhc_ratio"] = "FHC CC #nu_{#mu}/#nu_{e} Ratio"

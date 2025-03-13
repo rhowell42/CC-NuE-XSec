@@ -89,7 +89,40 @@ class Fitter():
         return(chi2)
 
 
-def FluxSolution(histogram,invCov=None,useOsc=False,usePseudo=False):
+def FluxSolution(histogram,invCov=None,useOsc=False,usePseudo=False,exclude="",lam=1):
+    def slicer(arr,inds):
+        return(arr[inds])
+
+    def slicer2D(arr,inds,axis=None):
+        if axis==0:
+            return(arr[inds,:])
+        elif axis==1:
+            return(arr[:,inds])
+        else:
+            ret = arr[:,inds]
+            ret = ret[inds,:]
+            return(ret)
+
+    def checkRemove(exclude,h):
+        if "fhc" in exclude:
+            if "fhc" in h and "selection" in h:
+                return(True)
+        if "rhc" in exclude:
+            if "rhc" in h and "selection" in h:
+                return(True)
+        if "numu" in exclude and "numu" in h:
+            return(True)
+        if "nue" in exclude and "nue" in h:
+            return(True)
+        if "elastic" in exclude and "elastic" in h:
+            return(True)
+        if "imd" in exclude and "imd" in h:
+            return(True)
+        if "ratio" in exclude and "ratio" in h:
+            return(True)
+
+        return(False)
+
     if usePseudo:
         dataHist = histogram.GetPseudoHistogram()
     else:
@@ -108,6 +141,22 @@ def FluxSolution(histogram,invCov=None,useOsc=False,usePseudo=False):
         invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True)
 
     A = histogram.GetAMatrix()
+
+    bin_config = {}
+    with open("HIST_CONFIG.json", "r") as file:
+        bin_config = json.load(file)
+
+    sliceInds = []
+    for h in histogram.keys:
+        if h not in bin_config.keys():
+            continue
+        if not checkRemove(exclude,h):
+           sliceInds.extend(list(range(bin_config[h]["start"],bin_config[h]["end"]+1)))
+
+    data = slicer(data,sliceInds)
+    mc   = slicer(mc,sliceInds)
+    A    = slicer2D(A,sliceInds,axis=1)
+    invCov    = slicer2D(invCov,sliceInds)
 
     V = invCov    
     C = data - mc
@@ -207,7 +256,6 @@ def MarginalizeFlux(histogram,invCov=None,fluxSolution=None,useOsc=False,usePseu
     else:
         A = histogram.GetAMatrix()
 
-    np.savetxt("rA.csv",A,delimiter=',')
     bin_config = {}
     with open("HIST_CONFIG.json", "r") as file:
         bin_config = json.load(file)
@@ -304,7 +352,7 @@ def Chi2DataMC(histogram,marginalize=False,fluxSolution=None,useOsc=False,usePse
     
     # Do we want to marginalize over the flux systematic before calculating chi2
     if marginalize:
-        mc,invCov,penalty = MarginalizeFlux(histogram,usePseudo=usePseudo,fluxSolution=fluxSolution,invCov=invCov,useOsc=useOsc,setHists=setHists,remakeCov=remakeCov,exclude=exclude,lam=1)
+        mc,invCov,penalty = MarginalizeFlux(histogram,usePseudo=usePseudo,fluxSolution=fluxSolution,invCov=invCov,useOsc=useOsc,setHists=setHists,remakeCov=remakeCov,exclude=exclude,lam=lam)
     else:
         penalty = 0
 

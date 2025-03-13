@@ -3,13 +3,6 @@ import os, time, sys, math
 from config.GRIDConfig import gridargs,anaargs
 from tools import Utilities
 
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-import numpy as np
-
 baseDir = os.path.dirname(os.path.abspath(__file__))+"/../"
 MacroName = baseDir.split("/")[-4]
 MAT = os.environ["PLOTUTILSROOT"].split("/")[-2]
@@ -69,10 +62,10 @@ def addBashLine( wrapper , command ):
   wrapper.write("echo '---------------'\n")
 
 
-def submitJob(tupleName,dm2):
+def submitJob(tupleName,procid,sampleString):
 
   # Create wrapper
-  wrapper_name = "grid_wrappers/%s/%s_wrapper.sh" % ( processingID , tupleName ) 
+  wrapper_name = "grid_wrappers/%s/%s_wrapper_%d.sh" % ( processingID , tupleName , procid) 
   
   my_wrapper = open(wrapper_name,"w")
   my_wrapper.write("#!/bin/sh\n")
@@ -91,8 +84,7 @@ def submitJob(tupleName,dm2):
   my_wrapper.write( "export USER=$(whoami)\n")
   #my_wrapper.write( "export XRD_LOGLEVEL=\"Debug\"\n")
   my_wrapper.write( "source py3env/bin/activate\n")
-  my_wrapper.write( "py3env/bin/python3 makeSurface.py --grid --delta_m %s --U_e4 ${PROCESS} --output $CONDOR_DIR_HISTS 2>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log\n" % (dm2,argstring,tupleName,argstring,tupleName) )
-
+  my_wrapper.write( 'py3env/bin/python3 fitBestFits.py --grid --experiments "%s" --output $CONDOR_DIR_HISTS %s &> $CONDOR_DIR_LOGS/%s-%d.log\n' % (sampleString,argstring,tupleName,procid) )
   my_wrapper.write("exit $?\n")
   #my_wrapper.write( "python eventSelection.py -p %s --grid --%s-only --ntuple_tag %s --count %d %d  --output $CONDOR_DIR_HISTS %s \n" % (playlist, dataSwitch, gridargs.ntuple_tag, start, count, argstring) )
  
@@ -102,11 +94,12 @@ def submitJob(tupleName,dm2):
   os.system( "chmod 777 %s" % wrapper_name )
   
   #cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s/testRelease.tar.gz -d HISTS %s -d LOGS %s -r %s -N %d --expected-lifetime=%dh --cmtconfig=%s -i /cvmfs/minerva.opensciencegrid.org/minerva/software_releases/%s/ file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , os.environ["MINERVA_RELEASE"], njobs, 12, os.environ["CMTCONFIG"],os.environ["MINERVA_RELEASE"], os.environ["PWD"] , wrapper_name )
-  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --append_condor_requirements='CpuFamily != 6' --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 2, os.environ["PWD"] , wrapper_name )
+  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 36, os.environ["PWD"] , wrapper_name )
   # Copy local files to PNFS, they aren't there already
   #copyLocalFilesToPNFS(tupleName,outdir_logs) 
  
   print(cmd)
+  cmdname = "grid_bestfit.sh"
 
   if os.path.isfile(cmdname):
     jobsubcmd = open(cmdname, 'a')
@@ -127,12 +120,22 @@ def submitJob(tupleName,dm2):
   ## clearLocalFilesFromPNFS()
 
 if __name__ == '__main__':
+  #if gridargs.cal_POT:
+  #  for playlist in gridargs.playlists:
+  #    for dataSwitch in ["mc","data"]:
+  #      if (gridargs.data_only and dataSwitch == "mc" ) or (gridargs.mc_only and dataSwitch == "data"):
+  #        continue
+#
+#        POT_used,POT_total = Utilities.getPOT(playlist,dataSwitch,gridargs.ntuple_tag,True)
+#        print playlist,POT_used,POT_total
+#    sys.exit(0)
+
   PNFS_switch = gridargs.PNFS_switch
   # Automatically generate unique output directory
-  processingID = '%s_%s-%s' % ("Oscillation_Surface", dt.date.today() , dt.datetime.today().strftime("%H%M%S") )
-  outdir_hists = "/pnfs/minerva/scratch/users/%s/%s_Oscillation_Surface_texts" % (os.environ["USER"],processingID)
+  processingID = '%s_%s-%s' % ("FHC_RHC", dt.date.today() , dt.datetime.today().strftime("%H%M%S") )
+  outdir_hists = "/pnfs/minerva/scratch/users/%s/%s_BestFit_dchi2s_texts" % (os.environ["USER"],processingID)
   os.system( "mkdir -p %s" % outdir_hists )
-  outdir_logs = "/pnfs/minerva/scratch/users/%s/%s_Oscillation_Surface_logs" % (os.environ["USER"],processingID)
+  outdir_logs = "/pnfs/minerva/scratch/users/%s/%s_BestFit_dchi2s_logs" % (os.environ["USER"],processingID)
   os.system( "mkdir -p %s" % outdir_logs )
   os.system( "mkdir -p grid_wrappers/%s" % processingID )
   outdir_tarball=gridargs.tarball if gridargs.tarball else "/pnfs/minerva/resilient/tarballs/rhowell-%s.tar.gz" % (processingID)
@@ -149,16 +152,12 @@ if __name__ == '__main__':
     count = gridargs.count
 
   argstring=" ".join(anaargs)
-  print(argstring)
-  exit()
-  njobs = 100
-  cmdname = "grid_surface.sh"
 
-  if os.path.exists(cmdname):
-    os.system( "rm {}".format(cmdname))
+  njobs = 1
+  if os.path.exists("grid_bestfit.sh"):
+    os.system( "rm grid_bestfit.sh")
 
-  m_toloop = np.logspace(-1,2,100)
-
-  for m in m_toloop:
-      cmdString = "FitSpace_{:.3f}".format(m)
-      submitJob(cmdString,str(m))
+  for i in range(0,1000):
+    cmdString = "BestFits"
+    sampleString = "fit_samples/fit_samples_{}.txt".format(i)
+    submitJob(cmdString,i,sampleString)
