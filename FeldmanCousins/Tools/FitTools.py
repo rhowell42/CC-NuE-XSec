@@ -151,7 +151,7 @@ def FluxSolution(histogram,invCov=None,useOsc=False,usePseudo=False,exclude="",l
         if h not in bin_config.keys():
             continue
         if not checkRemove(exclude,h):
-           sliceInds.extend(list(range(bin_config[h]["start"],bin_config[h]["end"]+1)))
+            sliceInds.extend(list(range(bin_config[h]["start"],bin_config[h]["end"]+1)))
 
     data = slicer(data,sliceInds)
     mc   = slicer(mc,sliceInds)
@@ -265,7 +265,7 @@ def MarginalizeFlux(histogram,invCov=None,fluxSolution=None,useOsc=False,usePseu
         if h not in bin_config.keys():
             continue
         if not checkRemove(exclude,h):
-           sliceInds.extend(list(range(bin_config[h]["start"],bin_config[h]["end"]+1)))
+            sliceInds.extend(list(range(bin_config[h]["start"],bin_config[h]["end"]+1)))
 
     data = slicer(data,sliceInds)
     mc   = slicer(mc,sliceInds)

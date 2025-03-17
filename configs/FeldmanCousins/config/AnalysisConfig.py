@@ -366,7 +366,7 @@ parser.add_argument("--lambda",
 parser.add_argument("-m", "--delta_m",
                     dest = "delta_m",
                     help="Delta m^2 value to probe.",
-                    type=float,
+                    type=int,
                     default=0
 )
 parser.add_argument("-Ue4", "--U_e4",
