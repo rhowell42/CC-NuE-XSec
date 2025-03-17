@@ -69,7 +69,8 @@ def fileChain(playlist, st, nickname ,tree=None, start = None,count = None):
     The Location of root files are contained in a playlist file, which is inferred from playlist name.
     """
     path,main_tree = findPlaylistFile(playlist,st,nickname)
-    return composeTChain(path,tree if (tree is not None) else main_tree ,start,count)
+    ret = composeTChain(path,tree if (tree is not None) else main_tree ,start,count)
+    return ret
 
 
 def countLines(playlist,st,nickname):
@@ -262,7 +263,7 @@ def GetHistogram(ifile,plot):
     hist = ifile.Get(plot)
     ROOT.SetOwnership(hist,True)
     if not hist:
-        print ("histogram not found: "+plot)
+        #print ("histogram not found: "+plot)
         return None
     return hist
 

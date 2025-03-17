@@ -4,7 +4,6 @@ import logging, sys
 import argparse
 import math
 import psutil
-import json
 
 from array import array
 
@@ -90,39 +89,6 @@ class Fitter():
 
 
 def FluxSolution(histogram,invCov=None,useOsc=False,usePseudo=False,exclude="",lam=1):
-    def slicer(arr,inds):
-        return(arr[inds])
-
-    def slicer2D(arr,inds,axis=None):
-        if axis==0:
-            return(arr[inds,:])
-        elif axis==1:
-            return(arr[:,inds])
-        else:
-            ret = arr[:,inds]
-            ret = ret[inds,:]
-            return(ret)
-
-    def checkRemove(exclude,h):
-        if "fhc" in exclude:
-            if "fhc" in h and "selection" in h:
-                return(True)
-        if "rhc" in exclude:
-            if "rhc" in h and "selection" in h:
-                return(True)
-        if "numu" in exclude and "numu" in h:
-            return(True)
-        if "nue" in exclude and "nue" in h:
-            return(True)
-        if "elastic" in exclude and "elastic" in h:
-            return(True)
-        if "imd" in exclude and "imd" in h:
-            return(True)
-        if "ratio" in exclude and "ratio" in h:
-            return(True)
-
-        return(False)
-
     if usePseudo:
         dataHist = histogram.GetPseudoHistogram()
     else:
@@ -142,23 +108,13 @@ def FluxSolution(histogram,invCov=None,useOsc=False,usePseudo=False,exclude="",l
 
     A = histogram.GetAMatrix()
 
-    bin_config = {}
-    with open("HIST_CONFIG.json", "r") as file:
-        bin_config = json.load(file)
-
-    sliceInds = []
-    for h in histogram.keys:
-        if h not in bin_config.keys():
-            continue
-        if not checkRemove(exclude,h):
-            sliceInds.extend(list(range(bin_config[h]["start"],bin_config[h]["end"]+1)))
+    sliceInds = GetSliceIndices("HIST_CONFIG.json",exclude,histogram.keys)
 
     data = slicer(data,sliceInds)
     mc   = slicer(mc,sliceInds)
-    A    = slicer2D(A,sliceInds,axis=1)
-    invCov    = slicer2D(invCov,sliceInds)
+    A    = slicer(A,sliceInds,axis=1)
+    V    = slicer(invCov,sliceInds)
 
-    V = invCov    
     C = data - mc
     I = np.identity(len(universes))
 
@@ -194,39 +150,6 @@ def ReweightCV(histogram,fluxSolution,cv=None,mc=None):
     return(weights)
 
 def MarginalizeFlux(histogram,invCov=None,fluxSolution=None,useOsc=False,usePseudo=False,setHists=False,remakeCov=False,useNewUniverses=False,exclude=None,lam=1):
-    def slicer(arr,inds):
-        return(arr[inds])
-
-    def slicer2D(arr,inds,axis=None):
-        if axis==0:
-            return(arr[inds,:])
-        elif axis==1:
-            return(arr[:,inds])
-        else:
-            ret = arr[:,inds]
-            ret = ret[inds,:]
-            return(ret)
-
-    def checkRemove(exclude,h):
-        if "fhc" in exclude:
-            if "fhc" in h and "selection" in h:
-                return(True)
-        if "rhc" in exclude:
-            if "rhc" in h and "selection" in h:
-                return(True)
-        if "numu" in exclude and "numu" in h:
-            return(True)
-        if "nue" in exclude and "nue" in h:
-            return(True)
-        if "elastic" in exclude and "elastic" in h:
-            return(True)
-        if "imd" in exclude and "imd" in h:
-            return(True)
-        if "ratio" in exclude and "ratio" in h:
-            return(True)
-
-        return(False)
-
     if usePseudo:
         dataHist = histogram.GetPseudoHistogram()
     else:
@@ -256,24 +179,14 @@ def MarginalizeFlux(histogram,invCov=None,fluxSolution=None,useOsc=False,usePseu
     else:
         A = histogram.GetAMatrix()
 
-    bin_config = {}
-    with open("HIST_CONFIG.json", "r") as file:
-        bin_config = json.load(file)
-
-    sliceInds = []
-    for h in histogram.keys:
-        if h not in bin_config.keys():
-            continue
-        if not checkRemove(exclude,h):
-            sliceInds.extend(list(range(bin_config[h]["start"],bin_config[h]["end"]+1)))
-
+    sliceInds = GetSliceIndices("HIST_CONFIG.json",exclude,histogram.keys)
+    
     data = slicer(data,sliceInds)
     mc   = slicer(mc,sliceInds)
-    A    = slicer2D(A,sliceInds,axis=1)
-    invCov    = slicer2D(invCov,sliceInds)
+    A    = slicer(A,sliceInds,axis=1)
+    V    = slicer(invCov,sliceInds)
 
     if fluxSolution is None:
-        V = invCov    
         C = data - mc
         I = np.identity(len(universes))
 
@@ -283,7 +196,7 @@ def MarginalizeFlux(histogram,invCov=None,fluxSolution=None,useOsc=False,usePseu
     else:
         solution = fluxSolution
 
-    penalty = solution @ solution
+    penalty = solution @ solution * lam
     new_cv = np.array(mcHist)[1:-1] + solution @ histogram.GetAMatrix()
 
     if remakeCov:
@@ -310,7 +223,7 @@ def MarginalizeFlux(histogram,invCov=None,fluxSolution=None,useOsc=False,usePseu
         new_invCov = new_invCov - TMatrix_to_Numpy(dataHist.GetSysErrorMatrix("Flux"))[1:-1,1:-1]
         new_invCov = np.linalg.inv(new_invCov)
     else:
-        new_invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True)
+        new_invCov = invCov
 
     if setHists:
         weights = mcHist.GetCVHistoWithStatError()
@@ -323,7 +236,7 @@ def MarginalizeFlux(histogram,invCov=None,fluxSolution=None,useOsc=False,usePseu
         new_mc.DivideSingle(new_mc,weights)
 
         if useOsc:
-            histogram.SetHistogram(new_mc)
+            histogram.SetOscHistogram(new_mc)
         else:
             histogram.SetMCHistogram(new_mc)
 
@@ -375,7 +288,6 @@ def Chi2DataMC(histogram,marginalize=False,fluxSolution=None,useOsc=False,usePse
         logging.error("chi2 has invalid value: {}".format(chi2))
         print("chi2 has invalid value: {}".format(chi2))
         return(-1)
-    
 
     return(chi2,penalty)
 
@@ -602,7 +514,7 @@ def OscillateHistogram(histogram, m, U_e4, U_mu4, U_tau4,fitPseudodata=False,fit
     if nutau.Integral() > 0:
         osc.Add(nutau)
 
-    histogram.SetHistogram(osc)
+    histogram.SetOscHistogram(osc)
 
 def sin_average(q=0,dm2=0,template=None,yaxis=True):
     avgsin = 0

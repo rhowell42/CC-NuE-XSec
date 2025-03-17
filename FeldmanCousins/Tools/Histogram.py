@@ -57,6 +57,8 @@ class StitchedHistogram:
         self.data_hists = OrderedDict()
         self.mc_hists = OrderedDict()
 
+        self.bin_dictionary = {}
+
         self.nue_hists = {}
         self.numu_hists = {}
         self.swap_hists = {}
@@ -158,6 +160,7 @@ class StitchedHistogram:
 
             cv = np.array(self.mc_hist)[1:-1]
             self.A = self.mc_flux_universes - np.array([cv for i in range(nhists)])
+            #np.savetxt("ryan_Amatrix.csv",self.A,delimiter=',')
 
     def SetCovarianceMatrices(self):
         if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist) and type(self.mc_hist) == PlotUtils.MnvH1D:
@@ -173,6 +176,11 @@ class StitchedHistogram:
 
             self.inv_covariance = np.linalg.inv(covariance)
             self.inv_covariance_sans_flux = np.linalg.inv(cov_sans_flux)
+
+            #np.savetxt("ryan_Cov.csv",covariance,delimiter=',')
+            #np.savetxt("ryan_CovSansFlux.csv",cov_sans_flux,delimiter=',')
+            #np.savetxt("ryan_InvCov.csv",self.inv_covariance,delimiter=',')
+            #np.savetxt("ryan_InvCovSansFlux.csv",self.inv_covariance_sans_flux,delimiter=',')
         else:
             raise ValueError("MC and Data histograms must be defined before setting inv_covariance matrix")
 
@@ -188,7 +196,7 @@ class StitchedHistogram:
         else:
             return(np.copy(self.covariance))
 
-    def SetHistogram(self,hist):
+    def SetOscHistogram(self,hist):
         self.osc_hist = hist.Clone()
 
     def GetMCHistogram(self):
@@ -392,8 +400,6 @@ class StitchedHistogram:
                 h_fix.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_fix.GetBinContent(i) * ratio1)
                 h_fix.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_fix.GetBinContent(i) * ratio2)
 
-        self.is_processed = True
-
     def SeparateBeamAngle(self):
         def separate(hist):
             if "beam_angle" in hist.GetVertErrorBandNames():
@@ -431,13 +437,28 @@ class StitchedHistogram:
                 lateral(self.numu_hists[h])
                 lateral(self.swap_hists[h])
 
-    def Stitch(self):
-        # ----- Create empty ROOT histograms to fill with stitched content ----- #
+    def TranslateBins(self):
+        histogram_config = {}
         n_bins_new = 0
+
         for h in self.stitchKeys:
-            for i in range(0,self.mc_hists[h].GetNbinsX()+1):
+            histogram_config[h] = {"start" : n_bins_new}
+            for i in range(1,self.mc_hists[h].GetNbinsX()+1): # skip under and overflow bins
                 if self.mc_hists[h].GetBinContent(i) > minBinCont:
                     n_bins_new+=1
+                    self.bin_dictionary[n_bins_new] = {"sample":h,"bin":i}
+                    
+            histogram_config[h]["end"] = n_bins_new-1
+
+        with open("HIST_CONFIG.json","w") as file:
+            json.dump(histogram_config,file,indent=4)
+
+        return(n_bins_new)
+
+
+    def Stitch(self):
+        # ----- Create empty ROOT histograms to fill with stitched content ----- #
+        n_bins_new = self.TranslateBins()
 
         self.mc_hist   = ROOT.TH1D(self.name+"_mc",self.name+"_mc",n_bins_new,0,n_bins_new)
         self.data_hist = ROOT.TH1D(self.name+"_data",self.name+"_data",n_bins_new,0,n_bins_new)
@@ -455,18 +476,20 @@ class StitchedHistogram:
         self.numu_template  = ROOT.TH2D(self.name+"_numu_template",self.name+"_numu_template",n_bins_new,0,n_bins_new,34,0,0.495)
         self.swap_template  = ROOT.TH2D(self.name+"_swap_template",self.name+"_swap_template",n_bins_new,0,n_bins_new,34,0,0.495)
 
+        # ----- Combine samples to one histogram ----- #
+        print("Filling CV content in stitched histogram...")
+        self.StitchThis()   # combine 1D histograms
+        if len(list(self.nue_templates.keys())) > 0:
+            self.StitchThis2D() # combine 2D templates
+
         # ----- Do some errorband cleaning ----- #
         if not self.is_processed:
+            print("Processing error systematics...")
             self.SeparateBeamAngle() # make beam angle systematics consistent across samples
             self.LateralToVertical() # convert lateral errorbands (deprecated) from old samples to vertical
             self.SyncErrorBands()  # make sure all samples have the same errorbands, reduce flux universes to 100
             self.is_processed = True
 
-        # ----- Combine samples to one histogram ----- #
-        self.StitchThis()   # combine 1D histograms
-        if len(list(self.nue_templates.keys())) > 0:
-            self.StitchThis2D() # combine 2D templates
-        
         # ----- Convert ROOT.TH1 to PlotUtils.Mnv1D and fill errorbands ----- #
         self.mc_hist = PlotUtils.MnvH1D(self.mc_hist)
         self.data_hist = PlotUtils.MnvH1D(self.data_hist)
@@ -476,6 +499,7 @@ class StitchedHistogram:
         self.numu_hist = PlotUtils.MnvH1D(self.numu_hist)
         self.swap_hist = PlotUtils.MnvH1D(self.swap_hist)
 
+        print("Filling error bands in stitched histogram...")
         self.mc_hist.AddMissingErrorBandsAndFillWithCV(self.mc_hists[self.stitchKeys[0]])
         self.data_hist.AddMissingErrorBandsAndFillWithCV(self.mc_hists[self.stitchKeys[0]])
         self.pseudo_hist.AddMissingErrorBandsAndFillWithCV(self.mc_hists[self.stitchKeys[0]])
@@ -489,6 +513,7 @@ class StitchedHistogram:
         self.SetAMatrix()
 
     def Write(self,filename):
+        print("Writing histograms to {}...".format(filename))
         f = ROOT.TFile(filename,"RECREATE")
         self.mc_hist.Write()
         self.data_hist.Write()
@@ -582,10 +607,7 @@ class StitchedHistogram:
 
         f.Close()
 
-        #self.SyncErrorBands()
         self.SetCovarianceMatrices()
-
-        #self.SetPlottingStyle()
 
     def SetPlottingStyle(self):
         MNVPLOTTER = PlotUtils.MnvPlotter()
@@ -695,120 +717,135 @@ class StitchedHistogram:
             self.data_hist.GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
 
     def StitchThis2D(self):
-        i_new = 0
-        
-        for h in self.stitchKeys:
+        for i in range(1, self.mc_hist.GetNbinsX()+1):
+            h = self.bin_dictionary[i]['sample']
+            sample_i = self.bin_dictionary[i]['bin']
+
             h_nue = self.nue_templates[h].Clone()
             h_numu = self.numu_templates[h].Clone()
             h_swap = self.swap_templates[h].Clone()
-            for x in range(1, self.mc_hists[h].GetNbinsX()+1):
-                if self.mc_hists[h].GetBinContent(x) <= minBinCont:
-                    continue
 
-                i_new += 1
-                colInt = 0
-                for c in range(1,h_nue.GetNbinsX()+1):
-                    if isinstance(h_nue,ROOT.TH1D):
-                        colInt+=h_nue.GetBinContent(c)
-                    else:
-                        colInt+=h_nue.GetBinContent(c,x)
+            # ----- nu_e sample L/E templates ----- #
+            colInt = 0
 
-                for c in range(1,h_nue.GetNbinsX()+1):
-                    if isinstance(h_nue,ROOT.TH1D):
-                        bin_c = h_nue.GetBinContent(c)
-                    else:
-                        bin_c = h_nue.GetBinContent(c,x)
-                    self.nue_template.SetBinContent(i_new, c, bin_c/colInt if colInt > 0 else 0)
-                colInt = 0
-                for c in range(1,h_numu.GetNbinsX()+1):
-                    if isinstance(h_numu,ROOT.TH1D):
-                        colInt+=h_numu.GetBinContent(c)
-                    else:
-                        colInt+=h_numu.GetBinContent(c,x)
+            # Get integrated column content to normalize
+            for c in range(1,h_nue.GetNbinsX()+1):
+                if isinstance(h_nue,ROOT.TH1D):
+                    colInt+=h_nue.GetBinContent(c)
+                else:
+                    colInt+=h_nue.GetBinContent(c,sample_i)
 
-                for c in range(1,h_numu.GetNbinsX()+1):
-                    if isinstance(h_numu,ROOT.TH1D):
-                        bin_c = h_numu.GetBinContent(c)
-                    else:
-                        bin_c = h_numu.GetBinContent(c,x)
-                    self.numu_template.SetBinContent(i_new, c, bin_c/colInt if colInt > 0 else 0)
-                colInt = 0
-                for c in range(1,h_swap.GetNbinsX()+1):
-                    if isinstance(h_swap,ROOT.TH1D):
-                        colInt+=h_swap.GetBinContent(c)
-                    else:
-                        colInt+=h_swap.GetBinContent(c,x)
+            # Set each bin in stiched histogram with fractional column content
+            for c in range(1,h_nue.GetNbinsX()+1):
+                if isinstance(h_nue,ROOT.TH1D):
+                    bin_c = h_nue.GetBinContent(c)
+                else:
+                    bin_c = h_nue.GetBinContent(c,sample_i)
+                self.nue_template.SetBinContent(i, c, bin_c/colInt if colInt > 0 else 0)
 
-                for c in range(1,h_swap.GetNbinsX()+1):
-                    if isinstance(h_swap,ROOT.TH1D):
-                        bin_c = h_swap.GetBinContent(c)
-                    else:
-                        bin_c = h_swap.GetBinContent(c,x)
-                    self.swap_template.SetBinContent(i_new, c, bin_c/colInt if colInt > 0 else 0)
+            # ----- nu_mu sample L/E templates ----- #
+            colInt = 0
+
+            # Get integrated column content to normalize
+            for c in range(1,h_numu.GetNbinsX()+1):
+                if isinstance(h_numu,ROOT.TH1D):
+                    colInt+=h_numu.GetBinContent(c)
+                else:
+                    colInt+=h_numu.GetBinContent(c,sample_i)
+
+            # Set each bin in stiched histogram with fractional column content
+            for c in range(1,h_numu.GetNbinsX()+1):
+                if isinstance(h_numu,ROOT.TH1D):
+                    bin_c = h_numu.GetBinContent(c)
+                else:
+                    bin_c = h_numu.GetBinContent(c,sample_i)
+                self.numu_template.SetBinContent(i, c, bin_c/colInt if colInt > 0 else 0)
+
+            # ----- nu_mu->nu_e sample L/E templates ----- #
+            colInt = 0
+
+            # Get integrated column content to normalize
+            for c in range(1,h_swap.GetNbinsX()+1):
+                if isinstance(h_swap,ROOT.TH1D):
+                    colInt+=h_swap.GetBinContent(c)
+                else:
+                    colInt+=h_swap.GetBinContent(c,sample_i)
+
+            # Set each bin in stiched histogram with fractional column content
+            for c in range(1,h_swap.GetNbinsX()+1):
+                if isinstance(h_swap,ROOT.TH1D):
+                    bin_c = h_swap.GetBinContent(c)
+                else:
+                    bin_c = h_swap.GetBinContent(c,sample_i)
+                self.swap_template.SetBinContent(i, c, bin_c/colInt if colInt > 0 else 0)
 
     def StitchThis(self):
-        i_new = 0
+        for i in range(1,self.mc_hist.GetNbinsX()+1):
+            h = self.bin_dictionary[i]['sample']
+            sample_i = self.bin_dictionary[i]['bin']
 
-        histogram_config = {}
-
-        for h in self.stitchKeys:
-            h_mc = self.mc_hists[h]
-            h_data = self.data_hists[h]
-            histogram_config[h] = {"start" : i_new}
-
-            for i in range(1,h_mc.GetNbinsX()+1):
-                if h_mc.GetBinContent(i) <= minBinCont:
-                    continue # skip empty MC bins
-                i_new += 1
-
-                # ----- do MC stitching ----- #
-                bin_c = h_mc.GetBinContent(i)
-                self.mc_hist.SetBinContent(i_new,bin_c)
-                self.pseudo_hist.SetBinContent(i_new,bin_c)
-
-                # no statistical error on elastic scattering special production
-                if 'elastic' in h or 'imd':
-                    self.mc_hist.SetBinError(i_new,0)
-                    self.nue_hist.SetBinError(i_new,0)
-                    self.numu_hist.SetBinError(i_new,0)
-
-                # ----- do data stitching ----- #
-                bin_c = h_data.GetBinContent(i)
-                self.data_hist.SetBinContent(i_new,bin_c)
-
-                # ----- do other stitching ----- #
-                if not self.dirty:
-                    self.nue_hist.SetBinContent(i_new,self.nue_hists[h].GetBinContent(i))
-                    self.numu_hist.SetBinContent(i_new,self.numu_hists[h].GetBinContent(i))
-                    self.swap_hist.SetBinContent(i_new,self.swap_hists[h].GetBinContent(i))
-
-                    self.beam_id.SetBinContent(i_new,self.beam_ids[h].GetBinContent(i))
-                    self.ratio_id.SetBinContent(i_new,self.ratio_ids[h].GetBinContent(i))
-                    self.elastic_id.SetBinContent(i_new,self.elastic_ids[h].GetBinContent(i))
+            h_mc = self.mc_hists[h].Clone()
+            h_data = self.data_hists[h].Clone()
 
 
-            histogram_config[h]["end"] = i_new-1
+            # ----- do MC stitching ----- #
+            bin_mc = h_mc.GetBinContent(sample_i)
+            err_mc = h_mc.GetBinError(sample_i)
 
-        with open("HIST_CONFIG.json","w") as file:
-            json.dump(histogram_config,file,indent=4)
+            self.mc_hist.SetBinContent(i,bin_mc)
+            self.pseudo_hist.SetBinContent(i,bin_mc)
+            
+            self.mc_hist.SetBinError(i,err_mc)
+            self.pseudo_hist.SetBinError(i,err_mc)
 
+            # no statistical error on elastic scattering special production
+            if 'elastic' in h or 'imd' in h:
+                self.mc_hist.SetBinError(i,0)
+                self.nue_hist.SetBinError(i,0)
+                self.numu_hist.SetBinError(i,0)
+
+            # ----- do data stitching ----- #
+            bin_data = h_data.GetBinContent(sample_i)
+            err_data = h_data.GetBinError(sample_i)
+
+            self.data_hist.SetBinContent(i,bin_data)
+            self.data_hist.SetBinError(i,err_data)
+
+            # ----- do other stitching ----- #
+            if not self.dirty:
+                self.nue_hist.SetBinContent(i,self.nue_hists[h].GetBinContent(sample_i))
+                self.numu_hist.SetBinContent(i,self.numu_hists[h].GetBinContent(sample_i))
+                self.swap_hist.SetBinContent(i,self.swap_hists[h].GetBinContent(sample_i))
+
+                self.nue_hist.SetBinError(i,self.nue_hists[h].GetBinError(sample_i))
+                self.numu_hist.SetBinError(i,self.numu_hists[h].GetBinError(sample_i))
+                self.swap_hist.SetBinError(i,self.swap_hists[h].GetBinError(sample_i))
+
+                self.beam_id.SetBinContent(i,self.beam_ids[h].GetBinContent(sample_i))
+                self.ratio_id.SetBinContent(i,self.ratio_ids[h].GetBinContent(sample_i))
+                self.elastic_id.SetBinContent(i,self.elastic_ids[h].GetBinContent(sample_i))
+
+                self.beam_id.SetBinError(i,self.beam_ids[h].GetBinError(sample_i))
+                self.ratio_id.SetBinError(i,self.ratio_ids[h].GetBinError(sample_i))
+                self.elastic_id.SetBinError(i,self.elastic_ids[h].GetBinError(sample_i))
+            
     def FillErrorBandsFromDict(self):
-        offset = 1
-        for h in self.stitchKeys:
+        for i in range(1,self.mc_hist.GetNbinsX()+1):
+            h = self.bin_dictionary[i]['sample']
+            sample_i = self.bin_dictionary[i]['bin']
+
             h_mc = self.mc_hists[h]
             h_data = self.data_hists[h]
-            Nbins = h_mc.GetNbinsX()+1
 
             if not self.is_processed:
                 raise ValueError("Histograms have not been synced")
 
             errorband_names_vert = h_mc.GetVertErrorBandNames()
-
-            n_univ = 0
-            sys_mc = 0.0
-            sys_data = 0.0
-
             for error_band in errorband_names_vert:
+                self.mc_hist.GetVertErrorBand(error_band).SetUseSpreadError(h_mc.GetVertErrorBand(error_band).GetUseSpreadError())
+                self.pseudo_hist.GetVertErrorBand(error_band).SetUseSpreadError(h_mc.GetVertErrorBand(error_band).GetUseSpreadError())
+                self.data_hist.GetVertErrorBand(error_band).SetUseSpreadError(h_data.GetVertErrorBand(error_band).GetUseSpreadError())
+
                 n_univ = h_mc.GetVertErrorBand(error_band).GetNHists()
                 if not self.mc_hist.HasVertErrorBand(error_band) and h_mc.HasVertErrorBand(error_band):
                     raise ValueError("MC histograms were not properly synchronized")
@@ -816,57 +853,28 @@ class StitchedHistogram:
                     raise ValueError("Data histograms were not properly synchronized")
 
                 for universe in range(0, n_univ):
-                    bin_offset = offset
-                    for b in range(1, Nbins):
-                        bin_mc = h_mc.GetBinContent(b)
-                        bin_data = h_data.GetBinContent(b)
+                    bin_mc = h_mc.GetBinContent(sample_i)
+                    bin_data = h_data.GetBinContent(sample_i)
 
-                        if bin_mc <= minBinCont:
-                            bin_offset += -1
-                            continue
+                    sys_mc = h_mc.GetVertErrorBand(error_band).GetHist(universe).GetBinContent(sample_i)
+                    sys_data = h_data.GetVertErrorBand(error_band).GetHist(universe).GetBinContent(sample_i)
 
-                        sys_mc = h_mc.GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
-                        sys_data = h_data.GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
+                    if not self.dirty:
+                        sys_nue = self.nue_hists[h].GetVertErrorBand(error_band).GetHist(universe).GetBinContent(sample_i)
+                        sys_numu = self.numu_hists[h].GetVertErrorBand(error_band).GetHist(universe).GetBinContent(sample_i)
+                        sys_swap = self.swap_hists[h].GetVertErrorBand(error_band).GetHist(universe).GetBinContent(sample_i)
 
-                        if not self.dirty:
-                            sys_nue = self.nue_hists[h].GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
-                            sys_numu = self.numu_hists[h].GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
-                            sys_swap = self.swap_hists[h].GetVertErrorBand(error_band).GetHist(universe).GetBinContent(b)
+                    ratio = sys_data/bin_data if bin_data != 0 else 0
+                    sys_pseudo = bin_mc*ratio
 
-                        ratio = sys_data/bin_data if bin_data != 0 else 0
-                        sys_pseudo = bin_mc*ratio
+                    self.mc_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(i,sys_mc)
+                    self.data_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(i,sys_data)
+                    self.pseudo_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(i,sys_pseudo)
 
-                        bin_new = b + bin_offset - 1
-
-                        self.mc_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_mc)
-                        self.data_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_data)
-                        self.pseudo_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_pseudo)
-
-                        if not self.dirty:
-                            self.nue_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_nue)
-                            self.numu_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_numu)
-                            self.swap_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(bin_new,sys_swap)
-
-            for i in range(1,Nbins):
-                if self.mc_hists[h].GetBinContent(i) <= minBinCont:
-                    continue
-                offset+=1
-
-    def SyncHistograms(self,h_sync):
-        if type(h_sync) == StitchedHistogram:
-            mc_sync = h_sync.mc_hist
-            data_sync = h_sync.data_hist
-            if mc_sync.GetVertErrorBandNames() != self.mc_hist.GetVertErrorBandNames():
-                self.Sync(mc_sync,self.mc_hist)
-            if data_sync.GetVertErrorBandNames() != self.data_hist.GetVertErrorBandNames():
-                self.Sync(data_sync,self.data_hist)
-        elif type(h_sync) == PlotUtils.MnvH1D:
-            if h_sync.GetVertErrorBandNames() != self.mc_hist.GetVertErrorBandNames():
-                self.Sync(h_sync,self.mc_hist)
-            if h_sync.GetVertErrorBandNames() != self.data_hist.GetVertErrorBandNames():
-                self.Sync(h_sync,self.mc_hist)
-        else:
-            raise ValueError("Cannot sync {} to MnvH1D or StitchedHistogram".format(type(h_sync)))
+                    if not self.dirty:
+                        self.nue_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(i,sys_nue)
+                        self.numu_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(i,sys_numu)
+                        self.swap_hist.GetVertErrorBand(error_band).GetHist(universe).SetBinContent(i,sys_swap)
 
     def SyncErrorBands(self,rename_bands=True):
         if len(self.mc_hists) > 0:
@@ -892,9 +900,6 @@ class StitchedHistogram:
                     self.ShortFlux(self.nue_hists[h1])
                     self.ShortFlux(self.numu_hists[h1])
                     self.ShortFlux(self.swap_hists[h1])
-
-        for h in self.mc_hists:
-            self.ShortFlux(self.mc_hists[h])
 
         if type(self.mc_hist) == PlotUtils.MnvH1D:
             if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist):
@@ -1065,6 +1070,7 @@ class StitchedHistogram:
         c1.Print(dirname+"swap_template"+name+".png")
 
         MNVPLOTTER = PlotUtils.MnvPlotter()
+        MNVPLOTTER.axis_maximum = 1
         MNVPLOTTER.error_summary_group_map.clear();
         for k,v in CONSOLIDATED_ERROR_GROUPS.items():
             vec = ROOT.vector("std::string")()
@@ -1077,3 +1083,8 @@ class StitchedHistogram:
         MNVPLOTTER.DrawErrorSummary(self.mc_hist,"TR",True,True,0)
         c1.Print(dirname+"mc_errsummary.png")
 
+        for key in self.mc_hists:
+            MNVPLOTTER.DrawErrorSummary(self.mc_hists[key],"TR",True,True,0)
+            c1.Print(dirname+key+"mc_errsummary.png")
+            MNVPLOTTER.DrawErrorSummary(self.data_hists[key],"TR",True,True,0)
+            c1.Print(dirname+key+"data_errsummary.png")

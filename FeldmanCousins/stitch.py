@@ -7,6 +7,7 @@ import PlotUtils
 from Tools.FitTools import *
 from Tools.PlotTools import *
 from Tools.Histogram import *
+from Tools.Helper import *
 import numpy as np
 
 import math
@@ -34,12 +35,8 @@ ROOT.TH1.AddDirectory(False)
 
 if __name__ == "__main__":
     binwidthScale = AnalysisConfig.binwidth
-
-    if AnalysisConfig.thesis_plots:
-        binwidthScale = True
     if AnalysisConfig.ratio:
         ftag = "ratio"
-        binwidthScale = False
     else:
         ftag = "stitched"
 
@@ -66,7 +63,6 @@ if __name__ == "__main__":
 
     type_path_map = {'mc':'/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_100Univ_thesis_swap_MAD.root'}
     data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection_100Univ",type_path_map,"MAD",True)
-    print("fhc_swap: ",mc_pot,data_pot)
     fhc_sel_swap = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_100Univ_thesis_swap_MAD.root")
     fhc_swap_sel_template = HistHolder("Reco Energy vs L/E",fhc_sel_swap,"Signal",True,mc_pot,standPOT)
     fhc_swap_selection_mc = HistHolder("Biased Neutrino Energy",fhc_sel_swap,"Signal",True,mc_pot,standPOT)
@@ -82,14 +78,13 @@ if __name__ == "__main__":
 
     type_path_map = {'mc':'/exp/minerva/data/users/rhowell/antinu_e_swap/kin_dist_mcRHC_Selection_1000Univ_thesis_swap_MAD.root'}
     data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("RHC_Selection_1000Univ",type_path_map,"MAD",True)
-    print("rhc_swap: ",mc_pot,data_pot)
     rhc_sel_swap = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e_swap/kin_dist_mcRHC_Selection_1000Univ_thesis_swap_MAD.root")
     rhc_swap_sel_template = HistHolder("Reco Energy vs L/E",rhc_sel_swap,"Signal",True,mc_pot,standPOT)
     rhc_swap_selection_mc = HistHolder("Biased Neutrino Energy",rhc_sel_swap,"Signal",True,mc_pot,standPOT)
 
     ### NuMu Selection ###
     cates = ["CCQE","CCDelta","CCDIS","CC2p2h","CCOther","CCWrongSign"]
-
+    
     type_path_map = {'data':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_dataFHC_Selection_100Univ_thesis_muon_MAD.root','mc':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_mcFHC_Selection_100Univ_thesis_muon_MAD.root'}
     data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection_100Univ",type_path_map,"MAD",True)
     standPOT = data_pot if data_pot is not None else mc_pot 
@@ -153,46 +148,34 @@ if __name__ == "__main__":
     h2_rhc_musel_template.Reset()
 
     for group in fhc_sel_template.hists:
-        if group == "Total":
-            continue
-        elif group in SIGNAL_DEFINITION:
+        if group in SIGNAL_DEFINITION:
             if fhc_sel_template.hists[group]:
                 h2_fhc_template.Add(fhc_sel_template.hists[group])
 
     for group in rhc_sel_template.hists:
-        if group == "Total":
-            continue
-        elif group in SIGNAL_DEFINITION:
+        if group in SIGNAL_DEFINITION:
             if rhc_sel_template.hists[group]:
                 h2_rhc_template.Add(rhc_sel_template.hists[group])
 
     for group in fhc_swap_sel_template.hists:
-        if group == "Total":
-            continue
-        elif group in SWAP_SIGNAL_DEFINITION:
+        if group in SWAP_SIGNAL_DEFINITION:
             if fhc_swap_sel_template.hists[group]:
                 h_fhc_swap_selection.Add(fhc_swap_selection_mc.hists[group])
                 h2_fhc_swap_template.Add(fhc_swap_sel_template.hists[group])
 
     for group in rhc_swap_sel_template.hists:
-        if group == "Total":
-            continue
-        elif group in SWAP_SIGNAL_DEFINITION:
+        if group in SWAP_SIGNAL_DEFINITION:
             if rhc_swap_sel_template.hists[group]:
                 h_rhc_swap_selection.Add(rhc_swap_selection_mc.hists[group])
                 h2_rhc_swap_template.Add(rhc_swap_sel_template.hists[group])
 
     for group in fhc_numu_selection_mcHold.hists:
-        if group == "Total":
-            continue
-        elif group in cates:
+        if group in cates and type(fhc_numu_selection_mcHold.hists[group]) == PlotUtils.MnvH1D:
             h_fhc_numu_selection_mc.Add(fhc_numu_selection_mcHold.hists[group])
             h2_fhc_musel_template.Add(fhc_musel_template.hists[group])
 
-    for group in fhc_numu_selection_mcHold.hists:
-        if group == "Total":
-            continue
-        elif group in cates:
+    for group in rhc_numu_selection_mcHold.hists:
+        if group in cates and type(rhc_numu_selection_mcHold.hists[group]) == PlotUtils.MnvH1D:
             h_rhc_numu_selection_mc.Add(rhc_numu_selection_mcHold.hists[group])
             h2_rhc_musel_template.Add(rhc_musel_template.hists[group])
 
@@ -341,16 +324,6 @@ if __name__ == "__main__":
     
     np.savetxt("mc_"+ftag+".csv",mcprint,delimiter=",")
     np.savetxt("data_"+ftag+".csv",dataprint,delimiter=",")
-                
-    for name in mnv_mc.GetVertErrorBandNames():
-        n_univ = mnv_mc.GetVertErrorBand(name).GetNHists()
-        err_hists = []
-        for univ in range(n_univ):
-            hist_vals = []
-            h_univ = mnv_mc.GetVertErrorBand(name).GetHist(univ)
-            for i in range(h_univ.GetNbinsX()+1):
-                hist_vals.append(h_univ.GetBinContent(i))
-            err_hists.append(hist_vals)
             
     filename = "{}/FeldmanCousins/rootfiles/NuE_stitched_hists.root".format(ccnueroot)
 
@@ -361,5 +334,5 @@ if __name__ == "__main__":
     invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
     nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
 
-    sample_histogram.PlotSamples(fluxSolution=nullSolution)
-    DataMCCVPlot(mnv_data,mnv_mc,"mc_stitched_v2.png")
+    #sample_histogram.PlotSamples(nullSolution)
+    #DataMCCVPlot(mnv_data,mnv_mc,"mc_stitched_v2.png")

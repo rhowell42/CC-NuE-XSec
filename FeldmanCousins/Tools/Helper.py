@@ -1,8 +1,56 @@
 import ROOT
 import numpy as np
 import ctypes
+import json
 
 legend_text_size = .025
+
+def GetSliceIndices(fname,exclude,keys):
+    bin_config = {}
+    with open(fname, "r") as file:
+        bin_config = json.load(file)
+
+    sliceInds = []
+    for h in keys:
+        if h not in bin_config.keys():
+            continue
+        if not checkRemove(exclude,h):
+            sliceInds.extend(list(range(bin_config[h]["start"],bin_config[h]["end"]+1)))
+
+    return(sliceInds)
+
+def slicer(arr,inds,axis=None):
+    if arr.ndim == 1: # 1D array
+        return arr[inds]
+    elif arr.ndim == 2: # 2D array
+        if axis == 1:
+            return arr[:,inds]
+        elif axis == 0:
+            return arr[inds,:]
+        else:
+            ret = arr[:,inds]
+            ret = ret[inds,:]
+            return ret
+
+def checkRemove(exclude,h):
+    if "fhc" in exclude:
+        if "fhc" in h and "selection" in h:
+            return(True)
+    if "rhc" in exclude:
+        if "rhc" in h and "selection" in h:
+            return(True)
+    if "numu" in exclude and "numu" in h:
+        return(True)
+    if "nue" in exclude and "nue" in h:
+        return(True)
+    if "elastic" in exclude and "elastic" in h:
+        return(True)
+    if "imd" in exclude and "imd" in h:
+        return(True)
+    if "ratio" in exclude and "ratio" in h:
+        return(True)
+
+    return(False)
 
 def TMatrix_to_Numpy(matrix):
     rows = matrix.GetNrows()

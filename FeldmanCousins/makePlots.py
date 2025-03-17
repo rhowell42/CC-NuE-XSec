@@ -87,9 +87,11 @@ if __name__ == "__main__":
     OscillateHistogram(sample_histogram, n4['m'], n4['ue4'], n4['umu4'], n4['utau4'])
 
     invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
+    invCov = np.loadtxt("data_minus_mc_COV.csv",delimiter=',')
+    invCov = np.linalg.inv(invCov)
 
     chi2,penalty = Chi2DataMC(sample_histogram,invCov=invCov,marginalize=True,exclude=AnalysisConfig.exclude,lam=AnalysisConfig.lambdaValue)
-    print(chi2,penalty)
+    print(chi2-penalty,penalty,chi2)
     exit()
 
     nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)

@@ -155,11 +155,8 @@ if __name__ == "__main__":
     POT_cal = AnalysisConfig.POT_cal
     print("playlist %s running ---------" % AnalysisConfig.playlist)
     for st in AnalysisConfig.data_types:
-        print(st)
         outputSelectionHistogram = AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,"data" in st,True)
-       
         output_file = ROOT.TFile.Open(outputSelectionHistogram,"RECREATE")
-        
         CopyMetaTreeToOutPutFile(output_file)
         if Reco :
             print("selecting reco")
