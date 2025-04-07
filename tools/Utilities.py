@@ -144,6 +144,7 @@ def ArachneLink(event):
 
 
 def PlaylistLookup(run):
+    print("Looking for playlist for run: {}".format(run))
     if (run>=110000 and run<=110149) or  (run>=118000 and run<=118999):
         return "minervame1a"
     elif run>=111000 and run<=111029:
