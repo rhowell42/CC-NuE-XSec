@@ -144,7 +144,6 @@ def ArachneLink(event):
 
 
 def PlaylistLookup(run):
-    print("Looking for playlist for run: {}".format(run))
     if (run>=110000 and run<=110149) or  (run>=118000 and run<=118999):
         return "minervame1a"
     elif run>=111000 and run<=111029:
@@ -219,31 +218,17 @@ def PlaylistLookup(run):
 
     #Low Energy
     # neutrino mode (FHC)
-    elif run >= 20000001 and run <= 23970019:
-        return "minervale1"
-    elif run >= 30860001 and run <= 30989999:
-        return "minervale7a"
-    elif run >= 33450003 and run <= 33570044:
-        return "minervale9"
-    elif run >= 35260001 and run <= 35420064:
-        return "minervale13a"
-    elif run >= 35430001 and run <= 35910055:
-        return "minervale13b"
-    elif run >= 35960001 and run <= 38160002:
-        return "minervale13c"
-    elif run >= 38160003 and run <= 38240051:
-        return "minervale13d"
-    elif run >= 38240052 and run <= 39010059:
-        return "minervale13e"
+    elif run >= 10200 and run <= 10250:
+        return "minerva1"
+    elif run >= 10250 and run <= 10255:
+        return "minerva7"
+    elif run >= 10255 and run <= 10260:
+        return "minerva9"
+    elif run >= 13200 and run <= 13300:
+        return "minerva13c"
     # anti-neutrino mode (RHC)
-    elif run >= 2650000 and run <= 28560015:
-        return "minervale5"
-    elif run >= 28280001 and run <= 28420041:
-        return "minervale5a"
-    elif run >= 26210001 and run <= 26470023:
-        return "minervale5b"
-    elif run >= 34150002 and run <= 34910054:
-        return "minervale10"
+    elif run >= 50200 and run <= 50250:
+        return "minerva5"
     else:
         return None
 
