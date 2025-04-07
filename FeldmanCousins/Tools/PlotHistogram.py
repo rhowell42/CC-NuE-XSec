@@ -587,17 +587,19 @@ class PlottingContainer:
 
         c1.Print("plots/{}_stitched_ratios_{:.1f}_{:.3f}_{:.4f}.png".format(name,parameters["m"],parameters['ue4'],parameters['umu4']))
 
-    def PlotOscillationEffects(self,parameters,name="",plotSamples=False,usePseudo=False,exclude="",lam=1):
+    def PlotOscillationEffects(self,parameters,name="",plotSamples=False,usePseudo=False):
         histogram = copy.deepcopy(self.histogram)
-        invCov=histogram.GetInverseCovarianceMatrix(sansFlux=True)
+        exclude = self.exclude
+        lam = self.lam
 
         h_null = histogram.GetMCHistogram()
         h_osc = histogram.GetOscillatedHistogram()
         h_data = histogram.GetPseudoHistogram() if usePseudo else histogram.GetDataHistogram()
 
-        chi2_null,_ = Chi2DataMC(histogram,invCov=invCov,marginalize=False,usePseudo=usePseudo,exclude=exclude,lam=lam)
-        chi2_model,_ = Chi2DataMC(histogram,invCov=invCov,marginalize=False,useOsc=True,usePseudo=usePseudo,exclude=exclude,lam=lam)
+        chi2_null,_ = Chi2DataMC(histogram,invCov=histogram.GetInverseCovarianceMatrix(sansFlux=False),marginalize=False,usePseudo=usePseudo,exclude=exclude,lam=lam)
+        chi2_model,_ = Chi2DataMC(histogram,invCov=histogram.GetInverseCovarianceMatrix(sansFlux=False),marginalize=False,useOsc=True,usePseudo=usePseudo,exclude=exclude,lam=lam)
 
+        invCov=histogram.GetInverseCovarianceMatrix()
         chi2_model_marg,model_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,useOsc=True,usePseudo=usePseudo,setHists=True,exclude=exclude)
         chi2_null_marg,null_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,usePseudo=usePseudo,setHists=True,lam=lam,exclude=exclude)
 

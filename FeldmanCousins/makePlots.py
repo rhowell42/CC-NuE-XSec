@@ -95,6 +95,11 @@ if __name__ == "__main__":
     plotter.PlotScatteringIntegrals()
     plotter.PlotFluxReweight()
     plotter.PlotProfileEffects()
+    plotter.PlotOscillationEffects(n4,"Neutrino4_lambda1",plotSamples=True)
+    plotter.SetLambda(12)
+    plotter.PlotOscillationEffects(n4,"Neutrino4_lambda12",plotSamples=True)
+    plotter.SetExclude("ratio")
+    plotter.PlotOscillationEffects(n4,"Neutrino4_excludeRatio",plotSamples=True)
     
 
     #nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
