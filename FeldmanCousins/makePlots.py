@@ -94,7 +94,7 @@ if __name__ == "__main__":
     plotter.SetInverseCovariance(invCov)
     plotter.PlotScatteringIntegrals()
     plotter.PlotFluxReweight()
-    #plotter.PlotProfileEffects()
+    plotter.PlotProfileEffects()
     
 
     #nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)

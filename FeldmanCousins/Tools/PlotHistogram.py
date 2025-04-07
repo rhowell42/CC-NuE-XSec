@@ -32,7 +32,7 @@ MNVPLOTTER.draw_normalized_to_bin_width=False
 # Specifically, w/o this, this script seg faults in the case where I try to instantiate FluxReweighterWithWiggleFit w/ nuE constraint set to False for more than one playlist
 ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
-legend_text_size = .025
+legend_text_size = .035
 
 def UndoBinWidthNorm(histogram):
     for i in range(0,histogram.GetNbinsX()+1):
@@ -225,11 +225,13 @@ class PlottingContainer:
 
     def PlotProfileEffects(self):
         c1 = ROOT.TCanvas("C2", "canvas2", 1024, 640)
-        c1.cd(1)
+        c1.SetTopMargin(0.35)
+        c1.SetRightMargin(0.05)
+
         h_null =  self.histogram.GetMCHistogram()
         h_data = self.histogram.GetDataHistogram()
         invCov = self.invCov
-        chi2,pen = Chi2DataMC(self.histogram,invCov=invCov)
+        chi2,pen = Chi2DataMC(self.histogram,invCov=self.histogram.GetInverseCovarianceMatrix(sansFlux=False))
 
         nullRatio = h_data.Clone()
         nullRatio.Divide(nullRatio,h_null)
@@ -251,14 +253,15 @@ class PlottingContainer:
         nullErrors.Draw("E2")
         nullRatio.Draw("SAME")
 
-        c1.SetTopMargin(0.35)
-        c1.SetRightMargin(0.05)
-        leg = ROOT.TLegend(0.05, 0.675, 0.95, .975)
+        leg = ROOT.TLegend(0.15, 0.675, 0.95, .975)
         leg.SetTextSize(legend_text_size);
-        leg.SetNColumns(len(self.titles)//2) # // median N number of rows per column
-        top = "Data"
+        #leg.SetNColumns(len(self.titles)//2) # // median N number of rows per column
+        leg.SetNColumns(2) # // median N number of rows per column
+
+        top = "Data w/o Profiling"
         bottom = "#chi^{2}="+"{:.2f}".format(chi2)
         legend = "#splitline{%s}{%s}" % (top,bottom)
+
         leg.AddEntry(nullRatio,legend,"p")
 
         for i,exclude in enumerate(self.exclude_samples):
@@ -268,12 +271,15 @@ class PlottingContainer:
             hist = self.histogram.GetMCHistogram()
             weights = ReweightCV(hist,fluxSolution=fluxSolution)
 
+            hist.SetName(exclude+"_{}".format(i))
+            hist.SetTitle(self.titles[i])
+
             hist.Divide(hist,h_null)
-            hist.SetLineColor(self.colors[i])
             hist.SetFillStyle(0)
-            if i == 0:
-                hist.SetLineStyle(2)
-            hist.Draw("same hist l")
+            #if i == 0:
+            #    hist.SetLineStyle(2)
+            hist.SetLineColor(self.colors[i])
+            hist.DrawClone("same hist l")
 
             top = self.titles[i]
             bottom = "#chi^{2}="+"{:.2f}+".format(chi2-penalty)+"{:.2f} pen.".format(penalty)
@@ -281,7 +287,6 @@ class PlottingContainer:
             leg.AddEntry(hist,legend,"l")
 
         straightLine.Draw("same hist") 
-
         leg.Draw()
 
         c1.Print("plots/stitched_flux_marg_effects.png")
