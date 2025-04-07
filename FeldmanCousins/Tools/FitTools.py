@@ -119,9 +119,9 @@ def FluxSolution(histogram,invCov=None,useOsc=False,usePseudo=False,exclude="",l
     I = np.identity(len(universes))
 
     L = 2 * A @ V @ C
-    Q = A @ V @ A.T + I
+    Q = A @ V @ A.T + I * lam
     solution = np.linalg.inv(Q) @ L/2
-    penalty = solution @ solution
+    penalty = lam * solution @ solution
     return(solution,penalty)
 
 def ReweightCV(histogram,fluxSolution,cv=None,mc=None):

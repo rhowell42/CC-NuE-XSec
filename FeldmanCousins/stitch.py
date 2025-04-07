@@ -5,7 +5,6 @@ import logging, sys
 import ROOT
 import PlotUtils
 from Tools.FitTools import *
-from Tools.PlotTools import *
 from Tools.Histogram import *
 from Tools.Helper import *
 import numpy as np
@@ -322,17 +321,14 @@ if __name__ == "__main__":
     dataprint = np.array(mnv_data)[1:-1] # store MC bin contents excluding over/underflow bins
     mcprint = np.array(mnv_mc)[1:-1]
     
-    np.savetxt("mc_"+ftag+".csv",mcprint,delimiter=",")
-    np.savetxt("data_"+ftag+".csv",dataprint,delimiter=",")
-            
     filename = "{}/FeldmanCousins/rootfiles/NuE_stitched_hists.root".format(ccnueroot)
 
     sample_histogram.Write(filename)
-    sample_histogram.SetPlottingStyle()
-    sample_histogram.DebugPlots()
+    #sample_histogram.SetPlottingStyle()
+    #sample_histogram.DebugPlots()
     
-    invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
-    nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
+    #invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
+    #nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
 
     #sample_histogram.PlotSamples(nullSolution)
     #DataMCCVPlot(mnv_data,mnv_mc,"mc_stitched_v2.png")

@@ -16,7 +16,6 @@ def GetSliceIndices(fname,exclude,keys):
             continue
         if not checkRemove(exclude,h):
             sliceInds.extend(list(range(bin_config[h]["start"],bin_config[h]["end"]+1)))
-
     return(sliceInds)
 
 def slicer(arr,inds,axis=None):

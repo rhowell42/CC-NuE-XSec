@@ -15,7 +15,7 @@ from array import array
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
 from Tools.Histogram import *
-from Tools.PlotTools import *
+from Tools.PlotHistogram import *
 from config.AnalysisConfig import AnalysisConfig
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
@@ -87,17 +87,20 @@ if __name__ == "__main__":
     OscillateHistogram(sample_histogram, n4['m'], n4['ue4'], n4['umu4'], n4['utau4'])
 
     invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
-    invCov = np.loadtxt("data_minus_mc_COV.csv",delimiter=',')
-    invCov = np.linalg.inv(invCov)
+    #invCov = np.loadtxt("data_minus_mc_COV.csv",delimiter=',')
+    #invCov = np.linalg.inv(invCov)
 
-    chi2,penalty = Chi2DataMC(sample_histogram,invCov=invCov,marginalize=True,exclude=AnalysisConfig.exclude,lam=AnalysisConfig.lambdaValue)
-    print(chi2-penalty,penalty,chi2)
-    exit()
+    plotter = PlottingContainer("test",sample_histogram)
+    plotter.SetInverseCovariance(invCov)
+    plotter.PlotScatteringIntegrals()
+    plotter.PlotFluxReweight()
+    #plotter.PlotProfileEffects()
+    
 
-    nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
+    #nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
 
-    sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="AllSamples")
-    PlotOscillationEffects(sample_histogram,n4,"Neutrino4",plotSamples=True)
-    PlotOscillationRatios(sample_histogram,n4,"Neutrino4")
-    PlotFluxMarginalizationEffects(sample_histogram,n4,"Neutrino4")
-    PlotSampleMarginalizationEffects(sample_histogram)
+    #sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="AllSamples")
+    #PlotOscillationEffects(sample_histogram,n4,"Neutrino4",plotSamples=True)
+    #PlotOscillationRatios(sample_histogram,n4,"Neutrino4")
+    #PlotFluxMarginalizationEffects(sample_histogram,n4,"Neutrino4")
+    #PlotSampleMarginalizationEffects(sample_histogram)
