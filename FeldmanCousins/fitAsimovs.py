@@ -18,7 +18,9 @@ from array import array
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
 from Tools.FitTools import *
-from Tools.PlotTools import *
+from Tools.Histogram import *
+
+from config.AnalysisConfig import AnalysisConfig
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
@@ -56,8 +58,7 @@ def ThrowSystematics(histogram,throwFlux=False,useDataSubMCCov=True,n_samples=50
         covMatrix = np.asarray(matrix(covMatrixTmp))[1:-1,1:-1] # convert to numpy array, exclude over/underflow bins
 
     if throwFlux:
-        #fluxCov = histogram.GetCovarianceMatrix() - histogram.GetCovarianceMatrix(sansFlux=True)
-        fluxCov = np.loadtxt("fluxCholeskyTolerance10.csv",delimiter=',')
+        fluxCov = histogram.GetCovarianceMatrix() - histogram.GetCovarianceMatrix(sansFlux=True)
         fluxCov = fluxCov @ np.conj(fluxCov.T)
         flux_throws = multivariate_normal.rvs(mean=pred_vals,cov=fluxCov) # randomly sample covariance matrix around null hypothesis
 
@@ -93,10 +94,10 @@ def FitToyExperiments(histogram,experiments):
         data_histogram.DivideSingle(data_histogram,weights)
         histogram.SetDataHistogram(data_histogram)
 
-        invCovariance = histogram.GetInverseCovarianceMatrix()
-        chi2_null,penalty = Chi2DataMC(histogram,invCov=invCovariance,marginalize=True)
+        invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True)
+        chi2_null,penalty = Chi2DataMC(histogram,invCov=invCov,marginalize=True,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
 
-        fitter = Fitter(histogram,invCov=invCovariance)
+        fitter = Fitter(histogram,invCov=invCov,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
         chi2_fit,res = fitter.DoFit()
 
         dchi2 = chi2_null - chi2_fit
@@ -111,59 +112,7 @@ def SplitList(alist,wanted_parts=1):
     return [ alist[i*length // wanted_parts: (i+1)*length // wanted_parts] for i in range(wanted_parts) ]
 
 if __name__ == "__main__":
-    BLUEARC = "/exp/minerva/data/users/{}/surfaces".format(os.environ["USER"])
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    parser.add_argument("--grid",
-                        action="store_true",
-                        default = False,
-                        help = "Run macro on grid, Input/Output path must be updated to avoid direct access to BlueArc"
-    )
-    parser.add_argument("-o", "--output",
-                        dest = "output_dir",
-                        help="Use alternate location for output file.",
-                        default=BLUEARC
-    )
-    parser.add_argument("-m", "--delta_m",
-                        dest = "delta_m",
-                        help="Delta m^2 value to probe.",
-                        type=float,
-                        default=0
-    )
-    parser.add_argument("-Ue4", "--U_e4",
-                        dest = "U_e4",
-                        help="U_e4 parameter to probe.",
-                        type=float,
-                        default=0
-    )
-    parser.add_argument("-Umu4", "--U_mu4",
-                        dest = "U_mu4",
-                        help="U_mu4 parameter to probe.",
-                        type=float,
-                        default=0
-    )
-    parser.add_argument("-U", "--U_tau4",
-                        dest = "U_tau4",
-                        help="U_tau4 parameter to probe.",
-                        type=float,
-                        default=0
-    )
-    parser.add_argument("--pseudodata",
-                        dest = "pseudodata",
-                        default = False,
-                        action="store_true",
-    )
-
-    args = parser.parse_args()
-    outdir_surface = args.output_dir
-    delta_m = args.delta_m
-    runongrid = args.grid
-    U_e4 = args.U_e4
-    U_mu4 = args.U_mu4
-    U_tau4 = args.U_tau4
-
-    filename = ""
-    filename = "NuE_stitched_hists.root"
+    filename = "rootfiles/NuE_stitched_hists.root"
 
     file_path = "{}/FeldmanCousins/{}".format(ccnueroot,filename)
 
@@ -174,4 +123,4 @@ if __name__ == "__main__":
     experiments = ThrowPoissons(sys_throws,sample_histogram)
 
     dchi2s = FitToyExperiments(sample_histogram,experiments)
-    np.savetxt('{}/sample_dchi2s_{}.csv'.format(outdir_surface,process),dchi2s,delimiter=',')
+    np.savetxt('{}/sample_dchi2s_{}.csv'.format(AnalysisConfig.output_dir,process),dchi2s,delimiter=',')
