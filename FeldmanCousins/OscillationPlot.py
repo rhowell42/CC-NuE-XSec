@@ -343,6 +343,16 @@ class PanelPlot:
             self.sens = ax.contour(X,Y,FC_sens[i],levels=limits,colors=contour_colors,origin="lower",linestyles='dashed')
             self.excl = ax.contour(X,Y,FC_excl[i],levels=limits,colors=contour_colors,origin="lower")
 
+    def PlotFeldmanCousinsLists(self, FC_excl, FC_sens, colors, limits):
+        contour_labels = [str(i)+'%' for i in limits]
+
+        X,Y = np.meshgrid(self.x,self.y)
+
+        for i,ax in enumerate(self.axes.flatten()):
+            for j in range(len(colors)):
+                self.sens = ax.contour(X,Y,FC_sens[j][i],levels=limits,colors=colors[j],origin="lower",linestyles='dashed')
+                self.excl = ax.contour(X,Y,FC_excl[j][i],levels=limits,colors=colors[j],origin="lower")
+
     def PlotExclusions(self):
         global hatch_index
         for i,ax in enumerate(self.axes.flatten()):
@@ -395,12 +405,58 @@ class PanelPlot:
 
         self.artists.extend([leg,leg2])
 
+    def PlotListLegend(self,limits,titles,colors):
+        handles = []
+        contour_labels = [title for title in titles]
+        contour_colors = colors
+
+        for c in range(len(contour_labels)):
+            line = plt.Line2D([0,0], [0,0], color=contour_colors[c], linestyle='dashed')
+            handles.append(line)
+        for c in range(len(contour_labels)):
+            line = plt.Line2D([0,0], [0,0], color=contour_colors[c])
+            handles.append(line)
+            
+        ph = [plt.plot([],marker="", ls="")[0]]*2
+        contour_labels+=contour_labels
+
+        half = len(titles)
+        handles = ph[:1] + handles[:half] + ph[1:] + handles[half:]
+        contour_labels = ["95% Sensitivity:"] + contour_labels[:half] + ["95% Exclusion:"] + contour_labels[half:]
+
+        leg = self.fig.legend(handles,contour_labels,ncol=2,title='MINERvA Feldman Cousins',bbox_to_anchor=(1.2, 0.5),loc='upper right',fontsize=12)
+        leg.get_title().set_fontsize(14)
+
+        for vpack in leg._legend_handle_box.get_children():
+            for hpack in vpack.get_children()[:1]:
+                hpack.get_children()[0].set_width(0)
+                
+        excl_handles = [exp.GetPatch() for exp in self.exclusion_results]
+        excl_handles.extend([exp.GetPatch() for exp in self.fit_results])
+
+        excl_labels = [exp.GetTitle() for exp in self.exclusion_results]
+        excl_labels.extend([exp.GetTitle() for exp in self.fit_results])
+        leg2 = self.fig.legend(excl_handles,excl_labels,title="External Experiments",bbox_to_anchor=(1.2, 0.75),loc='upper right',fontsize=14)
+        leg2.get_title().set_fontsize(14)
+
+        self.artists.extend([leg,leg2])
+
     def MakePlot(self,FC_excl,FC_sens,limits,name):
         self.CreateAxis()
         self.PlotFeldmanCousins(FC_excl,FC_sens,limits)
         self.PlotExclusions()
         self.PlotAlloweds()
         self.PlotLegend(limits)
+        print("saving figure {}".format(name))
+        plt.savefig(name,bbox_extra_artists=self.artists,bbox_inches='tight')
+
+    def MakeCompPlot(self,excls,sens,titles,limits,name):
+        colors = ["red","blue","green"]
+        self.CreateAxis()
+        self.PlotFeldmanCousinsLists(excls,sens,colors,limits)
+        self.PlotExclusions()
+        self.PlotAlloweds()
+        self.PlotListLegend(limits,titles,colors)
         print("saving figure {}".format(name))
         plt.savefig(name,bbox_extra_artists=self.artists,bbox_inches='tight')
 
@@ -476,15 +532,6 @@ if __name__ == "__main__":
     lam = int(AnalysisConfig.lambdaValue)
     exclude = AnalysisConfig.exclude
 
-    title = 'MINERvA Sterile Neutrino Search\nFlux Profiling $\lambda={}$ '.format(lam)
-    if exclude == 'ratio':
-        title+='Sans Flavor Ratio'
-        best_fit = 139.336
-    elif lam == 1:
-        best_fit = 101.24
-    elif lam == 12:
-        best_fit = 152.65
-
     histogram = StitchedHistogram("sample")
     histogram.Load(file_path)
 
@@ -493,9 +540,6 @@ if __name__ == "__main__":
     #best_fit,res = fitter.DoFit()
 
     #indexed like [dm2,umu4,ue4]
-    data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-    asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-    results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
 
     pplot = PanelPlot(title,'ue4','dm2','umu4')
 
@@ -535,6 +579,107 @@ if __name__ == "__main__":
             name = "plots/umu4_vs_dm2_%02d.png" % i
             pplot.Animate(sens,excl,limits,name,i)
     elif AnalysisConfig.compare_profiles:
+        lam = 1
+        best_fit = 101.24
+        exclude = "none"
+        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
+        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
+        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+        sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
+
+        lam = 12
+        best_fit = 152.65
+        exclude = "none"
+        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
+        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
+        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+        sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
+
+        lam = 1
+        exclude = "ratio"
+        best_fit = 139.336
+        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
+        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
+        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+        sens_list3,excl_list3 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
+
+        pplot.SetTitle("MINERvA Sterile Neutrino Search\nFlux Profiling Comparison")
+        pplot.SetXaxis("ue4")
+        pplot.SetYaxis("dm2")
+        pplot.SetPanel("umu4")
+        pplot.MakeCompPlot([excl_list1,excl_list2,excl_list3],[sens_list1,sens_list2,sens_list3],["$\lambda=1$","$\lambda=12$","$\lambda=1$ Sans\nFlavor Ratio"],limits,"plots/FC_ue4_vs_dm2_profiling.png")
+
+        lam = 1
+        best_fit = 101.24
+        exclude = "none"
+        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
+        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
+        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+        sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
+
+        lam = 12
+        best_fit = 152.65
+        exclude = "none"
+        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
+        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
+        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+        sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
+
+        lam = 1
+        exclude = "ratio"
+        best_fit = 139.336
+        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
+        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
+        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+        sens_list3,excl_list3 = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
+
+        pplot.SetXaxis("umu4")
+        pplot.SetYaxis("dm2")
+        pplot.SetPanel("ue4")
+        pplot.MakeCompPlot([excl_list1,excl_list2,excl_list3],[sens_list1,sens_list2,sens_list3],["$\lambda=1$","$\lambda=12$","$\lambda=1$ Sans\nFlavor Ratio"],limits,"plots/FC_umu4_vs_dm2_profiling.png")
+        
+        lam = 1
+        best_fit = 101.24
+        exclude = "none"
+        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
+        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
+        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+        sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
+
+        lam = 12
+        best_fit = 152.65
+        exclude = "none"
+        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
+        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
+        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+        sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
+
+        lam = 1
+        exclude = "ratio"
+        best_fit = 139.336
+        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
+        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
+        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+        sens_list3,excl_list3 = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
+
+        pplot.SetXaxis("ue4")
+        pplot.SetYaxis("umu4")
+        pplot.SetPanel("dm2")
+        pplot.MakeCompPlot([excl_list1,excl_list2,excl_list3],[sens_list1,sens_list2,sens_list3],["$\lambda=1$","$\lambda=12$","$\lambda=1$ Sans\nFlavor Ratio"],limits,"plots/FC_ue4_vs_umu4_profiling.png")
+
+    else:
+        title = 'MINERvA Sterile Neutrino Search\nFlux Profiling $\lambda={}$ '.format(lam)
+        if exclude == 'ratio':
+            title+='Sans Flavor Ratio'
+            best_fit = 139.336
+        elif lam == 1:
+            best_fit = 101.24
+        elif lam == 12:
+            best_fit = 152.65
+        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
+        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
+        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+
         pplot.SetXaxis("ue4")
         pplot.SetYaxis("dm2")
         pplot.SetPanel("umu4")
@@ -552,4 +697,3 @@ if __name__ == "__main__":
         pplot.SetPanel("dm2")
         sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
         pplot.MakePlot(excl_list,sens_list,limits,"plots/FC_ue4_vs_umu4_lambda{}_exclude_{}.png".format(lam,exclude))
-
