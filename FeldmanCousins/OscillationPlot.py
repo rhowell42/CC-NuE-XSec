@@ -41,6 +41,12 @@ str_to_index = {
         "umu4"  : 1
         }
 
+str_to_indices = {
+        "dm2"   : [20,27,32,39,44,51,61,71,92],
+        "ue4"   : [0,53,70,78,79,80,82,84,92],
+        "umu4"  : [0,50,58,62,65,67,69,72,87]
+        }
+
 hatch_styles = ["//",r"\\","||","--"]
 hatch_index = 0
 
@@ -266,11 +272,14 @@ class PanelPlot:
         self.y = str_to_axis[self.yaxis]
         self.p = str_to_axis[self.panel]
 
-        self.indices = []
+        self.indices = str_to_indices[panel]
 
         self.exclusion_results = []
         self.fit_results = []
         self.artists = []
+
+        self.sens = None
+        self.excl = None
 
     def SetTitle(self,title):
         self.title = title
@@ -286,9 +295,7 @@ class PanelPlot:
     def SetPanel(self,axis):
         self.panel = axis
         self.p = str_to_axis[axis]
-
-    def SetIndices(self,indices):
-        self.indices = indices
+        self.indices = str_to_indices[self.panel]
 
     def AddExclusions(self,exp):
         for e in exp:
@@ -333,8 +340,8 @@ class PanelPlot:
         X,Y = np.meshgrid(self.x,self.y)
 
         for i,ax in enumerate(self.axes.flatten()):
-            ax.contour(X,Y,FC_sens[i],levels=limits,colors=contour_colors,origin="lower",linestyles='dashed')
-            ax.contour(X,Y,FC_excl[i],levels=limits,colors=contour_colors,origin="lower")
+            self.sens = ax.contour(X,Y,FC_sens[i],levels=limits,colors=contour_colors,origin="lower",linestyles='dashed')
+            self.excl = ax.contour(X,Y,FC_excl[i],levels=limits,colors=contour_colors,origin="lower")
 
     def PlotExclusions(self):
         global hatch_index
@@ -397,8 +404,49 @@ class PanelPlot:
         print("saving figure {}".format(name))
         plt.savefig(name,bbox_extra_artists=self.artists,bbox_inches='tight')
 
+    def Animate(self,FC_excl,FC_sens,limits,name,index):
+        self.fig, self.axes = plt.subplots(figsize=(12,8),gridspec_kw={'wspace':0, 'hspace':0})
+        self.axes.set_title(self.title,size=20)
+        self.axes.set_xlabel(str_to_latex[self.xaxis],size=18)
+        self.axes.set_ylabel(str_to_latex[self.yaxis],size=18)
 
-def GetFCSlices(dchi2s,achi2s,results,indices,slc):
+        textprops = dict(facecolor='white',edgecolor='white', alpha=0.8)
+
+        self.axes.label_outer()
+        self.axes.set_aspect("auto")
+        self.axes.set_xscale("log")
+        self.axes.set_yscale("log")
+            
+        self.axes.set_xlim((self.x[0],self.x[-1]))
+        self.axes.set_ylim((self.y[0],self.y[-1]))
+
+        self.axes.text(self.x[7],self.y[7],s=str_to_latex[self.panel]+ "= {:.5f}".format(self.p[index]),bbox=textprops,c="black",fontweight="bold")
+
+        contour_labels = [str(i)+'%' for i in limits]
+        contour_colors = ['blue','red']
+
+        X,Y = np.meshgrid(self.x,self.y)
+
+        self.axes.contour(X,Y,FC_sens,levels=limits,colors=contour_colors,origin="lower",linestyles='dashed')
+        self.axes.contour(X,Y,FC_excl,levels=limits,colors=contour_colors,origin="lower")
+
+        global hatch_index
+        panel = self.p[index]
+        for exp in self.exclusion_results:
+            exp.Plot(self.axes,self.xaxis,self.yaxis,panel,self.panel)
+        hatch_index = 0 #reset hatch index for next plot
+        panel = self.p[index]
+        for exp in self.fit_results:
+            exp.Plot(self.axes,self.xaxis,self.yaxis,panel,self.panel)
+        hatch_index = 0 #reset hatch index for next plot
+        self.PlotLegend(limits)
+        plt.savefig(name,bbox_extra_artists=self.artists,bbox_inches='tight')
+        plt.close()
+
+
+def GetFCSlices(dchi2s,achi2s,results,panel):
+    indices = str_to_indices[panel]
+    slc = str_to_index[panel]
     sens_list = []
     excl_list = []
     for i in indices:
@@ -411,6 +459,15 @@ def GetFCSlices(dchi2s,achi2s,results,indices,slc):
         sens_list.append(FC_sens)
         excl_list.append(FC_excl)
     return(sens_list,excl_list)
+
+def GetFCSlice(dchi2s,achi2s,results,index,slc):
+    FC_sens = achi2s.take(indices=index,axis=slc)
+    FC_excl = dchi2s.take(indices=index,axis=slc)
+    for iy, ix in np.ndindex(FC_sens.shape):
+        FC_sens[iy,ix] = 100*(results[FC_sens[iy,ix] > results].shape[0]/results.shape[0])
+        FC_excl[iy,ix] = 100*(results[FC_excl[iy,ix] > results].shape[0]/results.shape[0])
+
+    return(FC_sens,FC_excl)
 
 if __name__ == "__main__":
     filename = "NuE_stitched_hists.root"
@@ -441,8 +498,6 @@ if __name__ == "__main__":
     results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
 
     pplot = PanelPlot(title,'ue4','dm2','umu4')
-    indices = [0,50,60,65,67,70,76,85,90]
-    pplot.SetIndices(indices)
 
     stereo = ExperimentContour("STEREO 95% Excl.","exp_results/stereo_2Dexcl.csv",False)
     neutrino4 = ExperimentContour("Neutrino-4 $2\sigma$ Conf.",["exp_results/n4_c1.csv","exp_results/n4_c2.csv","exp_results/n4_c3.csv","exp_results/n4_c4.csv"],True,"pink")
@@ -454,22 +509,47 @@ if __name__ == "__main__":
     neutrino4.SetPatch("Patch")
     raa.SetPatch("Patch")
 
+    limits = [95]
     pplot.AddExclusions([stereo,minos])
     pplot.AddAlloweds([neutrino4,raa])
 
-    limits = [95]
+    if AnalysisConfig.animate:
+        for i in range(len(str_to_axis["dm2"])):
+            pplot.SetXaxis("ue4")
+            pplot.SetYaxis("umu4")
+            pplot.SetPanel("dm2")
+            sens,excl = GetFCSlice(data_chi2s,asimov_chi2s,results,i,str_to_index["dm2"])
+            name = "plots/ue4_vs_umu4_%02d.png" % i
+            pplot.Animate(sens,excl,limits,name,i)
 
-    sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,indices,str_to_index["umu4"])
-    pplot.MakePlot(excl_list,sens_list,limits,"plots/FC_ue4_vs_dm2_lambda{}_exclude_{}.png".format(lam,exclude))
+            pplot.SetXaxis("ue4")
+            pplot.SetYaxis("dm2")
+            pplot.SetPanel("umu4")
+            sens,excl = GetFCSlice(data_chi2s,asimov_chi2s,results,i,str_to_index["umu4"])
+            name = "plots/ue4_vs_dm2_%02d.png" % i
+            pplot.Animate(sens,excl,limits,name,i)
+            
+            pplot.SetXaxis("umu4")
+            pplot.SetPanel("ue4")
+            sens,excl = GetFCSlice(data_chi2s,asimov_chi2s,results,i,str_to_index["ue4"])
+            name = "plots/umu4_vs_dm2_%02d.png" % i
+            pplot.Animate(sens,excl,limits,name,i)
+    elif AnalysisConfig.compare_profiles:
+        pplot.SetXaxis("ue4")
+        pplot.SetYaxis("dm2")
+        pplot.SetPanel("umu4")
+        sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
+        pplot.MakePlot(excl_list,sens_list,limits,"plots/FC_ue4_vs_dm2_lambda{}_exclude_{}.png".format(lam,exclude))
 
-    pplot.SetXaxis("umu4")
-    pplot.SetPanel("ue4")
-    sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,indices,str_to_index["ue4"])
-    pplot.MakePlot(excl_list,sens_list,limits,"plots/FC_umu4_vs_dm2_lambda{}_exclude_{}.png".format(lam,exclude))
-    
-    pplot.SetXaxis("ue4")
-    pplot.SetYaxis("umu4")
-    pplot.SetPanel("dm2")
-    sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,indices,str_to_index["dm2"])
-    pplot.MakePlot(excl_list,sens_list,limits,"plots/FC_ue4_vs_umu4_lambda{}_exclude_{}.png".format(lam,exclude))
+        pplot.SetXaxis("umu4")
+        pplot.SetYaxis("dm2")
+        pplot.SetPanel("ue4")
+        sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
+        pplot.MakePlot(excl_list,sens_list,limits,"plots/FC_umu4_vs_dm2_lambda{}_exclude_{}.png".format(lam,exclude))
+        
+        pplot.SetXaxis("ue4")
+        pplot.SetYaxis("umu4")
+        pplot.SetPanel("dm2")
+        sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
+        pplot.MakePlot(excl_list,sens_list,limits,"plots/FC_ue4_vs_umu4_lambda{}_exclude_{}.png".format(lam,exclude))
 
