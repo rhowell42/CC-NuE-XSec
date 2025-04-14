@@ -325,6 +325,16 @@ parser.add_argument("--truth",
                     action="store_true",
                     default=False)
 
+parser.add_argument("--animate",
+                    help="make contour plots as a video",
+                    action="store_true",
+                    default=False)
+
+parser.add_argument("--compare_profiles",
+                    help="compare different methods of flux profiling",
+                    action="store_true",
+                    default=False)
+
 parser.add_argument("--pseudodata",
                     help="Use MC predicted pseudodata in signal region.",
                     action="store_true",
