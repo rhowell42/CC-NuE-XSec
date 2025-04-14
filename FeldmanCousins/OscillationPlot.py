@@ -45,16 +45,17 @@ hatch_styles = ["//",r"\\","||","--"]
 hatch_index = 0
 
 class ExperimentContour:
-    def __init__(self,title,fname,xaxis,yaxis,fill,color="black"):
+    def __init__(self,title,fname,fill,color="black"):
         self.title = title
-        self.xaxis = xaxis
-        self.yaxis = yaxis
 
         self.color = color
         self.patch = Line2D([0], [0], color=self.color)
         self.style = "solid"
         self.fill = fill
         self.fname = fname
+
+        self.xaxis = ""
+        self.yaxis = ""
         self.data = {}
         self.LoadData()
 
@@ -69,6 +70,9 @@ class ExperimentContour:
 
     def LoadData(self,header=1):
         if isinstance(self.fname,str):
+            head = open(self.fname).readline().strip('\n')
+            self.xaxis = head.split(',')[0]
+            self.yaxis = head.split(',')[1]
             result = np.loadtxt(self.fname,delimiter=',',skiprows=header)
             if "theta" in self.xaxis:
                 xdata = np.array([np.roots([-4,4,-coeff])[1] for coeff in result[:,0]])
@@ -95,6 +99,9 @@ class ExperimentContour:
             self.data[self.yaxis] = ydata
 
         elif isinstance(self.fname,list):
+            head = open(self.fname[0]).readline().strip('\n')
+            self.xaxis = head.split(',')[0]
+            self.yaxis = head.split(',')[1]
             self.data[self.xaxis] = []
             self.data[self.yaxis] = []
             for name in self.fname:
@@ -437,10 +444,10 @@ if __name__ == "__main__":
     indices = [0,50,60,65,67,70,76,85,90]
     pplot.SetIndices(indices)
 
-    stereo = ExperimentContour("STEREO 95% Excl.","exp_results/stereo_2Dexcl.csv","dm2","sin2(2theta_e4)",False)
-    neutrino4 = ExperimentContour("Neutrino-4 $2\sigma$ Conf.",["exp_results/n4_c1.csv","exp_results/n4_c2.csv","exp_results/n4_c3.csv","exp_results/n4_c4.csv"],"sin2(2theta_e4)","dm2",True,"pink")
-    raa = ExperimentContour("RAA 90% Allowed","exp_results/RAA.csv","sin2(2theta_e4)","dm2",True,"gray")
-    minos = ExperimentContour("MINOS 90% Excl.","exp_results/MINOS.csv","sin2(2theta_mu4)","dm2",False,"black")
+    stereo = ExperimentContour("STEREO 95% Excl.","exp_results/stereo_2Dexcl.csv",False)
+    neutrino4 = ExperimentContour("Neutrino-4 $2\sigma$ Conf.",["exp_results/n4_c1.csv","exp_results/n4_c2.csv","exp_results/n4_c3.csv","exp_results/n4_c4.csv"],True,"pink")
+    raa = ExperimentContour("RAA 90% Allowed","exp_results/RAA.csv",True,"gray")
+    minos = ExperimentContour("MINOS 90% Excl.","exp_results/MINOS.csv",False,"black")
 
     stereo.SetPatch("Line")
     minos.SetPatch("Line")
