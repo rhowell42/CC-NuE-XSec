@@ -47,11 +47,10 @@ str_to_indices = {
         "umu4"  : [0,50,58,62,65,67,69,72,87]
         }
 
-hatch_styles = ["//",r"\\","||","--"]
-hatch_index = 0
+hatch_styles = ["//",r"\\","++","x"]
 
 class ExperimentContour:
-    def __init__(self,title,fname,fill,color="black"):
+    def __init__(self,title,fname,fill,color="black",h_index=0):
         self.title = title
 
         self.color = color
@@ -59,6 +58,7 @@ class ExperimentContour:
         self.style = "solid"
         self.fill = fill
         self.fname = fname
+        self.hatch = hatch_styles[h_index]
 
         self.xaxis = ""
         self.yaxis = ""
@@ -157,14 +157,13 @@ class ExperimentContour:
         self.style = style
 
     def SetPatch(self,graphic):
-        global hatch_index
         graphic = graphic.lower()
         if graphic == "line":
             self.patch = Line2D([0], [0], color=self.color, linestyle=self.style)
         elif graphic == "patch":
             self.patch = Patch(color=self.color) 
         elif graphic == "hatch":
-            self.patch = Patch(fill=False,hatch=hatch_styles[hatch_index], edgecolor=self.color)
+            self.patch = Patch(fill=False,hatch=self.hatch, edgecolor=self.color)
         else:
             raise ValueError("Graphic type not supported for legend")
 
@@ -206,12 +205,11 @@ class ExperimentContour:
         else:
             self.SetPatch('Hatch')
             for i in range(len(boxx)):
-                axis.fill(boxx[i],boxy[i],fill=False,hatch=hatch_styles[hatch_index],alpha=0.2,color=self.color)
+                axis.fill(boxx[i],boxy[i],fill=False,hatch=self.hatch,alpha=0.2,color=self.color)
 
     def Plot(self,axis,xaxis,yaxis,line,panel):
         axes = self.data.keys()
         t = self.data[xaxis] if xaxis in axes else self.data[yaxis]
-        global hatch_index
 
         if isinstance(t,list):
                 for i in range(len(t)):
@@ -256,10 +254,6 @@ class ExperimentContour:
                     pdata = self.data[panel]
                     boxx,boxy = self.GetIntersects(xdata,pdata,str_to_axis[yaxis],line)
                     self.PlotBox(axis,boxy,boxx)
-
-        # increment hatch styles if previously used
-        if xaxis not in axes or yaxis not in axes:
-            hatch_index+=1
 
 class PanelPlot:
     def __init__(self,title,xaxis,yaxis,panel):
@@ -354,20 +348,16 @@ class PanelPlot:
                 self.excl = ax.contour(X,Y,FC_excl[j][i],levels=limits,colors=colors[j],origin="lower")
 
     def PlotExclusions(self):
-        global hatch_index
         for i,ax in enumerate(self.axes.flatten()):
             panel = self.p[self.indices[i]]
             for exp in self.exclusion_results:
                 exp.Plot(ax,self.xaxis,self.yaxis,panel,self.panel)
-            hatch_index = 0 #reset hatch index for next plot
 
     def PlotAlloweds(self):
-        global hatch_index
         for i,ax in enumerate(self.axes.flatten()):
             panel = self.p[self.indices[i]]
             for exp in self.fit_results:
                 exp.Plot(ax,self.xaxis,self.yaxis,panel,self.panel)
-            hatch_index = 0 #reset hatch index for next plot
 
     def PlotLegend(self,limits):
         handles = []
@@ -486,15 +476,12 @@ class PanelPlot:
         self.axes.contour(X,Y,FC_sens,levels=limits,colors=contour_colors,origin="lower",linestyles='dashed')
         self.axes.contour(X,Y,FC_excl,levels=limits,colors=contour_colors,origin="lower")
 
-        global hatch_index
         panel = self.p[index]
         for exp in self.exclusion_results:
             exp.Plot(self.axes,self.xaxis,self.yaxis,panel,self.panel)
-        hatch_index = 0 #reset hatch index for next plot
         panel = self.p[index]
         for exp in self.fit_results:
             exp.Plot(self.axes,self.xaxis,self.yaxis,panel,self.panel)
-        hatch_index = 0 #reset hatch index for next plot
         self.PlotLegend(limits)
         plt.savefig(name,bbox_extra_artists=self.artists,bbox_inches='tight')
         plt.close()
@@ -554,10 +541,10 @@ if __name__ == "__main__":
 
     pplot = PanelPlot(title,'ue4','dm2','umu4')
 
-    stereo = ExperimentContour("STEREO 95% Excl.","exp_results/stereo_2Dexcl.csv",False)
-    neutrino4 = ExperimentContour("Neutrino-4 $2\sigma$ Conf.",["exp_results/n4_c1.csv","exp_results/n4_c2.csv","exp_results/n4_c3.csv","exp_results/n4_c4.csv"],True,"pink")
-    raa = ExperimentContour("RAA 90% Allowed","exp_results/RAA.csv",True,"gray")
-    minos = ExperimentContour("MINOS 90% Excl.","exp_results/MINOS.csv",False,"black")
+    stereo = ExperimentContour("STEREO 95% Excl.","exp_results/stereo_2Dexcl.csv",False,h_index=0)
+    minos = ExperimentContour("MINOS 90% Excl.","exp_results/MINOS.csv",False,"black",h_index=1)
+    neutrino4 = ExperimentContour("Neutrino-4 $2\sigma$ Conf.",["exp_results/n4_c1.csv","exp_results/n4_c2.csv","exp_results/n4_c3.csv","exp_results/n4_c4.csv"],True,"pink",h_index=2)
+    raa = ExperimentContour("RAA 90% Allowed","exp_results/RAA.csv",True,"gray",h_index=3)
 
     stereo.SetPatch("Line")
     minos.SetPatch("Line")
