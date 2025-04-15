@@ -540,6 +540,17 @@ if __name__ == "__main__":
     #best_fit,res = fitter.DoFit()
 
     #indexed like [dm2,umu4,ue4]
+    title = 'MINERvA Sterile Neutrino Search\nFlux Profiling $\lambda={}$ '.format(lam)
+    if exclude == 'ratio':
+        title+='Sans Flavor Ratio'
+        best_fit = 139.336
+    elif lam == 1:
+        best_fit = 101.24
+    elif lam == 12:
+        best_fit = 152.65
+    data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
+    asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
+    results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
 
     pplot = PanelPlot(title,'ue4','dm2','umu4')
 
@@ -564,20 +575,20 @@ if __name__ == "__main__":
             pplot.SetPanel("dm2")
             sens,excl = GetFCSlice(data_chi2s,asimov_chi2s,results,i,str_to_index["dm2"])
             name = "plots/ue4_vs_umu4_%02d.png" % i
-            pplot.Animate(sens,excl,limits,name,i)
+            pplot.Animate(excl,sens,limits,name,i)
 
             pplot.SetXaxis("ue4")
             pplot.SetYaxis("dm2")
             pplot.SetPanel("umu4")
             sens,excl = GetFCSlice(data_chi2s,asimov_chi2s,results,i,str_to_index["umu4"])
             name = "plots/ue4_vs_dm2_%02d.png" % i
-            pplot.Animate(sens,excl,limits,name,i)
+            pplot.Animate(excl,sens,limits,name,i)
             
             pplot.SetXaxis("umu4")
             pplot.SetPanel("ue4")
             sens,excl = GetFCSlice(data_chi2s,asimov_chi2s,results,i,str_to_index["ue4"])
             name = "plots/umu4_vs_dm2_%02d.png" % i
-            pplot.Animate(sens,excl,limits,name,i)
+            pplot.Animate(excl,sens,limits,name,i)
     elif AnalysisConfig.compare_profiles:
         lam = 1
         best_fit = 101.24
