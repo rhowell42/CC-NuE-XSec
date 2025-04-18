@@ -118,8 +118,8 @@ def PlotWithRatio(MNVPLOTTER,plotName,h_cv,hists=[],titles=[],colors=[],styles=[
     nullErrors.SetFillColorAlpha(ROOT.kGray+1, 0.4)
     nullErrors.GetYaxis().SetTitle("#splitline{Ratio to CV}{Prediction}")
     RatioAxis(nullErrors,MNVPLOTTER)
-    nullErrors.SetMinimum(0.4)
-    nullErrors.SetMaximum(1.6)
+    nullErrors.SetMinimum(0.7)
+    nullErrors.SetMaximum(1.3)
     nullErrors.Draw("E2")
 
     #Draw the data ratios

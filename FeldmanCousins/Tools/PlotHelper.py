@@ -6,7 +6,7 @@ def RatioAxis(hist,MNVPLOTTER):
 
     hist.SetTitle("")
     hist.GetYaxis().SetNdivisions(304) #5 minor divisions between 5 major divisions.  I'm trying to match a specific paper here.
-    hist.GetYaxis().SetTitleOffset(1.5)
+    hist.GetYaxis().SetTitleOffset(2.5)
     hist.GetYaxis().SetTitleFont(43)
     hist.GetYaxis().SetTitleSize(26)
     hist.GetYaxis().SetLabelFont(43)

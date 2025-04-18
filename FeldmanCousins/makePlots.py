@@ -76,32 +76,43 @@ if __name__ == "__main__":
     sample_histogram = StitchedHistogram("sample")
     sample_histogram.Load(file_path)
     sample_histogram.SetPlottingStyle()
+    invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
 
     n4 = {
             'm':7,
             'ue4':.14,
             'umu4':.003,
-            'utau4':0.5
+            'utau4':0.
+        }
+    nulltest = {
+            'm':0,
+            'ue4':0,
+            'umu4':0,
+            'utau4':0
         }
 
-    OscillateHistogram(sample_histogram, n4['m'], n4['ue4'], n4['umu4'], n4['utau4'])
+    plotter = PlottingContainer("test",sample_histogram)
+    plotter.SetInverseCovariance(invCov)
+    plotter.SetLambda(AnalysisConfig.lambdaValue)
+    plotter.SetExclude(AnalysisConfig.exclude)
+    #for i,umu4 in enumerate(np.linspace(0,0.41,100)):
+        #n4['umu4'] = umu4
+        #plotter.PlotOscillationEffects(n4,"Neutrino4_{}".format(i),plotSamples=True)
 
-    invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
+
     #invCov = np.loadtxt("data_minus_mc_COV.csv",delimiter=',')
     #invCov = np.linalg.inv(invCov)
 
-    plotter = PlottingContainer("test",sample_histogram)
+    OscillateHistogram(sample_histogram, n4['m'], n4['ue4'], n4['umu4'], n4['utau4'])
     plotter.SetInverseCovariance(invCov)
     plotter.PlotScatteringIntegrals()
     plotter.PlotFluxReweight()
     plotter.PlotProfileEffects()
-    plotter.PlotOscillationEffects(n4,"Neutrino4_lambda1",plotSamples=True)
-    plotter.SetLambda(12)
-    plotter.PlotOscillationEffects(n4,"Neutrino4_lambda12",plotSamples=True)
-    plotter.SetExclude("ratio")
-    plotter.PlotOscillationEffects(n4,"Neutrino4_excludeRatio",plotSamples=True)
+    plotter.PlotOscillationEffects(n4,"Neutrino4",plotSamples=True)
     
 
+    OscillateHistogram(sample_histogram, 0, 0, 0, 0)
+    plotter.PlotOscillationEffects(nulltest,"nulltest_excludeRatio",plotSamples=False)
     #nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
 
     #sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="AllSamples")

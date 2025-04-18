@@ -47,7 +47,13 @@ str_to_indices = {
         "umu4"  : [0,50,58,62,65,67,69,72,87]
         }
 
-hatch_styles = ["//",r"\\","++","x"]
+str_to_zoom = {
+        "dm2"   : 1e0,
+        "ue4"   : 5e-3,
+        "umu4"  : 5e-4
+        }
+
+hatch_styles = ["//",r"\\","+","oo","**"]
 
 class ExperimentContour:
     def __init__(self,title,fname,fill,color="black",h_index=0):
@@ -60,8 +66,6 @@ class ExperimentContour:
         self.fname = fname
         self.hatch = hatch_styles[h_index]
 
-        self.xaxis = ""
-        self.yaxis = ""
         self.data = {}
         self.LoadData()
 
@@ -77,78 +81,53 @@ class ExperimentContour:
     def LoadData(self,header=1):
         if isinstance(self.fname,str):
             head = open(self.fname).readline().strip('\n')
-            self.xaxis = head.split(',')[0]
-            self.yaxis = head.split(',')[1]
+            xaxis = head.split(',')[0]
+            yaxis = head.split(',')[1]
             result = np.loadtxt(self.fname,delimiter=',',skiprows=header)
-            if "theta" in self.xaxis:
-                xdata = np.array([np.roots([-4,4,-coeff])[1] for coeff in result[:,0]])
-            else:
-                xdata = result[:,0]
+            for i,axis in enumerate([xaxis,yaxis]):
+                if "theta" in axis:
+                    if "mue" in axis:
+                        data = result[:,i]/4
+                    else:
+                        data = np.array([np.roots([-4,4,-coeff])[1] for coeff in result[:,i]])
+                else:
+                    data = result[:,i]
 
-            xdata = self.interpolate(xdata)
-            if "e4" in self.xaxis:
-                self.xaxis = "ue4"
-            elif "mu4" in self.xaxis:
-                self.xaxis = "umu4"
-            self.data[self.xaxis] = xdata
-
-            if "theta" in self.yaxis:
-                ydata = np.array([np.roots([-4,4,-coeff])[1] for coeff in result[:,1]])
-            else:
-                ydata = result[:,1]
-
-            ydata = self.interpolate(ydata)
-            if "e4" in self.yaxis:
-                self.yaxis = "ue4"
-            elif "mu4" in self.yaxis:
-                self.yaxis = "umu4"
-            self.data[self.yaxis] = ydata
+                data = self.interpolate(data)
+                self.data[axis] = data
 
         elif isinstance(self.fname,list):
             head = open(self.fname[0]).readline().strip('\n')
-            self.xaxis = head.split(',')[0]
-            self.yaxis = head.split(',')[1]
-            self.data[self.xaxis] = []
-            self.data[self.yaxis] = []
+            xaxis = head.split(',')[0]
+            yaxis = head.split(',')[1]
+            self.data[xaxis] = []
+            self.data[yaxis] = []
             for name in self.fname:
                 result = np.loadtxt(name,delimiter=',',skiprows=header)
+                for i,axis in enumerate([xaxis,yaxis]):
+                    if "theta" in axis:
+                        if "mue" in axis:
+                            data = result[:,i]
+                        else:
+                            data = np.array([np.roots([-4,4,-coeff])[1] for coeff in result[:,i]])
+                    else:
+                        data = result[:,i]
 
-                if "theta" in self.xaxis:
-                    xdata = np.array([np.roots([-4,4,-coeff])[1] for coeff in result[:,0]])
-                else:
-                    xdata = result[:,0]
+                    data = self.interpolate(data)
+                    self.data[axis].append(data)
 
-                xdata = self.interpolate(xdata)
-                self.data[self.xaxis].append(xdata)
+        for axis in [xaxis,yaxis]:
+            if "e4" in axis:
+                new_axis = "ue4"
+            elif "mu4" in axis:
+                new_axis = "umu4"
+            elif "mue" in axis:
+                new_axis = "ue4_umu4"
+            else:
+                continue
 
-                if "theta" in self.yaxis:
-                    ydata = np.array([np.roots([-4,4,-coeff])[1] for coeff in result[:,1]])
-                else:
-                    ydata = result[:,1]
-
-                ydata = self.interpolate(ydata)
-                self.data[self.yaxis].append(ydata)
-    
-            xdata = self.data[self.xaxis]
-            ydata = self.data[self.yaxis]
-
-            if "e4" in self.xaxis:
-                del self.data[self.xaxis]
-                self.xaxis = "ue4"
-                self.data[self.xaxis] = xdata
-            elif "mu4" in self.xaxis:
-                del self.data[self.xaxis]
-                self.xaxis = "umu4"
-                self.data[self.xaxis] = xdata
-
-            if "e4" in self.yaxis:
-                del self.data[self.yaxis]
-                self.yaxis = "ue4"
-                self.data[self.yaxis] = ydata
-            elif "mu4" in self.yaxis:
-                del self.data[self.yaxis]
-                self.yaxis = "umu4"
-                self.data[self.yaxis] = ydata
+            self.data[new_axis] = self.data[axis]
+            del self.data[axis]
 
     def SetColor(self,color):
         self.color = color
@@ -163,7 +142,7 @@ class ExperimentContour:
         elif graphic == "patch":
             self.patch = Patch(color=self.color) 
         elif graphic == "hatch":
-            self.patch = Patch(fill=False,hatch=self.hatch, edgecolor=self.color)
+            self.patch = Patch(fill=False,hatch=self.hatch, edgecolor='black')
         else:
             raise ValueError("Graphic type not supported for legend")
 
@@ -197,6 +176,27 @@ class ExperimentContour:
                 box2.append([point1,point2,point2,point1])
         return(box1,box2)
 
+    def TranslateMixing(self,panel,line):
+        if panel == 'dm2':
+            intersect = 0
+            for i in range(1,len(self.data['dm2'])):
+                if self.data['dm2'][i] > line and self.data['dm2'][i-1] < line:
+                    intersect = self.data['ue4_umu4'][i] # want largest intersect for limits, so don't break
+            
+            ue4_0 = intersect / (4*str_to_axis["umu4"][0])
+            ue4_1 = intersect / (4*str_to_axis["umu4"][-1])
+            umu4_0 = intersect / (4*str_to_axis["ue4"][0])
+            umu4_1 = intersect / (4*str_to_axis["ue4"][-1])
+            return(np.array([ue4_0,ue4_1]),np.array([umu4_1,umu4_0]))
+        else:
+            x = []
+            y = []
+            for i,dm2 in enumerate(self.data['dm2']):
+                mixing = self.data['ue4_umu4'][i]
+                x.append(mixing / (4*line))
+                y.append(dm2)
+            return(np.array(x),np.array(y))
+
     def PlotBox(self,axis,boxx,boxy):
         if self.fill:
             self.SetPatch('Patch')
@@ -205,44 +205,48 @@ class ExperimentContour:
         else:
             self.SetPatch('Hatch')
             for i in range(len(boxx)):
-                axis.fill(boxx[i],boxy[i],fill=False,hatch=self.hatch,alpha=0.2,color=self.color)
+                axis.fill(boxx[i],boxy[i],fill=False,hatch=self.hatch,alpha=0.2,color='black')
+
+    def Draw(self,axis,x,y):
+        if self.fill:
+            self.SetPatch("patch")
+            axis.fill(x,y,color=self.color,alpha=0.4)
+        else:
+            self.SetPatch("line")
+            axis.plot(x,y,color=self.color,linestyle=self.style)
 
     def Plot(self,axis,xaxis,yaxis,line,panel):
         axes = self.data.keys()
-        t = self.data[xaxis] if xaxis in axes else self.data[yaxis]
-
+        t = self.data[list(self.data.keys())[0]] 
+        
         if isinstance(t,list):
-                for i in range(len(t)):
-                    if xaxis in axes and yaxis in axes:
-                        x = self.data[xaxis][i]
-                        y = self.data[yaxis][i]
-                        if self.fill:
-                            self.SetPatch("patch")
-                            axis.fill(x,y,color=self.color,alpha=0.4)
-                        else:
-                            self.SetPatch("line")
-                            axis.plot(x,y,color=self.color,linestyle=self.style)
-                    else: # need to recreate an axis
-                        if xaxis not in axes:
-                            ydata = self.data[yaxis][i]
-                            pdata = self.data[panel][i]
-                            boxx,boxy = self.GetIntersects(ydata,pdata,str_to_axis[xaxis],line)
-                            self.PlotBox(axis,boxx,boxy)
-                        elif yaxis not in axes:
-                            xdata = self.data[xaxis][i]
-                            pdata = self.data[panel][i]
-                            boxx,boxy = self.GetIntersects(xdata,pdata,str_to_axis[yaxis],line)
-                            self.PlotBox(axis,boxy,boxx)
+            for i in range(len(t)):
+                if xaxis in axes and yaxis in axes:
+                    x = self.data[xaxis][i]
+                    y = self.data[yaxis][i]
+                    self.Draw(axis,x,y)
+                elif "ue4_umu4" in axes:
+                    x,y = self.TranslateMixing(panel,line)
+                    self.Draw(axis,x,y)
+                else: # need to recreate an axis
+                    if xaxis not in axes:
+                        ydata = self.data[yaxis][i]
+                        pdata = self.data[panel][i]
+                        boxx,boxy = self.GetIntersects(ydata,pdata,str_to_axis[xaxis],line)
+                        self.PlotBox(axis,boxx,boxy)
+                    elif yaxis not in axes:
+                        xdata = self.data[xaxis][i]
+                        pdata = self.data[panel][i]
+                        boxx,boxy = self.GetIntersects(xdata,pdata,str_to_axis[yaxis],line)
+                        self.PlotBox(axis,boxy,boxx)
         else:
             if xaxis in axes and yaxis in axes:
                 x = self.data[xaxis]
                 y = self.data[yaxis]
-                if self.fill:
-                    self.SetPatch("patch")
-                    axis.fill(x,y,color=self.color,alpha=0.4)
-                else:
-                    self.SetPatch("line")
-                    axis.plot(x,y,color=self.color,linestyle=self.style)
+                self.Draw(axis,x,y)
+            elif "ue4_umu4" in axes:
+                x,y = self.TranslateMixing(panel,line)
+                self.Draw(axis,x,y)
             else: # need to recreate an axis
                 if xaxis not in axes:
                     ydata = self.data[yaxis]
@@ -256,24 +260,62 @@ class ExperimentContour:
                     self.PlotBox(axis,boxy,boxx)
 
 class PanelPlot:
-    def __init__(self,title,xaxis,yaxis,panel):
+    def __init__(self,title,xaxis,yaxis,panel,name=""):
         self.title = title
         self.xaxis = xaxis
         self.yaxis = yaxis
         self.panel = panel
+        self.name = name
 
         self.x = str_to_axis[self.xaxis]
         self.y = str_to_axis[self.yaxis]
         self.p = str_to_axis[self.panel]
+
+        self.zoomx = self.x[0]
+        self.zoomy = self.y[0]
 
         self.indices = str_to_indices[panel]
 
         self.exclusion_results = []
         self.fit_results = []
         self.artists = []
-
+        self.texts = []
         self.sens = None
         self.excl = None
+
+    def SetName(self,name):
+        self.name = name
+
+    def Zoom(self):
+        self.zoomx = str_to_zoom[self.xaxis]
+        self.zoomy = str_to_zoom[self.yaxis]
+        self.SetName(self.name[:-4] + "_zoomed.png")
+        for txt in self.texts:
+            txt.remove()
+
+        textprops = dict(facecolor='white',edgecolor='white', alpha=0.8)
+        for i,ax in enumerate(self.axes.flatten()):
+            ax.set_xlim((self.zoomx,self.x[-1]))
+            ax.set_ylim((self.zoomy,self.y[-1]))
+
+            rx = self.x[7] / self.x[0]
+            ry = self.y[7] / self.y[0]
+
+            textx = rx * self.zoomx
+            texty = ry * self.zoomy
+
+            text = str_to_latex[self.panel]
+            plabel = self.p[self.indices[i]]
+            if self.panel == "dm2":
+                text += "= {:.1f}".format(plabel)
+            elif self.panel == "ue4":
+                text += "= {:.3f}".format(plabel)
+            elif self.panel == "umu4":
+                text += "= {:.4f}".format(plabel)
+            self.texts.append(ax.text(textx,texty,s=text,bbox=textprops,c="black",fontweight="bold"))
+
+        self.Save()
+        self.texts = []
 
     def SetTitle(self,title):
         self.title = title
@@ -321,11 +363,19 @@ class PanelPlot:
                 ax.yaxis.set_major_locator(FixedLocator([1e-1,1e-2,1e-3,1e-4,1e-5]))
             elif self.yaxis == "ue4":
                 ax.yaxis.set_major_locator(FixedLocator([1e-1,1e-2,1e-3,1e-4]))
-                
             ax.set_xlim((self.x[0],self.x[-1]))
             ax.set_ylim((self.y[0],self.y[-1]))
+                
+            text = str_to_latex[self.panel]
+            plabel = self.p[self.indices[i]]
+            if self.panel == "dm2":
+                text += "= {:.1f}".format(plabel)
+            elif self.panel == "ue4":
+                text += "= {:.3f}".format(plabel)
+            elif self.panel == "umu4":
+                text += "= {:.4f}".format(plabel)
 
-            ax.text(self.x[7],self.y[7],s=str_to_latex[self.panel]+ "= {:.5f}".format(self.p[self.indices[i]]),bbox=textprops,c="black",fontweight="bold")
+            self.texts.append(ax.text(self.x[7],self.y[7],s=text,bbox=textprops,c="black",fontweight="bold"))
 
     def PlotFeldmanCousins(self, FC_excl, FC_sens, limits):
         contour_labels = [str(i)+'%' for i in limits]
@@ -378,7 +428,7 @@ class PanelPlot:
         handles = ph[:1] + handles[:half] + ph[1:] + handles[half:]
         contour_labels = ["Sensitivity:"] + contour_labels[:half] + ["Exclusion:"] + contour_labels[half:]
 
-        leg = self.fig.legend(handles,contour_labels,ncol=2,title='MINERvA Feldman Cousins',bbox_to_anchor=(1.2, 0.5),loc='upper right',fontsize=14)
+        leg = self.fig.legend(handles,contour_labels,ncol=2,title='MINERvA Feldman Cousins',bbox_to_anchor=(1.2, 0.4),loc='upper right',fontsize=14)
         leg.get_title().set_fontsize(14)
 
         for vpack in leg._legend_handle_box.get_children():
@@ -414,7 +464,7 @@ class PanelPlot:
         handles = ph[:1] + handles[:half] + ph[1:] + handles[half:]
         contour_labels = ["95% Sensitivity:"] + contour_labels[:half] + ["95% Exclusion:"] + contour_labels[half:]
 
-        leg = self.fig.legend(handles,contour_labels,ncol=2,title='MINERvA Feldman Cousins',bbox_to_anchor=(1.2, 0.5),loc='upper right',fontsize=12)
+        leg = self.fig.legend(handles,contour_labels,ncol=2,title='MINERvA Feldman Cousins',bbox_to_anchor=(1.2, 0.4),loc='upper right',fontsize=12)
         leg.get_title().set_fontsize(14)
 
         for vpack in leg._legend_handle_box.get_children():
@@ -431,26 +481,28 @@ class PanelPlot:
 
         self.artists.extend([leg,leg2])
 
-    def MakePlot(self,FC_excl,FC_sens,limits,name):
+    def Save(self):
+        print("saving figure {}".format(self.name))
+        plt.savefig(self.name,bbox_extra_artists=self.artists,bbox_inches='tight')
+
+    def MakePlot(self,FC_excl,FC_sens,limits):
         self.CreateAxis()
         self.PlotFeldmanCousins(FC_excl,FC_sens,limits)
         self.PlotExclusions()
         self.PlotAlloweds()
         self.PlotLegend(limits)
-        print("saving figure {}".format(name))
-        plt.savefig(name,bbox_extra_artists=self.artists,bbox_inches='tight')
+        self.Save()
 
-    def MakeCompPlot(self,excls,sens,titles,limits,name):
+    def MakeCompPlot(self,excls,sens,titles,limits):
         colors = ["red","blue","green"]
         self.CreateAxis()
         self.PlotFeldmanCousinsLists(excls,sens,colors,limits)
         self.PlotExclusions()
         self.PlotAlloweds()
         self.PlotListLegend(limits,titles,colors)
-        print("saving figure {}".format(name))
-        plt.savefig(name,bbox_extra_artists=self.artists,bbox_inches='tight')
+        self.Save()
 
-    def Animate(self,FC_excl,FC_sens,limits,name,index):
+    def Animate(self,FC_excl,FC_sens,limits,index):
         self.fig, self.axes = plt.subplots(figsize=(12,8),gridspec_kw={'wspace':0, 'hspace':0})
         self.axes.set_title(self.title,size=20)
         self.axes.set_xlabel(str_to_latex[self.xaxis],size=18)
@@ -483,7 +535,7 @@ class PanelPlot:
         for exp in self.fit_results:
             exp.Plot(self.axes,self.xaxis,self.yaxis,panel,self.panel)
         self.PlotLegend(limits)
-        plt.savefig(name,bbox_extra_artists=self.artists,bbox_inches='tight')
+        self.Save()
         plt.close()
 
 
@@ -526,7 +578,6 @@ if __name__ == "__main__":
     #fitter = Fitter(sample_histogram,invCov=invCov,lam=lam,exclude=exclude)
     #best_fit,res = fitter.DoFit()
 
-    #indexed like [dm2,umu4,ue4]
     title = 'MINERvA Sterile Neutrino Search\nFlux Profiling $\lambda={}$ '.format(lam)
     if exclude == 'ratio':
         title+='Sans Flavor Ratio'
@@ -535,24 +586,27 @@ if __name__ == "__main__":
         best_fit = 101.24
     elif lam == 12:
         best_fit = 152.65
+
+    #indexed like [dm2,umu4,ue4]
     data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
     asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
     results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
 
     pplot = PanelPlot(title,'ue4','dm2','umu4')
 
-    stereo = ExperimentContour("STEREO 95% Excl.","exp_results/stereo_2Dexcl.csv",False,h_index=0)
+    stereo = ExperimentContour("STEREO 95% Excl.","exp_results/stereo_2Dexcl.csv",False,"black",h_index=0)
     minos = ExperimentContour("MINOS 90% Excl.","exp_results/MINOS.csv",False,"black",h_index=1)
+    prospect = ExperimentContour("PROSPECT 95% Excl.","exp_results/prospect.csv",False,"yellow",h_index=2)
+    katrin = ExperimentContour("KATRIN 95% Excl.","exp_results/katrin.csv",False,"purple",h_index=3)
+    microboone = ExperimentContour("MicroBooNE 95% Excl.","exp_results/microboone.csv",False,"teal",h_index=4)
     neutrino4 = ExperimentContour("Neutrino-4 $2\sigma$ Conf.",["exp_results/n4_c1.csv","exp_results/n4_c2.csv","exp_results/n4_c3.csv","exp_results/n4_c4.csv"],True,"pink",h_index=2)
     raa = ExperimentContour("RAA 90% Allowed","exp_results/RAA.csv",True,"gray",h_index=3)
 
-    stereo.SetPatch("Line")
-    minos.SetPatch("Line")
     neutrino4.SetPatch("Patch")
     raa.SetPatch("Patch")
 
     limits = [95]
-    pplot.AddExclusions([stereo,minos])
+    pplot.AddExclusions([stereo,minos,prospect,katrin,microboone])
     pplot.AddAlloweds([neutrino4,raa])
 
     if AnalysisConfig.animate:
@@ -562,20 +616,24 @@ if __name__ == "__main__":
             pplot.SetPanel("dm2")
             sens,excl = GetFCSlice(data_chi2s,asimov_chi2s,results,i,str_to_index["dm2"])
             name = "plots/ue4_vs_umu4_%02d.png" % i
-            pplot.Animate(excl,sens,limits,name,i)
+            pplot.SetName(name)
+            pplot.Animate(excl,sens,limits,i)
 
             pplot.SetXaxis("ue4")
             pplot.SetYaxis("dm2")
             pplot.SetPanel("umu4")
             sens,excl = GetFCSlice(data_chi2s,asimov_chi2s,results,i,str_to_index["umu4"])
             name = "plots/ue4_vs_dm2_%02d.png" % i
-            pplot.Animate(excl,sens,limits,name,i)
+            pplot.SetName(name)
+            pplot.Animate(excl,sens,limits,i)
             
             pplot.SetXaxis("umu4")
             pplot.SetPanel("ue4")
             sens,excl = GetFCSlice(data_chi2s,asimov_chi2s,results,i,str_to_index["ue4"])
             name = "plots/umu4_vs_dm2_%02d.png" % i
-            pplot.Animate(excl,sens,limits,name,i)
+            pplot.SetName(name)
+            pplot.Animate(excl,sens,limits,i)
+
     elif AnalysisConfig.compare_profiles:
         lam = 1
         best_fit = 101.24
@@ -605,7 +663,10 @@ if __name__ == "__main__":
         pplot.SetXaxis("ue4")
         pplot.SetYaxis("dm2")
         pplot.SetPanel("umu4")
-        pplot.MakeCompPlot([excl_list1,excl_list2,excl_list3],[sens_list1,sens_list2,sens_list3],["$\lambda=1$","$\lambda=12$","$\lambda=1$ Sans\nFlavor Ratio"],limits,"plots/FC_ue4_vs_dm2_profiling.png")
+        name = "plots/FC_ue4_vs_dm2_profiling.png"
+        pplot.SetName(name)
+        pplot.MakeCompPlot([excl_list1,excl_list2,excl_list3],[sens_list1,sens_list2,sens_list3],["$\lambda=1$","$\lambda=12$","$\lambda=1$ Sans\nFlavor Ratio"],limits)
+        pplot.Zoom()
 
         lam = 1
         best_fit = 101.24
@@ -634,8 +695,11 @@ if __name__ == "__main__":
         pplot.SetXaxis("umu4")
         pplot.SetYaxis("dm2")
         pplot.SetPanel("ue4")
-        pplot.MakeCompPlot([excl_list1,excl_list2,excl_list3],[sens_list1,sens_list2,sens_list3],["$\lambda=1$","$\lambda=12$","$\lambda=1$ Sans\nFlavor Ratio"],limits,"plots/FC_umu4_vs_dm2_profiling.png")
-        
+        name = "plots/FC_umu4_vs_dm2_profiling.png"
+        pplot.SetName(name)
+        pplot.MakeCompPlot([excl_list1,excl_list2,excl_list3],[sens_list1,sens_list2,sens_list3],["$\lambda=1$","$\lambda=12$","$\lambda=1$ Sans\nFlavor Ratio"],limits)        
+        pplot.Zoom()
+
         lam = 1
         best_fit = 101.24
         exclude = "none"
@@ -663,7 +727,10 @@ if __name__ == "__main__":
         pplot.SetXaxis("ue4")
         pplot.SetYaxis("umu4")
         pplot.SetPanel("dm2")
-        pplot.MakeCompPlot([excl_list1,excl_list2,excl_list3],[sens_list1,sens_list2,sens_list3],["$\lambda=1$","$\lambda=12$","$\lambda=1$ Sans\nFlavor Ratio"],limits,"plots/FC_ue4_vs_umu4_profiling.png")
+        name = "plots/FC_ue4_vs_umu4_profiling.png"
+        pplot.SetName(name)
+        pplot.MakeCompPlot([excl_list1,excl_list2,excl_list3],[sens_list1,sens_list2,sens_list3],["$\lambda=1$","$\lambda=12$","$\lambda=1$ Sans\nFlavor Ratio"],limits)
+        pplot.Zoom()
 
     else:
         title = 'MINERvA Sterile Neutrino Search\nFlux Profiling $\lambda={}$ '.format(lam)
@@ -682,16 +749,22 @@ if __name__ == "__main__":
         pplot.SetYaxis("dm2")
         pplot.SetPanel("umu4")
         sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
-        pplot.MakePlot(excl_list,sens_list,limits,"plots/FC_ue4_vs_dm2_lambda{}_exclude_{}.png".format(lam,exclude))
+        pplot.SetName("plots/FC_ue4_vs_dm2_lambda{}_exclude_{}.png".format(lam,exclude))
+        pplot.MakePlot(excl_list,sens_list,limits)
+        pplot.Zoom()
 
         pplot.SetXaxis("umu4")
         pplot.SetYaxis("dm2")
         pplot.SetPanel("ue4")
         sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
-        pplot.MakePlot(excl_list,sens_list,limits,"plots/FC_umu4_vs_dm2_lambda{}_exclude_{}.png".format(lam,exclude))
+        pplot.SetName("plots/FC_umu4_vs_dm2_lambda{}_exclude_{}.png".format(lam,exclude))
+        pplot.MakePlot(excl_list,sens_list,limits)
+        pplot.Zoom()
         
         pplot.SetXaxis("ue4")
         pplot.SetYaxis("umu4")
         pplot.SetPanel("dm2")
         sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
-        pplot.MakePlot(excl_list,sens_list,limits,"plots/FC_ue4_vs_umu4_lambda{}_exclude_{}.png".format(lam,exclude))
+        pplot.SetName("plots/FC_ue4_vs_umu4_lambda{}_exclude_{}.png".format(lam,exclude))
+        pplot.MakePlot(excl_list,sens_list,limits)
+        pplot.Zoom()
