@@ -76,6 +76,7 @@ if __name__ == "__main__":
     print("   U_e4^2    = {:.3f}      +- {:.4f}".format(res['ue4'],0))
     print("   U_mu4^2   = {:.5f}    +- {:.4f}".format(res['umu4'],0))
     print("   U_tau4^2  = {:.3f}      +- {:.4f}".format(res['utau4'],0))
+    sample_histogram.SetPlottingStyle()
 
     plotter = PlottingContainer("fitted_histogram",sample_histogram)
     plotter.SetExclude(AnalysisConfig.exclude)

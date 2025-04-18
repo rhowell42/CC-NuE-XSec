@@ -607,6 +607,16 @@ class StitchedHistogram:
 
         f.Close()
 
+        for h1 in self.nue_hists:
+            self.nue_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hist)
+            self.numu_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hist)
+            self.swap_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hist)
+            self.data_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hist)
+            self.nue_hists[h1].AddMissingErrorBandsAndFillWithCV(self.data_hist)
+            self.numu_hists[h1].AddMissingErrorBandsAndFillWithCV(self.data_hist)
+            self.swap_hists[h1].AddMissingErrorBandsAndFillWithCV(self.data_hist)
+            self.data_hists[h1].AddMissingErrorBandsAndFillWithCV(self.data_hist)
+
         self.SetCovarianceMatrices()
 
     def SetPlottingStyle(self):
@@ -886,6 +896,9 @@ class StitchedHistogram:
                 for h in self.keys:
                     self.RenameBands(self.data_hists[h])
                     self.RenameBands(self.mc_hists[h])
+                    self.RenameBands(self.nue_hists[h])
+                    self.RenameBands(self.numu_hists[h])
+                    self.RenameBands(self.swap_hists[h])
             for h1 in self.keys:
                 for h2 in self.keys:
                     if h1 != h2:

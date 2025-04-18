@@ -47,8 +47,8 @@ def MakeSurface(histogram,outdir,deltam=1,U_tau4=0,makePlot=False,exclude="",lam
 
             OscillateHistogram(histogram, deltam, U_e4, U_mu4, U_tau4)
 
-            chi2_data,data_penalty = Chi2DataMC(histogram,invCov=histogram.GetInverseCovarianceMatrix(),marginalize=True,useOsc=True,exclude=exclude,lam=lam)
-            chi2_asimov,asimov_penalty = Chi2DataMC(histogram,invCov=histogram.GetInverseCovarianceMatrix(),marginalize=True,useOsc=True,usePseudo=True,exclude=exclude,lam=lam)
+            chi2_data,data_penalty = Chi2DataMC(histogram,invCov=histogram.GetInverseCovarianceMatrix(sansFlux=True),marginalize=True,useOsc=True,exclude=exclude,lam=lam)
+            chi2_asimov,asimov_penalty = Chi2DataMC(histogram,invCov=histogram.GetInverseCovarianceMatrix(sansFlux=True),marginalize=True,useOsc=True,usePseudo=True,exclude=exclude,lam=lam)
 
             if makePlot:
                 res={"m":deltam,"ue4":U_e4,"umu4":U_mu4,"utau4":0}

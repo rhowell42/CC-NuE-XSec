@@ -39,7 +39,7 @@ ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 
 class Fitter():
-    def __init__(self,histogram,invCov=None,remakeCov=False,useNewUniverses=False,exclude=None,lam=1):
+    def __init__(self,histogram,invCov=None,remakeCov=False,useNewUniverses=False,exclude="",lam=1):
         self.hist = histogram
         self.remakeCov = remakeCov
         self.useNewUniverses = useNewUniverses
@@ -242,7 +242,7 @@ def MarginalizeFlux(histogram,invCov=None,fluxSolution=None,useOsc=False,usePseu
 
     return(new_cv,new_invCov,penalty)
 
-def Chi2DataMC(histogram,marginalize=False,fluxSolution=None,useOsc=False,usePseudo=False,invCov=None,setHists=False,remakeCov=False,useNewUniverses=False,exclude=None,lam=1):
+def Chi2DataMC(histogram,marginalize=False,fluxSolution=None,useOsc=False,usePseudo=False,invCov=None,setHists=False,remakeCov=False,useNewUniverses=False,exclude="",lam=1):
     ##### Get histograms to calculate chi2 between #####
     if useOsc:
         mcHist = histogram.GetOscillatedHistogram()

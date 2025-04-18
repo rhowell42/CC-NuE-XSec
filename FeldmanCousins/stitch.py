@@ -325,7 +325,7 @@ if __name__ == "__main__":
 
     sample_histogram.Write(filename)
     #sample_histogram.SetPlottingStyle()
-    #sample_histogram.DebugPlots()
+    sample_histogram.DebugPlots()
     
     #invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
     #nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
