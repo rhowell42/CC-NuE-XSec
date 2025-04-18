@@ -39,7 +39,8 @@ M_mu_sqr = M_mu**2
 class CVUniverse(ROOT.PythonMinervaUniverse):
     is_pc = False
     def __init__(self, chain, nsigma = None): #nsigma is None for data because we don't shift data
-        ROOT.PythonMinervaUniverse.__init__(self, chain, 0 if nsigma is None else nsigma)
+        #ROOT.PythonMinervaUniverse.__init__(self, chain, 0 if nsigma is None else nsigma)
+        super(CVUniverse,self).__init__(chain,0 if nsigma is None else nsigma)
         self.weight = None
         self.tuning_weight = None
         self.InitWithoutSuper(chain,nsigma)
@@ -159,7 +160,6 @@ class CVUniverse(ROOT.PythonMinervaUniverse):
         weight *= self.GetLowRecoil2p2hWeight()
         weight *= self.GetRPAWeight()
         weight *= self.GetMyLowQ2PiWeight() # using MENU1PI for Aaron's result
-        weight *= self.GetGeantHadronWeight()
         weight *= self.GetMyMinosEfficiencyWeight()
 
         ### MnvTune v4.3.1 block below ###
@@ -395,7 +395,15 @@ class CVUniverse(ROOT.PythonMinervaUniverse):
 class FluxUniverse:
     def __init__(self, chain, universe_number):
         self.universe = ROOT.PlotUtils.FluxUniverse[ROOT.PythonMinervaUniverse](chain, 1, universe_number)
-        self.cv_universe = CVUniverse(chain, 1)  
+        self.cv_universe = CVUniverse(chain, 1)
+
+    def GetWeight(self,test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight *= self.universe.GetWeightRatioToCV()
+        return weight
 
     def __getattr__(self, attr):
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
@@ -409,6 +417,14 @@ class GenieUniverse():
     def __init__(self,chain,nsigma,universe_name):
         self.universe = ROOT.PlotUtils.GenieUniverse[ROOT.PythonMinervaUniverse](chain, nsigma, universe_name)
         self.cv_universe = CVUniverse(chain, nsigma)  
+
+    def GetWeight(self,test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight *= self.universe.GetGenieWeight()
+        return weight
 
     def __getattr__(self, attr):
         """Redirect attribute access to GenieUniverse first, then CVUniverse"""
@@ -427,6 +443,14 @@ class GenieRvx1piUniverse():
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
+    def GetWeight(self,test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight *= self.universe.GetGenieWeight()
+        return weight
+
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieRvx1piUniverse(chain,i,j) for j in ["Rvn1pi","Rvp1pi"] for i in OneSigmaShift]
@@ -439,6 +463,14 @@ class GenieFaCCQEUniverse():
     def __getattr__(self, attr):
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
+
+    def GetWeight(self,test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight *= self.universe.GetGenieWeight()
+        return weight
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
@@ -456,6 +488,14 @@ class GenieNormCCResUniverse():
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
+    def GetWeight(self,test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight *= self.universe.GetGenieWeight()
+        return weight
+
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieNormCCResUniverse(chain,i) for i in OneSigmaShift]
@@ -469,6 +509,14 @@ class GenieMaResUniverse():
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
+    def GetWeight(self,test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight *= self.universe.GetGenieWeight()
+        return weight
+
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieMaResUniverse(chain,i) for i in OneSigmaShift]
@@ -481,6 +529,14 @@ class GenieMvResUniverse():
     def __getattr__(self, attr):
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
+
+    def GetWeight(self,test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight *= self.universe.GetGenieWeight()
+        return weight
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
@@ -771,6 +827,14 @@ class GeantHadronUniverse():
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
+    def GetWeight(self,test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight *= self.universe.GetGeantHadronWeight()
+        return weight
+
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [GeantHadronUniverse(chain,i,j) for j in SystematicsConfig.GEANT_PARTICLES for i in OneSigmaShift]
@@ -778,10 +842,13 @@ class GeantHadronUniverse():
 class TargetMassUniverse():
     def __init__(self,chain,nsigma):
         self.universe = ROOT.PlotUtils.TargetMassScintillatorUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
-        self.cv_universe = CVUniverse(chain, nsigma)  
+        self.cv_universe = CVUniverse(chain, nsigma)
+
+    def GetWeight(self, test=None):
+        return self.GetStandardWeight()
 
     def GetStandardWeight(self):
-        weight = super(TargetMassUniverse,self).GetStandardWeight()
+        weight = self.cv_universe.GetStandardWeight()
         weight*= self.GetWeightRatioToCV()
         return weight
 
@@ -806,9 +873,12 @@ class MKModelUniverse():
         return True
 
     def GetStandardWeight(self):
-        weight = super(MKModelUniverse,self).GetStandardWeight()
-        weight*= self.reweighter.GetWeight(self,ROOT.PlotUtils.detail.empty())
+        weight = self.cv_universe.GetStandardWeight()
+        weight*= self.reweighter.GetWeight(self.cv_universe,ROOT.PlotUtils.detail.empty())
         return weight
+
+    def GetWeight(self, test=None):
+        return self.GetStandardWeight()
 
     def ShortName(self):
         return "MK_model"
@@ -833,9 +903,12 @@ class FSIWeightUniverse():
     def IsVerticalOnly(self):
         return True
 
+    def GetWeight(self, test=None):
+        return self.GetStandardWeight()
+
     def GetStandardWeight(self):
-        weight = super(FSIWeightUniverse,self).GetStandardWeight()
-        weight*= self.reweighter.GetWeight(self,ROOT.PlotUtils.detail.empty())
+        weight = self.cv_universe.GetStandardWeight()
+        weight*= self.reweighter.GetWeight(self.cv_universe,ROOT.PlotUtils.detail.empty())
         return weight
 
     def ShortName(self):
@@ -872,9 +945,12 @@ class SusaValenciaUniverse():
     def LatexName(self):
         return "SuSA Valencia Weight"
 
+    def GetWeight(self, test=None):
+        return self.GetStandardWeight()
+
     def GetStandardWeight(self):
-        weight = super(SusaValenciaUniverse,self).GetStandardWeight()
-        weight*= self.reweighter.GetWeight(self,ROOT.PlotUtils.detail.empty())
+        weight = self.cv_universe.GetStandardWeight()
+        weight*= self.reweighter.GetWeight(self.cv_universe,ROOT.PlotUtils.detail.empty())
         return weight
 
     @staticmethod
@@ -1021,11 +1097,12 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
     if exclude is not None and len(univ_dict)>1:
         for i in exclude:
             if i in univ_dict:
+                print("deleting universe {} from {}".format(i,univ_dict[i]))
                 del univ_dict[i]
 
     return univ_dict
 
-#code for testing new cv universe.
+#code for test=Noneing new cv universe.
 if __name__ == "__main__":
 
     #path = "/exp/minerva/data/users/hsu/merged_files/merged-1558038217.root"
@@ -1037,20 +1114,11 @@ if __name__ == "__main__":
     chainWrapper.GetValue("prong_part_score",0)
 
     univs = GetAllSystematicsUniverses(chainWrapper,False)
-    cvmin = 0
-    cvmax = 0
+
     for u in univs.keys():
-        if u == "cv":
-            continue
-
-        univ = univs[u][0]
-        #univ = univs[u][0]
-        univ.SetCVEntry(0)
-        minsigma = univ.GetWeight(False)
-        univ.SetCVEntry(1)
-        maxsigma = univ.GetWeight(False)
         print(u)
-        print(minsigma,maxsigma)
+        for univ in univs[u]:
+            univ.SetEntry(5)
+            weight = univ.GetWeight(False)
+            print(weight)
         print("")
-
-
