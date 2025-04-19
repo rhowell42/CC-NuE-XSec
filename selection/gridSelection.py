@@ -17,12 +17,15 @@ def createTarball(outDir):
 
 def unpackTarball( mywrapper):
   mywrapper.write("cd $CONDOR_DIR_INPUT\n")
-  mywrapper.write("source /cvmfs/larsoft.opensciencegrid.org/spack-packages/setup-env.sh\n")
-  mywrapper.write("spack load root@6.28.12\n")
-  mywrapper.write("spack load cmake\n")
+
+  mywrapper.write("source /cvmfs/larsoft.opensciencegrid.org/spack-v0.22.0-fermi/setup-env.sh\n")
+  mywrapper.write("spack load root@6.28.12 arch=linux-almalinux9-x86_64_v3\n")
+  mywrapper.write("spack load cmake@3.27.9%gcc@11.4.1 arch=linux-almalinux9-x86_64_v2\n")
   mywrapper.write("spack load gcc\n")
-  mywrapper.write("spack load fife-utils@3.7.4\n")
-  mywrapper.write("spack load py-numpy\n")
+  mywrapper.write("spack load python@3.9.15\n")
+  mywrapper.write("spack load ifdhc-config@2.6.20%gcc@11.4.1 arch=linux-almalinux9-x86_64_v2\n")
+  mywrapper.write("spack load py-numpy@1.24.3%gcc@12.2.0\n")
+
   mywrapper.write("tar -xvzf {}\n".format(outdir_tarball.split("/")[-1]))
   mywrapper.write("export MINERVA_PREFIX=`pwd`/{}\n".format(MAT))
   mywrapper.write("pushd {}/bin\n".format(MAT))
