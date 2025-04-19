@@ -557,6 +557,10 @@ class PlottingContainer:
         for whichBin in range(0, nullErrors.GetXaxis().GetNbins()+1): 
             nullErrors.SetBinError(whichBin, max(nullErrors.GetBinContent(whichBin), 1e-9))
             nullErrors.SetBinContent(whichBin, 1)
+        profErrors = h_prof.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
+        for whichBin in range(0, profErrors.GetXaxis().GetNbins()+1): 
+            profErrors.SetBinError(whichBin, max(profErrors.GetBinContent(whichBin), 1e-9))
+            profErrors.SetBinContent(whichBin,profRatio.GetBinContent(whichBin))
 
         nullRatio.SetLineColor(ROOT.kBlack)
         nullRatio.SetLineWidth(3)
@@ -564,13 +568,17 @@ class PlottingContainer:
         #Error envelope for the MC
         nullErrors.SetLineWidth(0)
         nullErrors.SetMarkerStyle(0)
-        nullErrors.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
+        nullErrors.SetFillColorAlpha(ROOT.kPink + 1, 0.3)
         nullErrors.GetYaxis().SetTitle("#splitline{Ratio to Null}{Hypothesis}")
         RatioAxis(nullErrors,MNVPLOTTER)
         nullErrors.GetXaxis().SetTitle("Bin Number")
         nullErrors.SetMinimum(.7)
         nullErrors.SetMaximum(1.3)
+        profErrors.SetLineWidth(0)
+        profErrors.SetMarkerStyle(0)
+        profErrors.SetFillColorAlpha(ROOT.kBlue + 1, 0.3)
         nullErrors.Draw("E2")
+        profErrors.Draw("E2 same")
 
         #Draw the data ratios
         nullRatio.Draw("same")
