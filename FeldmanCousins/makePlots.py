@@ -103,16 +103,17 @@ if __name__ == "__main__":
     #invCov = np.loadtxt("data_minus_mc_COV.csv",delimiter=',')
     #invCov = np.linalg.inv(invCov)
 
-    OscillateHistogram(sample_histogram, n4['m'], n4['ue4'], n4['umu4'], n4['utau4'])
-    plotter.SetInverseCovariance(invCov)
-    plotter.PlotScatteringIntegrals()
-    plotter.PlotFluxReweight()
-    plotter.PlotProfileEffects()
-    plotter.PlotOscillationEffects(n4,"Neutrino4",plotSamples=True)
+    #OscillateHistogram(sample_histogram, n4['m'], n4['ue4'], n4['umu4'], n4['utau4'])
+    #plotter.SetInverseCovariance(invCov)
+    #plotter.PlotScatteringIntegrals()
+    #plotter.PlotFluxReweight()
+    #plotter.PlotProfileEffects()
+    plotter.PlotFluxProfilingEffects("profile_effect")
+    #plotter.PlotOscillationEffects(n4,"Neutrino4",plotSamples=True)
     
 
-    OscillateHistogram(sample_histogram, 0, 0, 0, 0)
-    plotter.PlotOscillationEffects(nulltest,"nulltest_excludeRatio",plotSamples=False)
+    #OscillateHistogram(sample_histogram, 0, 0, 0, 0)
+    #plotter.PlotOscillationEffects(nulltest,"nulltest_excludeRatio",plotSamples=False)
     #nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
 
     #sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="AllSamples")

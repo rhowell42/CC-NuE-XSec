@@ -116,14 +116,15 @@ def PlotWithRatio(MNVPLOTTER,plotName,h_cv,hists=[],titles=[],colors=[],styles=[
     nullErrors.SetLineWidth(0)
     nullErrors.SetMarkerStyle(0)
     nullErrors.SetFillColorAlpha(ROOT.kGray+1, 0.4)
-    nullErrors.GetYaxis().SetTitle("#splitline{Ratio to CV}{Prediction}")
+    nullErrors.GetYaxis().SetTitle("Ratio to CV")
     RatioAxis(nullErrors,MNVPLOTTER)
     nullErrors.SetMinimum(0.7)
     nullErrors.SetMaximum(1.3)
+    nullErrors.GetXaxis().SetTitle("Neutrino Energy")
     nullErrors.Draw("E2")
 
     #Draw the data ratios
-    nullRatio.Draw("same")
+    nullRatio.Draw("same hist")
 
     for hist in hists:
         i_ratio = hist.Clone()

@@ -168,7 +168,66 @@ class PlottingContainer:
         pad.BuildLegend()
         c0.Print("plots/integrated_elastic_events.png")
 
+    def PlotRHCFluxReweight(self):
+        f_numu = ROOT.TFile.Open(plotutils+'/data/flux/flux-g4numiv6-pdg-14-minervame6A.root')
+        rhc_numu = f_numu.Get("flux_E_unweighted")
+        f_numu.Close()
+        f_nue = ROOT.TFile.Open(plotutils+'/data/flux/flux-g4numiv6-pdg-12-minervame6A.root')
+        rhc_nue = f_nue.Get("flux_E_unweighted")
+        f_nue.Close()
+        rhc_numu_univ = rhc_numu.GetVertErrorBand("Flux")
+        rhc_nue_univ = rhc_nue.GetVertErrorBand("Flux")
+
+        numu_fluxes = []
+        nue_fluxes = []
+
+        for i,exclude in enumerate(self.exclude_samples):
+            fluxSolution,nullPen = FluxSolution(self.histogram,invCov=self.invCov,exclude=exclude,lam=self.lams[i])
+
+            new_rhc_numu = rhc_numu.Clone()
+            new_rhc_nue = rhc_nue.Clone()
+            weights = ReweightCV(new_rhc_numu,fluxSolution=fluxSolution)
+            weights = ReweightCV(new_rhc_nue,fluxSolution=fluxSolution)
+
+            nue_fluxes.append(new_rhc_nue)
+            numu_fluxes.append(new_rhc_numu)
+
+        new_bins = array('d',list(range(0,21)))
+        UndoBinWidthNorm(rhc_nue)
+        UndoBinWidthNorm(rhc_numu)
+
+        rhc_numu = rhc_numu.Rebin(20,"hnew",new_bins)
+        rhc_numu.Scale(1,"width")
+        rhc_nue = rhc_nue.Rebin(20,"hnew",new_bins)
+        rhc_nue.Scale(1,"width")
+
+        titles = self.titles.copy()
+
+        for i in range(len(numu_fluxes)):
+            UndoBinWidthNorm(numu_fluxes[i])
+            numu_fluxes[i] = numu_fluxes[i].Rebin(20,str(i),new_bins)
+            numu_fluxes[i].Scale(1,'width')
+
+            UndoBinWidthNorm(nue_fluxes[i])
+            nue_fluxes[i] = nue_fluxes[i].Rebin(20,str(i),new_bins)
+            nue_fluxes[i].Scale(1,'width')
+
+        rhc_numu.GetXaxis().SetRangeUser(0,20)
+        rhc_numu.GetXaxis().SetTitle("Neutrino Energy")
+        rhc_numu.SetTitle("RHC anti #nu_{#mu} Flux Prediction")
+
+        rhc_nue.GetXaxis().SetRangeUser(0,20)
+        rhc_nue.GetXaxis().SetTitle("Neutrino Energy")
+        rhc_nue.SetTitle("RHC anti #nu_{e} Flux Prediction")
+
+        PlotWithRatio(MNVPLOTTER,"plots/RHC_NuMuFlux_Reweight.png",rhc_numu,hists=numu_fluxes,titles=titles,colors=self.colors)
+        PlotWithRatio(MNVPLOTTER,"plots/RHC_NuEFlux_Reweight.png",rhc_nue,hists=nue_fluxes,titles=titles,colors=self.colors)
+
     def PlotFluxReweight(self):
+        self.PlotRHCFluxReweight()
+        self.PlotFHCFluxReweight()
+
+    def PlotFHCFluxReweight(self):
         f_numu = ROOT.TFile.Open(plotutils+'/data/flux/flux-g4numiv6-pdg14-minervame1D1M1NWeightedAve.root')
         fhc_numu = f_numu.Get("flux_E_unweighted")
         f_numu.Close()
@@ -220,8 +279,8 @@ class PlottingContainer:
         fhc_nue.GetXaxis().SetTitle("Neutrino Energy")
         fhc_nue.SetTitle("FHC #nu_{e} Flux Prediction")
 
-        PlotWithRatio(MNVPLOTTER,"plots/NuMuFlux_Reweight.png",fhc_numu,hists=numu_fluxes,titles=titles,colors=self.colors)
-        PlotWithRatio(MNVPLOTTER,"plots/NuEFlux_Reweight.png",fhc_nue,hists=nue_fluxes,titles=titles,colors=self.colors)
+        PlotWithRatio(MNVPLOTTER,"plots/FHC_NuMuFlux_Reweight.png",fhc_numu,hists=numu_fluxes,titles=titles,colors=self.colors)
+        PlotWithRatio(MNVPLOTTER,"plots/FHC_NuEFlux_Reweight.png",fhc_nue,hists=nue_fluxes,titles=titles,colors=self.colors)
 
     def PlotProfileEffects(self):
         c1 = ROOT.TCanvas("C2", "canvas2", 1024, 640)
@@ -424,14 +483,118 @@ class PlottingContainer:
 
         c1.Print("plots/{}_marg_effects_{:.1f}_{:.3f}_{:.4f}.png".format(name,parameters["m"],parameters['ue4'],parameters['umu4']))
 
+    def PlotFluxProfilingEffects(self,name=""):
+        histogram = copy.deepcopy(self.histogram)
+        exclude = self.exclude
+        lam = self.lam
+
+        h_null = histogram.GetMCHistogram()
+        invCov=self.invCov
+        chi2_null,null_pen = Chi2DataMC(histogram,invCov=histogram.GetInverseCovarianceMatrix(sansFlux=False))
+        chi2_model,model_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,setHists=True,exclude=exclude,lam=lam)
+
+        h_prof = histogram.GetMCHistogram()
+        h_data = histogram.GetDataHistogram()
+
+        c1 = ROOT.TCanvas()
+        margin = .12
+        bottomFraction = .2
+        overall = ROOT.TCanvas("Data/MC")
+        top = ROOT.TPad("DATAMC", "DATAMC", 0, bottomFraction, 1, 1)
+        bottom = ROOT.TPad("Ratio", "Ratio", 0, 0, 1, bottomFraction+margin)
+
+        top.Draw()
+        bottom.Draw()
+
+        top.cd()
+        top.SetLogy()
+        
+        h_null.SetTitle(name)
+        h_prof.SetLineColor(ROOT.kBlue)
+        
+        h_null.Draw("hist")
+        h_prof.Draw("hist same")
+        h_data.Draw("same")
+
+        null = h_null.GetCVHistoWithError()
+        null.SetLineColor(ROOT.kRed)
+        null.SetLineWidth(2)
+        null.SetMarkerStyle(0)
+        null.SetFillColorAlpha(ROOT.kPink + 1, 0.3)
+        null.Draw("E2 SAME")
+
+        h_prof.PopVertErrorBand("Flux")
+        prof = h_prof.GetCVHistoWithError()
+        prof.SetLineColor(ROOT.kBlue)
+        prof.SetLineWidth(2)
+        prof.SetMarkerStyle(0)
+        prof.SetFillColorAlpha(ROOT.kBlue + 1, 0.3)
+        prof.Draw("E2 SAME")
+
+        leg = ROOT.TLegend(.28,.35)
+        leg.AddEntry(h_data,"Data","p")
+        top_text = "Null Hypothesis"
+        bot_text = "#chi^{2}="+"{:.2f}".format(chi2_null)
+        leg_text = "#splitline{%s}{%s}" % (top_text,bot_text)
+        leg.AddEntry(h_null,leg_text,"l")
+        top_text = "Profiled Flux"
+        bot_text = "#chi^{2}="+"{:.2f} + {:.2f} penalty".format(chi2_model-model_pen,model_pen)
+        leg_text = "#splitline{%s}{%s}" % (top_text,bot_text)
+        leg.AddEntry(h_prof,leg_text,"l")
+        leg.Draw()
+
+        nullRatio =  h_data.Clone()
+        profRatio =  h_prof.Clone()
+
+        nullRatio.Divide(nullRatio,h_null)
+        profRatio.Divide(profRatio, h_null)
+
+        bottom.cd()
+        bottom.SetTopMargin(0)
+        bottom.SetBottomMargin(0.3)
+
+        nullErrors = h_null.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
+        for whichBin in range(0, nullErrors.GetXaxis().GetNbins()+1): 
+            nullErrors.SetBinError(whichBin, max(nullErrors.GetBinContent(whichBin), 1e-9))
+            nullErrors.SetBinContent(whichBin, 1)
+
+        nullRatio.SetLineColor(ROOT.kBlack)
+        nullRatio.SetLineWidth(3)
+
+        #Error envelope for the MC
+        nullErrors.SetLineWidth(0)
+        nullErrors.SetMarkerStyle(0)
+        nullErrors.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
+        nullErrors.GetYaxis().SetTitle("#splitline{Ratio to Null}{Hypothesis}")
+        RatioAxis(nullErrors,MNVPLOTTER)
+        nullErrors.GetXaxis().SetTitle("Bin Number")
+        nullErrors.SetMinimum(.7)
+        nullErrors.SetMaximum(1.3)
+        nullErrors.Draw("E2")
+
+        #Draw the data ratios
+        nullRatio.Draw("same")
+        profRatio.Draw('same hist l')
+
+        #Draw a flat line at 1 for profRatio of MC to itself
+        straightLine = nullErrors.Clone()
+        straightLine.SetLineColor(ROOT.kRed)
+        straightLine.SetLineWidth(2)
+        straightLine.SetFillColor(0)
+        straightLine.Draw("HIST SAME")
+
+        top.cd()
+
+        overall.Print("plots/{}_stitched.png".format(name))
+
     def PlotOscillationEffects(self,parameters,name="",plotSamples=False,usePseudo=False):
         histogram = copy.deepcopy(self.histogram)
         exclude = self.exclude
         lam = self.lam
 
         invCov=self.invCov
-        chi2_null,null_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,usePseudo=usePseudo,setHists=True,exclude=exclude,lam=lam)
         chi2_model,model_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,useOsc=True,setHists=True,usePseudo=usePseudo,exclude=exclude,lam=lam)
+        chi2_null,null_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,usePseudo=usePseudo,setHists=True,exclude=exclude,lam=lam)
 
         h_null = histogram.GetMCHistogram()
         h_osc = histogram.GetOscillatedHistogram()
