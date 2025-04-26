@@ -9,26 +9,26 @@
     },
     "fhc_numu_selection": {
         "start": 7,
-        "end": 31
+        "end": 6
     },
     "rhc_elastic": {
-        "start": 32,
-        "end": 37
+        "start": 7,
+        "end": 12
     },
     "rhc_imd": {
-        "start": 38,
-        "end": 38
+        "start": 13,
+        "end": 13
     },
     "rhc_numu_selection": {
-        "start": 39,
-        "end": 63
+        "start": 14,
+        "end": 38
     },
     "fhc_ratio": {
-        "start": 64,
-        "end": 88
+        "start": 39,
+        "end": 38
     },
     "rhc_ratio": {
-        "start": 89,
-        "end": 113
+        "start": 39,
+        "end": 63
     }
 }
