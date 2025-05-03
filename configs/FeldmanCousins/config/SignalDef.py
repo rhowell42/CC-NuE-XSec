@@ -118,6 +118,13 @@ TRUTH_CATEGORIES["CCNuEDIS"] = lambda event: IsCC(event) and IsNuE(event) and Is
 TRUTH_CATEGORIES["CCNuE2p2h"] = lambda event: IsCC(event) and IsNuE(event) and Is2p2h(event)
 TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNuE(event)
 
+TRUTH_CATEGORIES["CCNuMuWrongSign"] = lambda event: IsCC(event) and IsNue(event)
+TRUTH_CATEGORIES["CCNuMuQE"] = lambda event: IsCC(event) and IsNuMu(event) and IsQE(event)
+TRUTH_CATEGORIES["CCNuMuDelta"] = lambda event: IsCC(event) and IsNuMu(event) and IsDelta(event)
+TRUTH_CATEGORIES["CCNuMuDIS"] = lambda event: IsCC(event) and IsNuMu(event) and IsDIS(event)
+TRUTH_CATEGORIES["CCNuMu2p2h"] = lambda event: IsCC(event) and IsNuMu(event) and Is2p2h(event)
+TRUTH_CATEGORIES["CCNuMu"] = lambda event: IsCC(event) and IsNuMu(event)
+
 TRUTH_CATEGORIES["CCPi0"] = lambda event: IsCC(event) and IsPi0InFinalState(event) and IsNotNue(event)
 TRUTH_CATEGORIES["NCCohPi0"] = lambda event: IsCoherent(event) and IsNC(event) and IsPi0InFinalState(event)
 TRUTH_CATEGORIES["NCPi0"] = lambda event: IsNC(event) and IsPi0InFinalState(event)
@@ -141,6 +148,12 @@ SIGNAL_DEFINITION = [
     "CCNuE",
     "CCNuE2p2h",
     "CCNuEWrongSign"
+    "CCNuMuQE",
+    "CCNuMuDelta",
+    "CCNuMuDIS",
+    "CCNuMu",
+    "CCNuMu2p2h",
+    "CCNuMuWrongSign"
 ]
 SWAP_SIGNAL_DEFINITION = [
     "CCNu",
