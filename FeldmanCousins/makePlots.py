@@ -106,9 +106,9 @@ if __name__ == "__main__":
     #OscillateHistogram(sample_histogram, n4['m'], n4['ue4'], n4['umu4'], n4['utau4'])
     #plotter.SetInverseCovariance(invCov)
     #plotter.PlotScatteringIntegrals()
-    #plotter.PlotFluxReweight()
+    plotter.PlotFluxReweight()
     #plotter.PlotProfileEffects()
-    plotter.PlotFluxProfilingEffects("profile_effect")
+    #plotter.PlotFluxProfilingEffects("profile_effect")
     #plotter.PlotOscillationEffects(n4,"Neutrino4",plotSamples=True)
     
 

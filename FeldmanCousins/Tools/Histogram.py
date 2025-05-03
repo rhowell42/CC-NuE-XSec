@@ -1103,6 +1103,11 @@ class StitchedHistogram:
         c1.Print(dirname+"mc_errsummary.png")
 
         for key in self.mc_hists:
+            self.mc_hists[key].Draw("hist")
+            c1.Print(dirname+key+"mc_hist.png")
+            self.data_hists[key].Draw("hist")
+            c1.Print(dirname+key+"data_hist.png")
+
             MNVPLOTTER.DrawErrorSummary(self.mc_hists[key],"TR",True,True,0)
             c1.Print(dirname+key+"mc_errsummary.png")
             MNVPLOTTER.DrawErrorSummary(self.data_hists[key],"TR",True,True,0)

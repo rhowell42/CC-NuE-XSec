@@ -193,6 +193,7 @@ class PlottingContainer:
             numu_fluxes.append(new_rhc_numu)
 
         new_bins = array('d',list(range(0,21)))
+        new_bins = array('d',[0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20])
         UndoBinWidthNorm(rhc_nue)
         UndoBinWidthNorm(rhc_numu)
 
@@ -220,11 +221,29 @@ class PlottingContainer:
         rhc_nue.GetXaxis().SetTitle("Neutrino Energy")
         rhc_nue.SetTitle("RHC anti #nu_{e} Flux Prediction")
 
-        PlotWithRatio(MNVPLOTTER,"plots/RHC_NuMuFlux_Reweight.png",rhc_numu,hists=numu_fluxes,titles=titles,colors=self.colors)
+        numu_arr = np.array(rhc_numu)[1:-1]
+        np.savetxt("anumu_flux.csv",numu_arr,delimiter=',')
+
+        band = rhc_numu.GetVertErrorBand("Flux")
+        nhists = band.GetNHists()
+        flux_universes = np.array([np.array(band.GetHist(i))[1:-1] for i in range(nhists)])
+        A = flux_universes - np.array([numu_arr for i in range(nhists)])
+        np.savetxt("anumu_Amatrix.csv",A,delimiter=',')
+
+        nue_arr = np.array(rhc_nue)[1:-1]
+        np.savetxt("anue_flux.csv",nue_arr,delimiter=',')
+
+        band = rhc_nue.GetVertErrorBand("Flux")
+        nhists = band.GetNHists()
+        flux_universes = np.array([np.array(band.GetHist(i))[1:-1] for i in range(nhists)])
+        A = flux_universes - np.array([nue_arr for i in range(nhists)])
+        np.savetxt("anue_Amatrix.csv",A,delimiter=',')
+
+        PlotWithRatio(MNVPLOTTER,"plots/RHC_NuMuFlux_Reweight.png",rhc_nue,hists=nue_fluxes,titles=titles,colors=self.colors)
         PlotWithRatio(MNVPLOTTER,"plots/RHC_NuEFlux_Reweight.png",rhc_nue,hists=nue_fluxes,titles=titles,colors=self.colors)
 
     def PlotFluxReweight(self):
-        self.PlotRHCFluxReweight()
+        #self.PlotRHCFluxReweight()
         self.PlotFHCFluxReweight()
 
     def PlotFHCFluxReweight(self):
@@ -252,23 +271,24 @@ class PlottingContainer:
             numu_fluxes.append(new_fhc_numu)
 
         new_bins = array('d',list(range(0,21)))
+        #new_bins = array('d',[0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20])
         UndoBinWidthNorm(fhc_nue)
         UndoBinWidthNorm(fhc_numu)
 
-        fhc_numu = fhc_numu.Rebin(20,"hnew",new_bins)
+        fhc_numu = fhc_numu.Rebin(len(new_bins)-1,"hnew",new_bins)
         fhc_numu.Scale(1,"width")
-        fhc_nue = fhc_nue.Rebin(20,"hnew",new_bins)
+        fhc_nue = fhc_nue.Rebin(len(new_bins)-1,"hnew",new_bins)
         fhc_nue.Scale(1,"width")
 
         titles = self.titles.copy()
 
         for i in range(len(numu_fluxes)):
             UndoBinWidthNorm(numu_fluxes[i])
-            numu_fluxes[i] = numu_fluxes[i].Rebin(20,str(i),new_bins)
+            numu_fluxes[i] = numu_fluxes[i].Rebin(len(new_bins)-1,str(i),new_bins)
             numu_fluxes[i].Scale(1,'width')
 
             UndoBinWidthNorm(nue_fluxes[i])
-            nue_fluxes[i] = nue_fluxes[i].Rebin(20,str(i),new_bins)
+            nue_fluxes[i] = nue_fluxes[i].Rebin(len(new_bins)-1,str(i),new_bins)
             nue_fluxes[i].Scale(1,'width')
 
         fhc_numu.GetXaxis().SetRangeUser(0,20)
@@ -279,8 +299,80 @@ class PlottingContainer:
         fhc_nue.GetXaxis().SetTitle("Neutrino Energy")
         fhc_nue.SetTitle("FHC #nu_{e} Flux Prediction")
 
-        PlotWithRatio(MNVPLOTTER,"plots/FHC_NuMuFlux_Reweight.png",fhc_numu,hists=numu_fluxes,titles=titles,colors=self.colors)
-        PlotWithRatio(MNVPLOTTER,"plots/FHC_NuEFlux_Reweight.png",fhc_nue,hists=nue_fluxes,titles=titles,colors=self.colors)
+        numu_arr = np.array(fhc_numu)[1:-1]
+        np.savetxt("numu_flux.csv",numu_arr,delimiter=',')
+
+        band = fhc_numu.GetVertErrorBand("Flux")
+        nhists = band.GetNHists()
+        flux_universes = np.array([np.array(band.GetHist(i))[1:-1] for i in range(nhists)])
+        A = flux_universes - np.array([numu_arr for i in range(nhists)])
+        np.savetxt("numu_Amatrix.csv",A,delimiter=',')
+
+        nue_arr = 1e12*np.array(fhc_nue)[1:-1]
+        np.savetxt("nue_flux.csv",nue_arr,delimiter=',')
+
+        fhc_nue.PopVertErrorBand("Flux_BeamFocus")
+        fhc_nue.PopVertErrorBand("ppfx1_Total")
+        band = fhc_nue.GetVertErrorBand("Flux")
+        nhists = band.GetNHists()
+        flux_universes = np.array([np.array(band.GetHist(i))[1:-1] for i in range(nhists)])
+        A = 1e12*flux_universes - np.array([nue_arr for i in range(nhists)])
+        np.savetxt("nue_Amatrix.csv",A,delimiter=',')
+        fhc_nue.PopVertErrorBand("Flux")
+        h_data = fhc_nue.Clone()
+        for i in range(1,h_data.GetNbinsX()+1):
+            excess = 2.718281**-h_data.GetXaxis().GetBinCenter(i)
+            fake_data = nue_arr[i-1] + 2*nue_arr[i-1] * excess
+            h_data.SetBinContent(i,fake_data)
+            h_data.SetBinError(i,np.sqrt(fake_data))
+            fhc_nue.SetBinContent(i,fhc_nue.GetBinContent(i)*1e12)
+            fhc_nue.SetBinError(i,np.sqrt(fhc_nue.GetBinContent(i)))
+
+        data = np.array(h_data)[1:-1]
+        mc = nue_arr
+
+        C = data - mc
+        ctest = ROOT.TCanvas()
+        h_data.Draw("hist p")
+
+        leg = ROOT.TLegend()
+        leg.AddEntry(h_data,"fake data","p")
+        #fhc_nue.Draw("same hist")
+        #ctest.Print("plots/fakedata.png")
+        hists = []
+        dataHist = h_data.Clone()
+        dataHist.Add(fhc_nue,-1)
+        V = TMatrix_to_Numpy(dataHist.GetTotalErrorMatrix(True,False,False))[1:-1,1:-1]
+        for testUniverses in [10,50,100,500,1000]:
+            cloned = fhc_nue.Clone()
+
+            I = np.identity(testUniverses)
+            Atest = A[:testUniverses,:]
+            L = 2 * Atest @ V @ C
+            lam = 1
+            Q = Atest @ V @ Atest.T + I * lam
+            solution = np.linalg.inv(Q) @ L/2
+            penalty = solution @ solution * lam
+            new_cv = mc + solution @ Atest
+            print(L)
+            for i in range(1,cloned.GetNbinsX()+1):
+                cloned.SetBinContent(i,new_cv[i-1])
+
+            hists.append(cloned)
+            print("{} universes with penalty chi2 = {}".format(testUniverses,penalty))
+
+        fhc_nue.SetLineColor(ROOT.kBlack)
+        fhc_nue.Draw("hist same l")
+        leg.AddEntry(fhc_nue,"CV prediction","l")
+        for i,cloned in enumerate(hists):
+            cloned.SetLineColor([ROOT.kRed,ROOT.kBlue,ROOT.kOrange,ROOT.kGreen,ROOT.kTeal][i])
+            cloned.Draw("hist same l")
+            leg.AddEntry(cloned,"{} universe profile".format([10,50,100,500,1000][i]),"l")
+
+        leg.Draw()
+        ctest.Print("plots/fakedata.png")
+        #PlotWithRatio(MNVPLOTTER,"plots/FHC_NuMuFlux_Reweight.png",fhc_numu,hists=numu_fluxes,titles=titles,colors=self.colors)
+        #PlotWithRatio(MNVPLOTTER,"plots/FHC_NuEFlux_Reweight.png",fhc_nue,hists=nue_fluxes,titles=titles,colors=self.colors)
 
     def PlotProfileEffects(self):
         c1 = ROOT.TCanvas("C2", "canvas2", 1024, 640)

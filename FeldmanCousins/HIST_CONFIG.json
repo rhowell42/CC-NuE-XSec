@@ -9,26 +9,26 @@
     },
     "fhc_numu_selection": {
         "start": 7,
-        "end": 6
+        "end": 31
     },
     "rhc_elastic": {
-        "start": 7,
-        "end": 12
+        "start": 32,
+        "end": 37
     },
     "rhc_imd": {
-        "start": 13,
-        "end": 13
+        "start": 38,
+        "end": 38
     },
     "rhc_numu_selection": {
-        "start": 14,
-        "end": 38
-    },
-    "fhc_ratio": {
-        "start": 39,
-        "end": 38
-    },
-    "rhc_ratio": {
         "start": 39,
         "end": 63
+    },
+    "fhc_ratio": {
+        "start": 64,
+        "end": 88
+    },
+    "rhc_ratio": {
+        "start": 89,
+        "end": 113
     }
 }

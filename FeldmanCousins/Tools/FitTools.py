@@ -130,7 +130,6 @@ def ReweightCV(histogram,fluxSolution,cv=None,mc=None):
     
     band = histogram.GetVertErrorBand("Flux")
     nhists = band.GetNHists()
-    nhists = 100
     universes = np.array([np.array(band.GetHist(l))[1:-1] for l in range(nhists)])
     cv_table = np.array([cv for l in range(len(universes))])
     A = universes - cv_table
