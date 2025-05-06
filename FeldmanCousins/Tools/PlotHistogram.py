@@ -315,8 +315,8 @@ class PlottingContainer:
         fhc_nue.PopVertErrorBand("ppfx1_Total")
         band = fhc_nue.GetVertErrorBand("Flux")
         nhists = band.GetNHists()
-        flux_universes = np.array([np.array(band.GetHist(i))[1:-1] for i in range(nhists)])
-        A = 1e12*flux_universes - np.array([nue_arr for i in range(nhists)])
+        flux_universes = np.array([1e12*np.array(band.GetHist(i))[1:-1] for i in range(nhists)])
+        A = flux_universes - np.array([nue_arr for i in range(nhists)])
         np.savetxt("nue_Amatrix.csv",A,delimiter=',')
         fhc_nue.PopVertErrorBand("Flux")
         h_data = fhc_nue.Clone()
@@ -343,7 +343,7 @@ class PlottingContainer:
         dataHist = h_data.Clone()
         dataHist.Add(fhc_nue,-1)
         V = TMatrix_to_Numpy(dataHist.GetTotalErrorMatrix(True,False,False))[1:-1,1:-1]
-        for testUniverses in [10,50,100,500,1000]:
+        for testUniverses in range(1,1000):#[10,50,100,500,1000]:
             cloned = fhc_nue.Clone()
 
             I = np.identity(testUniverses)
@@ -354,20 +354,17 @@ class PlottingContainer:
             solution = np.linalg.inv(Q) @ L/2
             penalty = solution @ solution * lam
             new_cv = mc + solution @ Atest
-            print(L)
             for i in range(1,cloned.GetNbinsX()+1):
-                cloned.SetBinContent(i,new_cv[i-1])
-
+                cloned.SetBinContent(i,Atest[testUniverses-1][i-1])
             hists.append(cloned)
-            print("{} universes with penalty chi2 = {}".format(testUniverses,penalty))
+            #print("{} universes with penalty chi2 = {}".format(testUniverses,penalty))
 
         fhc_nue.SetLineColor(ROOT.kBlack)
         fhc_nue.Draw("hist same l")
         leg.AddEntry(fhc_nue,"CV prediction","l")
         for i,cloned in enumerate(hists):
-            cloned.SetLineColor([ROOT.kRed,ROOT.kBlue,ROOT.kOrange,ROOT.kGreen,ROOT.kTeal][i])
             cloned.Draw("hist same l")
-            leg.AddEntry(cloned,"{} universe profile".format([10,50,100,500,1000][i]),"l")
+            #leg.AddEntry(cloned,"{} universe profile".format([10,50,100,500,1000][i]),"l")
 
         leg.Draw()
         ctest.Print("plots/fakedata.png")
