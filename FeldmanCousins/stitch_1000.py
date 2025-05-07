@@ -55,14 +55,14 @@ if __name__ == "__main__":
     standPOT = data_pot if data_pot is not None else mc_pot 
     fhc_nue_selection_mc = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/bkgfit_FHC_Selection_N4_tune_paper_MAD.root")
     fhc_nue_selection_mcHold = HistHolder("Predicted MC",fhc_nue_selection_mc,"Signal",True,mc_pot,standPOT)
-    h_fhc_nue_selection_data = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/bkgfit_FHC_Selection_N4_tune_paper_MAD.root").Get("EN4_data_bkgSubbed")
-    fhc_sel = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Selection_Genie_paper_MAD.root")
+    h_fhc_nue_selection_data = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/bkgfit_FHC_Selection_N4_tune_thesis_MAD.root").Get("EN4_data_bkgSubbed")
+    fhc_sel = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Selection_100Univ_Genie_thesis_MAD.root")
     fhc_sel_template = HistHolder("Reco Energy vs L/E",fhc_sel,"Signal",True,mc_pot,standPOT)
 
 
-    type_path_map = {'mc':'/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_100Univ_thesis_swap_MAD.root'}
-    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection_100Univ",type_path_map,"MAD",True)
-    fhc_sel_swap = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_100Univ_thesis_swap_MAD.root")
+    type_path_map = {'mc':'/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_thesis_swap_MAD.root'}
+    data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection",type_path_map,"MAD",True)
+    fhc_sel_swap = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e_swap/kin_dist_mcFHC_Selection_thesis_swap_MAD.root")
     fhc_swap_sel_template = HistHolder("Reco Energy vs L/E",fhc_sel_swap,"Signal",True,mc_pot,standPOT)
     fhc_swap_selection_mc = HistHolder("Biased Neutrino Energy",fhc_sel_swap,"Signal",True,mc_pot,standPOT)
     
@@ -83,6 +83,7 @@ if __name__ == "__main__":
 
     ### NuMu Selection ###
     cates = ["CCQE","CCDelta","CCDIS","CC2p2h","CCOther","CCWrongSign"]
+    cates.extend(["CCNuMuQE","CCNuMuDelta","CCNuMuDIS","CCNuMu2p2h","CCNuMuOther","CCNuMuWrongSign"])
     
     type_path_map = {'data':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_dataFHC_Selection_paper_muon_MAD.root','mc':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_mcFHC_Selection_paper_muon_MAD.root'}
     data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection",type_path_map,"MAD",True)
@@ -169,7 +170,9 @@ if __name__ == "__main__":
                 h2_rhc_swap_template.Add(rhc_swap_sel_template.hists[group])
 
     for group in fhc_numu_selection_mcHold.hists:
+        print(group)
         if group in cates and type(fhc_numu_selection_mcHold.hists[group]) == PlotUtils.MnvH1D:
+            print(group, " in cates")
             h_fhc_numu_selection_mc.Add(fhc_numu_selection_mcHold.hists[group])
             h2_fhc_musel_template.Add(fhc_musel_template.hists[group])
 
@@ -320,15 +323,17 @@ if __name__ == "__main__":
 
     dataprint = np.array(mnv_data)[1:-1] # store MC bin contents excluding over/underflow bins
     mcprint = np.array(mnv_mc)[1:-1]
+    np.savetxt("mc_cv.csv",mcprint,delimiter=',')
     
     filename = "{}/FeldmanCousins/rootfiles/NuE_stitched_hists.root".format(ccnueroot)
 
     sample_histogram.Write(filename)
     #sample_histogram.SetPlottingStyle()
-    sample_histogram.DebugPlots()
-    
+
     #invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
     #nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
-
     #sample_histogram.PlotSamples(nullSolution)
+    sample_histogram.DebugPlots()
+    
+
     #DataMCCVPlot(mnv_data,mnv_mc,"mc_stitched_v2.png")
