@@ -320,6 +320,7 @@ if __name__ == "__main__":
 
     dataprint = np.array(mnv_data)[1:-1] # store MC bin contents excluding over/underflow bins
     mcprint = np.array(mnv_mc)[1:-1]
+    np.savetxt("mc_cv.csv",mcprint,delimiter=',')
     
     filename = "{}/FeldmanCousins/rootfiles/NuE_stitched_hists.root".format(ccnueroot)
 

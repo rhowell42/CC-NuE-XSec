@@ -160,7 +160,7 @@ class StitchedHistogram:
 
             cv = np.array(self.mc_hist)[1:-1]
             self.A = self.mc_flux_universes - np.array([cv for i in range(nhists)])
-            #np.savetxt("ryan_Amatrix.csv",self.A,delimiter=',')
+            np.savetxt("ryan_Amatrix.csv",self.A,delimiter=',')
 
     def SetCovarianceMatrices(self):
         if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist) and type(self.mc_hist) == PlotUtils.MnvH1D:
