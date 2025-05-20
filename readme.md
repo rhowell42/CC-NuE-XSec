@@ -66,8 +66,7 @@ Here is a list of files currently used in the macro:
 - The grid processing runs a playlist in separated jobs, hence counting POT in each job doesn't make sense. User should used `--cal_POT` option of gridSelection to count POT.
 
 # Changes from AL9 Upgrade
-- ~~This framework currently does not work in AL9 due to lack of ROOT version availability. Newer ROOT versions make some inheritance between Python and MAT-MINERvA classes impossible, and the AL9 installs do not have older ROOT versions for use. This could be solved with local spack installs of ROOT, but that has not been worked out yet.~~
-- This framework now supports AL9! Specifically, it supports more modern versions of ROOT that are built with Python3 and change how multi-cross inheritance works. See the following sections for the outdated SL7 container instructions.
+- This framework now supports AL9! Specifically, it supports more modern versions of ROOT that are built with Python3 and change how multi-cross inheritance works.
 
 # How to Install in Alma9 OS
 ## Install MAT-MINERvA
@@ -82,6 +81,7 @@ export LD_LIBRARY_PATH=${ROOTSYS}/lib/root:${LD_LIBRARY_PATH}
 mkdir /exp/minerva/app/users/$USER/MAT_AL9 && cd /exp/minerva/app/users/$USER/MAT_AL9
 git clone https://github.com/MinervaExpt/MAT.git
 git clone https://github.com/MinervaExpt/MAT-MINERvA.git
+git clone https://github.com/MinervaExpt/UnfoldUtils.git
 
 mkdir opt && cd opt #install prefixed for OPTimized version of MAT/tutorial libraries and executables
 
@@ -93,67 +93,30 @@ source /exp/minerva/app/users/$USER/MAT_AL9/opt/bin/setup.sh
 
 cd /exp/minerva/app/users/$USER/MAT_AL9/
 git clone https://github.com/rhowell42/CC-NuE-XSec.git
-git checkout feature/python3
-cd CVUniversePythonBinding/
+cd CC-NuE-XSec/CVUniversePythonBinding/
 rm -r build && mkdir build/ && cd build/
 cmake ../ -DCMAKE_INSTALL_PREFIX=/exp/minerva/app/users/$USER/MAT_AL9/opt -DCMAKE_BUILD_TYPE=Release
 make install
 ```
 The following shell script can be run on login to the gpvms to set everything up:
 ```
-source /cvmfs/larsoft.opensciencegrid.org/spack-packages/setup-env.sh
-spack load root@6.28.12
-spack load cmake
-spack load gcc
-spack load fife-utils@3.7.4
+source /cvmfs/larsoft.opensciencegrid.org/spack-v0.22.0-fermi/setup-env.sh
 
+spack load root@6.28.12 arch=linux-almalinux9-x86_64_v3
+spack load cmake@3.27.9%gcc@11.4.1 arch=linux-almalinux9-x86_64_v3
+spack load gcc
+spack load python@3.9.15
+spack load ifdhc-config@2.6.20%gcc@11.4.1 arch=linux-almalinux9-x86_64_v3
+spack load py-numpy@1.24.3%gcc@12.2.0
 export JOBSUB_GROUP=minerva
+
+htgettoken -a htvaultprod.fnal.gov -i minerva
+export BEARER_TOKEN_FILE=/run/user/`id -u`/bt_u`id -u`
 
 source /exp/minerva/app/users/$USER/MAT_AL9/opt/bin/setup.sh
 
-voms-proxy-destroy
-kx509
-voms-proxy-init -rfc --voms=fermilab:/fermilab/minerva/Role=Analysis --noregen -valid 72:7
-
 export LD_LIBRARY_PATH=${ROOTSYS}/lib/root:${LD_LIBRARY_PATH}
-
 cd /exp/minerva/app/users/$USER/MAT_AL9/CC-NuE-XSec/
-```
-
-# How to Install with SL7 Containers
-## Install MAT-MINERvA
-```
-/cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer shell --shell=/bin/bash -B /cvmfs,/grid,/exp,/nashome,/pnfs/minerva,/opt,/run/user,/etc/hostname,/etc/hosts,/etc/krb5.conf --ipc --pid /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:latest # setup the SL7 container
-source /cvmfs/larsoft.opensciencegrid.org/products/setup
-source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh
-kinit 
-unset SSH_ASKPASS
-setup root v6_22_06a -q e19:p383b:prof
-source /cvmfs/minerva.opensciencegrid.org/minerva/hep_hpc_products/setups
-setup cmake v3_7_1
-cd /exp/minerva/app/users/$USER/
-mkdir cmtuser/ && cd cmtuser/
-git clone https://github.com/MinervaExpt/MAT-MINERvA.git
-mkdir -p opt/build/ && cd opt/build/
-cmake ../../MAT-MINERvA/bootstrap -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Release
-make install
-```
-- Exit out of current ssh session and log back in !
-## Install CC-NuE-XSec
-```
-/cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer shell --shell=/bin/bash -B /cvmfs,/grid,/exp,/nashome,/pnfs/minerva,/opt,/run/user,/etc/hostname,/etc/hosts,/etc/krb5.conf --ipc --pid /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:latest # setup the SL7 container
-source /cvmfs/larsoft.opensciencegrid.org/products/setup
-source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh
-setup root v6_22_06a -q e19:p383b:prof
-export JOBSUB_GROUP=minerva
-source /cvmfs/minerva.opensciencegrid.org/minerva/hep_hpc_products/setups
-setup cmake v3_9_5
-
-git clone https://github.com/rhowell42/CC-NuE-XSec.git
-cd CVUniversePythonBinding/
-rm -r build && mkdir build/ && cd build/
-cmake ../ -DCMAKE_INSTALL_PREFIX=/exp/minerva/app/users/$USER/cmtuser/opt -DCMAKE_BUILD_TYPE=Release
-make install
 ```
 
 # Making an Event Selection
