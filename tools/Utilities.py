@@ -215,6 +215,20 @@ def PlaylistLookup(run):
 
     elif run>=131000 and run<=131019:
         return "minervame3a"
+
+    #Low Energy
+    # neutrino mode (FHC)
+    elif run >= 10200 and run <= 10250:
+        return "minerva1"
+    elif run >= 10250 and run <= 10255:
+        return "minerva7"
+    elif run >= 10255 and run <= 10260:
+        return "minerva9"
+    elif run >= 13200 and run <= 13300:
+        return "minerva13c"
+    # anti-neutrino mode (RHC)
+    elif run >= 50200 and run <= 50250:
+        return "minerva5"
     else:
         return None
 

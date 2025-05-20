@@ -452,9 +452,9 @@ PLOT_SETTINGS= {
     },
     "True Energy vs Biased Neutrino Energy":
     {
-        "name" : "ETrue_Enuavail",
+        "name" : "ETrue_EReco",
 
-        "title": "True E_{#nu} v.s. E_{e} + E_{avail}; E_{e} + E_{avail} (GeV); True E_{#nu} (GeV); NEvents",
+        "title": "E_{l} + E_{avail} vs True E_{#nu}; E_{l} + E_{avail} (GeV); True E_{#nu} (GeV); NEvents",
         "binning" : [PlotConfig.NEUTRINO4_EE_BINNING,
                      PlotConfig.NEUTRINO4_EE_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE,

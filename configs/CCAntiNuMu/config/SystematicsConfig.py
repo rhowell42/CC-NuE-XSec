@@ -16,7 +16,7 @@ import math
 NUM_UNIVERSE = 100
 #number of flux uniberses
 USE_NUE_CONSTRAINT = False
-AnaNuPDG=14
+AnaNuPDG=-14
 USE_SWAPPED=False
 NUM_FLUX_UNIVERSE = 1000
 # detector mass uncertainty
@@ -28,7 +28,8 @@ EM_ENERGY_SCALE_SHIFT_ECAL = -0.058 # downward 5.8%
 # EM scale uncertainty in ECAL,HCAL, quoted from nu+e paper
 EM_ENERGY_SCALE_UNCERTAINTY = {
     "ECAL": 0.015,
-    "HCAL": 0.05
+    "HCAL"   : 0.05,
+    "Tracker": 0.02
 }
 
 BEAM_ANGLE = math.radians(-3.3)
@@ -43,7 +44,7 @@ LEAKAGE_SYSTEMATICS = 2 # MeV
 LEAKAGE_BIAS = 5#MeV
 
 # electron angle uncertainty
-ELECTRON_ANGLE_UNCERTAINTY = 1e-3 # this is muon angular resolution. I am worry about this.
+LEPTON_ANGLE_UNCERTAINTY = 1e-3 # this is muon angular resolution. I am worry about this.
 
 #DEDX_ENERGY_SCALE_UNCERTAINTY = 0.015 # = 1.5% (still fractional).  Based on eyeballing the dE/dx distribution for this analysis in the extra energy sideband.
 
@@ -114,13 +115,6 @@ RESPONSE_BRANCHES = [
     "em",
     "other",
     "xtalk",
-]
-OTHER_RESPONSE_BRANCHES = [
-    "P",
-    "Meson",
-    "EM",
-    "Other",
-    "Crosstalk",
 ]
 
 NEUTRON_RESPONSE = False
@@ -241,15 +235,12 @@ GEANT_PARTICLES = [
 
 DETECTOR_RESPONSE_ERROR_GROUPS = {
     "Angular resolution": ["eltheta",],
-    "Beam Angle": ["beam_angle","BeamAngleX","BeamAngleY"],
+    "Beam Angle": ["beam_angle",],
     "EM energy scale": ["elE_ECAL","elE_HCAL"],
-    "Birk's Constant" : ["birks","Birks_Response_Proton","Bethe_Bloch"],
+    "Birk's Constant" : ["birks"],
     "Particle Response":["response_"+i for i in RESPONSE_BRANCHES],
     "Leakage Estimation" : ["Leakage_Uncertainty"],
-    "Target Mass" : ["Target_Mass_CH","Target_Mass"],
-    "Particle Responses":[i+"_Response" for i in OTHER_RESPONSE_BRANCHES],
-    "Michel" : ["Michel_Efficiency"],
-    "Track" : ["Proton_TrackEff"]
+    "Target Mass" : ["Target_Mass_CH"]
 }
 
 MINERVA_TUNNING_ERROR_GROUPS = {
@@ -269,7 +260,7 @@ MINERVA_TUNNING_ERROR_GROUPS2 = {
 
 
 GENIE_ERROR_GROUPS = {
-    "GENIE" : ["GENIE_"+ i for i in (GENIE_UNIVERSES+["ZExpansion","MvRES","EP_MvRES","MaRES","NormCCRES","D2_MaRES","D2_NormCCRES","MaZExpCCQE","MaCCQE", "Rvn1pi", "Rvp1pi"] ) if not (i.startswith("Fr") or i.startswith("MFP")) ]
+    "GENIE" : ["GENIE_"+ i for i in (GENIE_UNIVERSES+["EP_MvRES","MaRES","NormCCRES","D2_MaRES","D2_NormCCRES","MaZExpCCQE","MaCCQE", "Rvn1pi", "Rvp1pi"] ) if not (i.startswith("Fr") or i.startswith("MFP")) ]
 }
 
 FSI_ERROR_GROUPS = {
@@ -289,7 +280,7 @@ CONSOLIDATED_ERROR_GROUPS_CONFIG = {
     "Detector model": [DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS],
     "Interaction model": [GENIE_ERROR_GROUPS,FSI_ERROR_GROUPS],
     "MnvTunes" :[MINERVA_TUNNING_ERROR_GROUPS],
-    "Muon Reconstruction" :[{"Muon Energy":["h_Muon_Energy_MINOS","h_Muon_Energy_MINERvA","v_Muon_Energy_Resolution","v_Muon_Energy_MINOS","v_Muon_Energy_MINERvA","MuonAngleXResolution","MINOS_Reconstruction_Efficiency","Muon_Energy_Resolution","MuonAngleYResolution","Muon_Energy_MINERvA","Muon_Energy_MINOS"]}],
+    "Muon Reconstruction" :[{"Muon Energy":["MuonAngleXResolution","MINOS_Reconstruction_Efficiency","Muon_Energy_Resolution","MuonAngleYResolution","Muon_Energy_MINERvA","Muon_Energy_MINOS"]}],
     "Alternative Tunning methods" : [BKG_TUNNING_ERROR_GROUPS]
    # "Others":[DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS,GENIE_ERROR_GROUPS,FSI_ERROR_GROUPS,MINERVA_TUNNING_ERROR_GROUPS],
 }

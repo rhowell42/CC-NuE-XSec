@@ -337,30 +337,11 @@ CUT_CONFIGS = {
         "cut_fn": lambda vals: vals>0 and vals <= CutConfig.WEXP_CUT,
         "variable_range": [0.5* i for i in range(0,11)]
     },
-    "Eavail": {
-        "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
-        #"cut_fn": lambda vals: vals <= CutConfig.Reco_visEcut,
-        "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1],
-        "variable_range": [0.4* i for i in range(0,11)]
-    },
     "FHC_proton": {
         "value_getter": lambda event, nprong: event,
-        #"cut_fn": lambda vals: CutConfig.EAVAIL_LOW[0] <= vals[0] < CutConfig.EAVAIL_LOW[1] if vals[1] < CutConfig.ELECTRON_ENERGY_CUTOFF else CutConfig.EAVAIL_HIGH[0] <= vals[0] < CutConfig.EAVAIL_HIGH[1],
         "cut_fn": lambda val: passHybridProtonNodeCut(val,10),
         #"cut_fn": lambda val: passSingleProtonCut(val,0),
         "variable_range": [0.1* i for i in range(0,11)]
-    },
-    "Eavail_FHC": {
-        "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
-        #"cut_fn": lambda vals: CutConfig.EAVAIL_LOW[0] <= vals[0] < CutConfig.EAVAIL_LOW[1] if vals[1] < CutConfig.ELECTRON_ENERGY_CUTOFF else CutConfig.EAVAIL_HIGH[0] <= vals[0] < CutConfig.EAVAIL_HIGH[1],
-        "cut_fn": lambda val: CutConfig.visE_FHCRANGE[0] <= val < CutConfig.visE_FHCRANGE[1],
-        "variable_range": [0.4* i for i in range(0,11)]
-    },
-    "Eavail_RHC": {
-        "value_getter": lambda event, nprong: (event.kin_cal.reco_visE, event.kin_cal.reco_E_lep),
-        #"cut_fn": lambda vals: CutConfig.EAVAIL_LOW[0] <= vals[0] < CutConfig.EAVAIL_LOW[1] if vals[1] < CutConfig.ELECTRON_ENERGY_CUTOFF else CutConfig.EAVAIL_HIGH[0] <= vals[0] < CutConfig.EAVAIL_HIGH[1],
-        "cut_fn": lambda vals: RHC_Cut(vals[0],vals[1]),
-        "variable_range": [0.4* i for i in range(0,11)]
     },
     "Pt": {
         "value_getter": lambda event, nprong: event.kin_cal.reco_Pt_lep,
@@ -383,29 +364,18 @@ CUT_CONFIGS = {
 
     "MeanFrontdEdX": {
         "value_getter": lambda event, nprong: event.prong_dEdXMeanFrontTracker[nprong],
-        #"cut_fn": lambda val: val > 0,
         "cut_fn": lambda val: 0 < val <= CutConfig.FRONT_DEDX_CUT,
-#       "value_getter": lambda event: (event.prong_dEdXMeanFrontPositionTracker[0] if hasattr(event, "prong_dEdXMeanFrontPositionTracker") else 0, event.prong_dEdXMeanFrontTracker[0]),
-#       "value_getter": _dedx_cut_getter,
-#       "cut_fn": lambda vals: vals[1] > 0 and vals[1] <= FRONTDEDX_CUT_GRAPH.Eval(vals[0]),
         "variable_range": [0.1* i for i in range(0,51)]
     },
-    
-    #   "UpstreamODEnergy": {
-    #       "value_getter": lambda event: event.UpstreamODEnergy,
-    #       "cut_fn": lambda val: val < UPSTREAM_OD_ENERGY_CUT,
-    #   },
 
     "MidMeanFrontdEdX" : {
         "value_getter": lambda event, nprong: event.prong_dEdXMeanFrontTracker[nprong],
-        #"cut_fn": lambda val: val > 0,
         "cut_fn": lambda val: val > CutConfig.FRONT_DEDX_CUT and val<CutConfig.FRONT_DEDX_PI0_UPPERBOUND,
         "variable_range": [0.1* i for i in range(0,51)]
     },
 
     "HighMeanFrontdEdX" : {
         "value_getter": lambda event, nprong: event.prong_dEdXMeanFrontTracker[nprong],
-        #"cut_fn": lambda val: val > 0,
         "cut_fn": lambda val: val > CutConfig.FRONT_DEDX_PI0_UPPERBOUND,
         "variable_range": [0.1* i for i in range(0,51)]
     },
@@ -492,6 +462,11 @@ CUT_CONFIGS = {
 
 
 KINEMATICS_CUT_CONFIGS = {
+    "RecoEavail": {
+        "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
+        "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1],
+        "variable_range": [0.4* i for i in range(0,11)]
+    },
     "RecoLeptonEnergy": {
         "value_getter": lambda event,nprong: event.kin_cal.reco_E_lep,
         "cut_fn": lambda val: CutConfig.ELECTRON_ENERGY_RANGE[0] <= val < CutConfig.ELECTRON_ENERGY_RANGE[1],
@@ -500,7 +475,7 @@ KINEMATICS_CUT_CONFIGS = {
     
     "RecoLeptonAngle": {
         "value_getter": lambda event,nprong: event.kin_cal.reco_theta_lep,
-        "cut_fn": lambda val: CutConfig.ELECTRON_ANGLE_RANGE[0] <= val < CutConfig.ELECTRON_ANGLE_RANGE[1],
+        "cut_fn": lambda val: CutConfig.LEPTON_ANGLE_RANGE[0] <= val < CutConfig.LEPTON_ANGLE_RANGE[1],
     },
 
     "RecoNeutrinoEnergy": {
@@ -517,6 +492,11 @@ KINEMATICS_CUT_CONFIGS = {
         "cut_fn": lambda val: CutConfig.RECO_PT_RANGE[0] <= val < CutConfig.RECO_PT_RANGE[1],
         "variable_range": [0.1*i for i in range(0,21)]
     },
+    "TrueEavail": {
+        "value_getter": lambda event, nprong: event.kin_cal.true_visE,
+        "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1],
+        "variable_range": [0.4* i for i in range(0,11)]
+    },
     "TrueLeptonEnergy": {
         "value_getter": lambda event,nprong: event.kin_cal.true_E_lep,
         "cut_fn": lambda val: CutConfig.ELECTRON_ENERGY_RANGE[0] <= val < CutConfig.ELECTRON_ENERGY_RANGE[1],
@@ -524,7 +504,7 @@ KINEMATICS_CUT_CONFIGS = {
     
     "TrueLeptonAngle": {
         "value_getter": lambda event,nprong: event.kin_cal.true_theta_lep,
-        "cut_fn": lambda val: CutConfig.ELECTRON_ANGLE_RANGE[0] <= val < CutConfig.ELECTRON_ANGLE_RANGE[1],
+        "cut_fn": lambda val: CutConfig.LEPTON_ANGLE_RANGE[0] <= val < CutConfig.LEPTON_ANGLE_RANGE[1],
     },
 
     "TrueNeutrinoEnergy": {
@@ -538,7 +518,7 @@ KINEMATICS_CUT_CONFIGS = {
     },
     "TruePt": {
         "value_getter": lambda event,nprong: event.kin_cal.true_Pt_lep,
-        "cut_fn": lambda val: CutConfig.TRUE_PT_RANGE[0] <= val < CutConfig.TRUE_PT_RANGE[1],
+        "cut_fn": lambda val: CutConfig.RECO_PT_RANGE[0] <= val < CutConfig.RECO_PT_RANGE[1],
         "variable_range": [0.1*i for i in range(0,21)]
     },
 }
@@ -581,11 +561,3 @@ class Cuts(object):
 
 
 CUTS = Cuts()
-# for name, config in CUT_CONFIGS.items():
-#     config["name"] = name
-#     CUTS[name] = SelectionCut(**config)
-
-# for name, config in KINEMATICS_CUT_CONFIGS.items():
-#     config["name"] = name
-#     CUTS[name] = SelectionCut(**config)
-
