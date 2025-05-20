@@ -20,10 +20,10 @@ def unpackTarball( mywrapper):
 
   mywrapper.write("source /cvmfs/larsoft.opensciencegrid.org/spack-v0.22.0-fermi/setup-env.sh\n")
   mywrapper.write("spack load root@6.28.12 arch=linux-almalinux9-x86_64_v3\n")
-  mywrapper.write("spack load cmake@3.27.9%gcc@11.4.1 arch=linux-almalinux9-x86_64_v2\n")
+  mywrapper.write("spack load cmake@3.27.9%gcc@11.4.1 arch=linux-almalinux9-x86_64_v3\n")
   mywrapper.write("spack load gcc\n")
   mywrapper.write("spack load python@3.9.15\n")
-  mywrapper.write("spack load ifdhc-config@2.6.20%gcc@11.4.1 arch=linux-almalinux9-x86_64_v2\n")
+  mywrapper.write("spack load ifdhc-config@2.6.20%gcc@11.4.1 arch=linux-almalinux9-x86_64_v3\n")
   mywrapper.write("spack load py-numpy@1.24.3%gcc@12.2.0\n")
 
   mywrapper.write("tar -xvzf {}\n".format(outdir_tarball.split("/")[-1]))
