@@ -83,6 +83,7 @@ if __name__ == "__main__":
 
     ### NuMu Selection ###
     cates = ["CCQE","CCDelta","CCDIS","CC2p2h","CCOther","CCWrongSign"]
+    cates.extend(["CCNuMuQE","CCNuMuDelta","CCNuMuDIS","CCNuMu2p2h","CCNuMuOther","CCNuMuWrongSign"])
     
     type_path_map = {'data':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_dataFHC_Selection_paper_muon_MAD.root','mc':'/exp/minerva/data/users/rhowell/nu_mu/kin_dist_mcFHC_Selection_paper_muon_MAD.root'}
     data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale("FHC_Selection",type_path_map,"MAD",True)
