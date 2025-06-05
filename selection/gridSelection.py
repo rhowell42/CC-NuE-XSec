@@ -63,7 +63,7 @@ def submitJob( tupleName):
   os.system( "chmod 777 %s" % wrapper_name )
   
   avoidReqs = "--append_condor_requirements='(regexp(\".*fnpc7.*\",Machine) == FALSE)'"
-  cmd = "jobsub_submit --group=minerva %s -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % (avoidReqs , memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 36, os.environ["PWD"] , wrapper_name )
+  cmd = "jobsub_submit --group=minerva %s -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest\\\"' -c has_avx2==True --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % (avoidReqs , memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 36, os.environ["PWD"] , wrapper_name )
   os.system(cmd)
 
   #cmdname = "jobsub_commands/submit_wrapper.sh"
