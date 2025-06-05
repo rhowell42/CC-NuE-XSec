@@ -27,9 +27,6 @@ Is2p2h = lambda event: event.mc_intType == 8
 IsPC = lambda event: event.mc_processType ==5
 IsUnknown  = lambda event : event.mc_intType == 10
 
-def countPDG(fsparticles,pdgs):
-    return sum(map(lambda x:1 if x in pdgs else 0,fsparticles))
-
 IsNuE = lambda event: abs(event.mc_incoming) == 12
 IsNuMu = lambda event: abs(event.mc_incoming) == 14
 IsAntiNu = lambda event: event.mc_incoming < 0 # assuming only neutrino incomes
