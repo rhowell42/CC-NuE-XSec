@@ -78,7 +78,8 @@ IsPC = lambda event: event.mc_processType ==5
 IsUnknown  = lambda event : event.mc_intType == 10
 
 
-IsNuE = lambda event: abs(event.mc_incoming) == 12
+IsNuE = lambda event: event.mc_incoming == 12
+IsNuEBar = lambda event: event.mc_incoming == -12
 IsNuMu = lambda event: abs(event.mc_incoming) == 14
 IsAntiNu = lambda event: event.mc_incoming < 0 # assuming only neutrino incomes
 IsNu = lambda event: event.mc_incoming > 0
@@ -108,13 +109,13 @@ def IsInKinematicPhaseSpace(event):
 TRUTH_CATEGORIES = OrderedDict()
 TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
 TRUTH_CATEGORIES["NuEElastic"] = lambda event: IsElastic(event)
-TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and IsNuE(event) and not IsInKinematicPhaseSpace(event)
+TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and (IsNuE(event) or IsNuEBar(event)) and not IsInKinematicPhaseSpace(event)
 
-TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsNue(event) and not IsAntiNu(event)
-TRUTH_CATEGORIES["CCNuEQE"] = lambda event: IsCC(event) and IsNuE(event) and IsQE(event)
-TRUTH_CATEGORIES["CCNuEDelta"] = lambda event: IsCC(event) and IsNuE(event) and IsDelta(event)
-TRUTH_CATEGORIES["CCNuEDIS"] = lambda event: IsCC(event) and IsNuE(event) and IsDIS(event)
-TRUTH_CATEGORIES["CCNuE2p2h"] = lambda event: IsCC(event) and IsNuE(event) and Is2p2h(event)
+TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsNuE(event)
+TRUTH_CATEGORIES["CCNuEQE"] = lambda event: IsCC(event) and IsNuEBar(event) and IsQE(event)
+TRUTH_CATEGORIES["CCNuEDelta"] = lambda event: IsCC(event) and IsNuEBar(event) and IsDelta(event)
+TRUTH_CATEGORIES["CCNuEDIS"] = lambda event: IsCC(event) and IsNuEBaar(event) and IsDIS(event)
+TRUTH_CATEGORIES["CCNuE2p2h"] = lambda event: IsCC(event) and IsNuEBar(event) and Is2p2h(event)
 TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNuE(event)
 
 TRUTH_CATEGORIES["CCPi0"] = lambda event: IsCC(event) and IsPi0InFinalState(event) and IsNotNue(event)

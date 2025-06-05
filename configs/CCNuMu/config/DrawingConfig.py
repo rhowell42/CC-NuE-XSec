@@ -140,28 +140,28 @@ del BackgroundDecomposition["CCNuE"]
 #}
 
 SignalDecomposition = {
-    "CCQE" :
+    "CCNuMuQE" :
     {
         "title" : "CC #nu_{#mu}-QE",
         "color": COLORS[5]
     },
-    "CC2p2h" : {
+    "CCNuMu2p2h" : {
         "title" : "CC #nu_{#mu}-2p2h",
         "color": COLORS[6]
     },
-    "CCDelta" : {
+    "CCNuMuDelta" : {
         "title" : "CC #nu_{#mu}-Delta Res",
         "color": COLORS[1]
     },
-    "CCOther": {
-        "title" : "CC #nu_{#mu}-Res", 
-        "color": COLORS[4]
+    "Other" : {
+        "title" : "CC #nu_{#mu} Res",
+        "color": COLORS[2]
     },
-    "CCDIS" : {
+    "CCNuMuDIS" : {
         "title" : "CC #nu_{#mu}-DIS",
         "color": COLORS[2]
     },
-    "CCWrongSign": {
+    "CCNuMuWrongSign": {
         "title" : "CC #nu_{#mu} wrong sign", 
         "color": COLORS[7]
     }
@@ -568,10 +568,10 @@ PLOTS_TO_MAKE = [
     #{"name":"Available Energy vs Lepton Pt"},
     #{"name":"Front dEdX"},
     {"name":"Biased Neutrino Energy"},
-    {"name":"Biased Neutrino Energy",
-         "plot_type" : "err"},
-    {"name":"True Energy vs Biased Neutrino Energy",
-            "plot_type" : 'migration'},
+    #{"name":"Biased Neutrino Energy",
+    #     "plot_type" : "err"},
+    #{"name":"True Energy vs Biased Neutrino Energy",
+    #        "plot_type" : 'migration'},
     #{"name":"Reco Energy vs L/E",
     #    "plot_type" : "migration"},
     #{"name":"True Energy vs Biased Neutrino Energy",

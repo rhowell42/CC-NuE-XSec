@@ -235,12 +235,13 @@ GEANT_PARTICLES = [
 
 DETECTOR_RESPONSE_ERROR_GROUPS = {
     "Angular resolution": ["eltheta",],
-    "Beam Angle": ["beam_angle",],
-    "EM energy scale": ["elE_ECAL","elE_HCAL"],
+    "Beam Angle": ["beam_angle","BeamAngleX","BeamAngleY","BeamAngleY"],
+    "EM energy scale": ["elE_ECAL","elE_HCAL",""],
     "Birk's Constant" : ["birks"],
     "Particle Response":["response_"+i for i in RESPONSE_BRANCHES],
+    "Tracking Efficiency":["Proton_TrackEff"],
     "Leakage Estimation" : ["Leakage_Uncertainty"],
-    "Target Mass" : ["Target_Mass_CH"]
+    "Target Mass" : ["Target_Mass","Target_Mass_CH"]
 }
 
 MINERVA_TUNNING_ERROR_GROUPS = {
@@ -260,7 +261,7 @@ MINERVA_TUNNING_ERROR_GROUPS2 = {
 
 
 GENIE_ERROR_GROUPS = {
-    "GENIE" : ["GENIE_"+ i for i in (GENIE_UNIVERSES+["MaRES","NormCCRES","D2_MaRES","D2_NormCCRES","MaZExpCCQE","MaCCQE", "Rvn1pi", "Rvp1pi"] ) if not (i.startswith("Fr") or i.startswith("MFP")) ]
+    "GENIE" : ["GENIE_"+ i for i in (GENIE_UNIVERSES+["EP_MvRES","MaRES","NormCCRES","D2_MaRES","D2_NormCCRES","MaZExpCCQE","MaCCQE", "Rvn1pi", "Rvp1pi"] ) if not (i.startswith("Fr") or i.startswith("MFP")) ]
 }
 
 FSI_ERROR_GROUPS = {
@@ -280,6 +281,7 @@ CONSOLIDATED_ERROR_GROUPS_CONFIG = {
     "Detector model": [DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS],
     "Interaction model": [GENIE_ERROR_GROUPS,FSI_ERROR_GROUPS],
     "MnvTunes" :[MINERVA_TUNNING_ERROR_GROUPS],
+    "Muon Reconstruction" :[{"Muon Energy":["MINOS_Reconstruction_Efficiency","Michel_Efficiency","MuonReconstruction","MuonAngleXResolution","MuonAngleYResolution","Muon_Energy_MINERvA","Muon_Energy_MINOS","Muon_Energy_Resolution"]}],
     "Alternative Tunning methods" : [BKG_TUNNING_ERROR_GROUPS]
    # "Others":[DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS,GENIE_ERROR_GROUPS,FSI_ERROR_GROUPS,MINERVA_TUNNING_ERROR_GROUPS],
 }

@@ -18,7 +18,7 @@ OD_CAL_VISE_CUT = 0.05
 PSI_FLAT_CUT = 0.1
 FRONT_DEDX_CUT = 2.4  # in MeV/cm
 PID_SCORE_CUT = 0.7
-MIN_VERTEX_TRACK_MULTIPLICITY = 2
+MIN_VERTEX_TRACK_MULTIPLICITY = 1
 MAX_VERTEX_TRACK_MULTIPLICITY = 6
 
 NONMIP_CLUS_FRAC_CUT = 0.4
@@ -59,41 +59,41 @@ ELECTRON_ENERGY_CUTOFF = 2.5
 SAMPLE_CUTS = {
     "Signal" : [ 
         "NoCut",
-        "HasNoBackExitingTracks",
         "HasTracks",
         "Vertex_Z",
-        "Vertex_Apothem",
+        "HasNoBackExitingTracks",
         "EMLikeTrackScore",
         "DSCalVisE",
         "ODCalVisE",
-        "DeadTime",
-        "Afterpulsing",
-        "NonMIPClusFrac",
-        "TransverseGapScore",
-        "HasNoVertexMismatch", 
         "StartPointVertexMultiplicity",
+        #"HasNoVertexMismatch",
         "VertexTrackMultiplicity",
         "Etheta",
         "MeanFrontdEdX",
+        "Vertex_Apothem",
+        "NonMIPClusFrac",
+        "TransverseGapScore",
+        "DeadTime",
+        "Afterpulsing",
     ],
     "dEdX" : [
         "NoCut",
-        "HasNoBackExitingTracks",
         "HasTracks",
         "Vertex_Z",
-        "Vertex_Apothem",
+        "HasNoBackExitingTracks",
         "EMLikeTrackScore",
         "DSCalVisE",
         "ODCalVisE",
-        "DeadTime",
-        "Afterpulsing",
-        "NonMIPClusFrac",
-        "TransverseGapScore",
-        "HasNoVertexMismatch",
         "StartPointVertexMultiplicity",
+        #"HasNoVertexMismatch",
         "VertexTrackMultiplicity",
         "Etheta",
         "InverseMeanFrontdEdX",
+        "Vertex_Apothem",
+        "NonMIPClusFrac",
+        "TransverseGapScore",
+        "DeadTime",
+        "Afterpulsing",
     ]
 }
 
