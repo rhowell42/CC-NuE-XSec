@@ -566,7 +566,7 @@ def GetFCSlice(dchi2s,achi2s,results,index,slc):
 
 if __name__ == "__main__":
     filename = "NuE_stitched_hists.root"
-    file_path = "{}/FeldmanCousins/rootfiles/{}".format(ccnueroot,filename)
+    file_path = "{}/oscillations/rootfiles/{}".format(ccnueroot,filename)
 
     lam = int(AnalysisConfig.lambdaValue)
     exclude = AnalysisConfig.exclude

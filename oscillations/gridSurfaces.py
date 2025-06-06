@@ -35,7 +35,7 @@ def unpackTarball( mywrapper):
   mywrapper.write("pushd {}\n".format(MacroName))
   mywrapper.write("source setup_ccnue.sh {}\n".format(CONFIG))
   mywrapper.write("export LD_LIBRARY_PATH=${ROOTSYS}/lib/root:${LD_LIBRARY_PATH}\n")
-  mywrapper.write("source FeldmanCousins/py3env/bin/activate\n")
+  mywrapper.write("source oscillations/py3env/bin/activate\n")
   
   mywrapper.write("popd\n")
   
@@ -57,7 +57,7 @@ def submitJob(tupleName,tag):
   unpackTarball(my_wrapper)
 
   # This is the bash line that will be executed on the grid
-  my_wrapper.write( "cd $CCNUEROOT/FeldmanCousins\n")
+  my_wrapper.write( "cd $CCNUEROOT/oscillations\n")
   my_wrapper.write( "export USER=$(whoami)\n")
   my_wrapper.write( "source py3env/bin/activate\n")
   my_wrapper.write( "py3env/bin/python3 makeSurface.py --grid --delta_m ${PROCESS} --output $CONDOR_DIR_HISTS 2>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log %s \n" % (tupleName,tag,tupleName,tag,argstring) )

@@ -111,19 +111,19 @@ if __name__ == "__main__":
     else:
         filename = "NuE_stitched_hists.root"
 
-    stitched_data = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('data_stitched')
-    stitched_mc = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched')
+    stitched_data = ROOT.TFile.Open("{}/oscillations/{}".format(ccnueroot,filename)).Get('data_stitched')
+    stitched_mc = ROOT.TFile.Open("{}/oscillations/{}".format(ccnueroot,filename)).Get('mc_stitched')
     
-    stitched_nueTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_nue')
-    stitched_numuTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_numu')
-    stitched_swapTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_swap')
+    stitched_nueTemp = ROOT.TFile.Open("{}/oscillations/{}".format(ccnueroot,filename)).Get('LE_template_nue')
+    stitched_numuTemp = ROOT.TFile.Open("{}/oscillations/{}".format(ccnueroot,filename)).Get('LE_template_numu')
+    stitched_swapTemp = ROOT.TFile.Open("{}/oscillations/{}".format(ccnueroot,filename)).Get('LE_template_swap')
 
-    stitched_nue_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nue')
-    stitched_numu_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_numu')
-    stitched_nutau_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nutau')
-    stitched_nueselection_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nueselection')
-    stitched_ratio_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_ratio')
-    stitched_swap_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_swap')
+    stitched_nue_energy = ROOT.TFile.Open("{}/oscillations/{}".format(ccnueroot,filename)).Get('mc_stitched_nue')
+    stitched_numu_energy = ROOT.TFile.Open("{}/oscillations/{}".format(ccnueroot,filename)).Get('mc_stitched_numu')
+    stitched_nutau_energy = ROOT.TFile.Open("{}/oscillations/{}".format(ccnueroot,filename)).Get('mc_stitched_nutau')
+    stitched_nueselection_energy = ROOT.TFile.Open("{}/oscillations/{}".format(ccnueroot,filename)).Get('mc_stitched_nueselection')
+    stitched_ratio_energy = ROOT.TFile.Open("{}/oscillations/{}".format(ccnueroot,filename)).Get('mc_stitched_ratio')
+    stitched_swap_energy = ROOT.TFile.Open("{}/oscillations/{}".format(ccnueroot,filename)).Get('mc_stitched_swap')
 
     templates = {
             "nue":stitched_nueTemp,

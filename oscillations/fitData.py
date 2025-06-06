@@ -57,7 +57,7 @@ ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 if __name__ == "__main__":
     filename = "rootfiles/NuE_stitched_hists.root"
     
-    file_path = "{}/FeldmanCousins/{}".format(ccnueroot,filename)
+    file_path = "{}/oscillations/{}".format(ccnueroot,filename)
 
     sample_histogram = StitchedHistogram("sample")
     sample_histogram.Load(file_path)

@@ -1,25 +1,28 @@
 import os
 import logging, sys
+import copy
 import ROOT
 import PlotUtils
 import numpy as np
-np.set_printoptions(precision=1)
+np.set_printoptions(precision=4)
 np.set_printoptions(linewidth=1520)
 np.set_printoptions(threshold=sys.maxsize)
 from scipy import optimize, integrate
+
 import argparse
 ccnueroot = os.environ.get('CCNUEROOT')
 
 import math
 import psutil
-import multiprocessing
-import threading
-nthreads = 4
+#import multiprocessing
+import time
+#import threading
+#nthreads = 4
 from array import array
 
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
-from Tools.FitTools import *
+from Tools.Histogram import *
 from Tools.PlotTools import *
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
@@ -70,6 +73,18 @@ if __name__ == "__main__":
                         type=float,
                         default=0
     )
+    parser.add_argument("-Ue4", "--U_e4",
+                        dest = "U_e4",
+                        help="U_e4 parameter to probe.",
+                        type=float,
+                        default=0
+    )
+    parser.add_argument("-Umu4", "--U_mu4",
+                        dest = "U_mu4",
+                        help="U_mu4 parameter to probe.",
+                        type=float,
+                        default=0
+    )
     parser.add_argument("-U", "--U_tau4",
                         dest = "U_tau4",
                         help="U_tau4 parameter to probe.",
@@ -86,42 +101,33 @@ if __name__ == "__main__":
     outdir_surface = args.output_dir
     delta_m = args.delta_m
     runongrid = args.grid
+    U_e4 = args.U_e4
+    U_mu4 = args.U_mu4
     U_tau4 = args.U_tau4
-    pseudodata = args.pseudodata
 
     filename = ""
-    if pseudodata:
-        filename = "NuE_stitched_hists_pseudo.root"
-    else:
-        filename = "NuE_stitched_hists.root"
-
-    stitched_data = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('data_stitched')
-    stitched_mc = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched')
+    filename = "NuE_stitched_hists.root"
     
-    stitched_nueTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_nue')
-    stitched_numuTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_numu')
-    stitched_swapTemp = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('LE_template_swap')
+    file_path = "{}/oscillations/{}".format(ccnueroot,filename)
 
-    stitched_nue_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nue')
-    stitched_numu_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_numu')
-    stitched_nutau_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nutau')
-    stitched_nueselection_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_nueselection')
-    stitched_ratio_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_ratio')
-    stitched_fhc_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_fhc')
-    stitched_swap_energy = ROOT.TFile.Open("{}/FeldmanCousins/{}".format(ccnueroot,filename)).Get('mc_stitched_swap')
+    sample_histogram = StitchedHistogram("sample")
+    sample_histogram.Load(file_path)
 
-    templates = {
-            "nue":stitched_nueTemp,
-            "numu":stitched_numuTemp,
-            "swap":stitched_swapTemp,
-            "nue_energy":stitched_nue_energy,
-            "numu_energy":stitched_numu_energy,
-            "nutau_energy":stitched_nutau_energy,
-            "fhc_energy":stitched_fhc_energy,
-            "swap_energy":stitched_swap_energy,
-            "ratio_energy":stitched_ratio_energy,
-            "nueselection_energy":stitched_nueselection_energy,
-    }
-    chi2_fit,fitHist,res = fitNorm(stitched_data, templates, stitched_mc)
-    PlotNorms(stitched_mc,stitched_data,fitHist,list(res.values()))
-    print(res)
+    invCovariance = sample_histogram.GetInverseCovarianceMatrix()
+
+    chi2_null,penalty = Chi2DataMC(sample_histogram,invCov=invCovariance,marginalize=True)
+    print("null chi2: {:.3f}".format(chi2_null))
+
+    fitter = Fitter(sample_histogram,invCov=invCovariance)
+    chi2_fit,res = fitter.DoFit()
+
+    print("Data fit: delta chi2 = {:.3f} = {:.3f} - {:.3f}".format(chi2_null-chi2_fit,chi2_null,chi2_fit))
+    print("Best fit params:")
+    print("   delta m^2 = {:.3f} eV^2 +- {:.4f}".format(res['m'],0))
+    print("   U_e4^2    = {:.3f}      +- {:.4f}".format(res['ue4'],0))
+    print("   U_mu4^2   = {:.5f}    +- {:.4f}".format(res['umu4'],0))
+    print("   U_tau4^2  = {:.3f}      +- {:.4f}".format(res['utau4'],0))
+
+    PlotOscillationEffects(sample_histogram,res,"bestfit",plotSamples=False)
+    PlotOscillationRatios(sample_histogram,res,"bestfit")
+    PlotFluxMarginalizationEffects(sample_histogram,res,"bestfit")

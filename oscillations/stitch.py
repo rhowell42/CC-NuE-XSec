@@ -323,7 +323,7 @@ if __name__ == "__main__":
     mcprint = np.array(mnv_mc)[1:-1]
     np.savetxt("mc_cv.csv",mcprint,delimiter=',')
     
-    filename = "{}/FeldmanCousins/rootfiles/NuE_stitched_hists.root".format(ccnueroot)
+    filename = "{}/oscillations/rootfiles/NuE_stitched_hists.root".format(ccnueroot)
 
     sample_histogram.Write(filename)
     #sample_histogram.SetPlottingStyle()

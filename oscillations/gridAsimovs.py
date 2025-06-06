@@ -22,37 +22,23 @@ def createTarball(outDir):
 def unpackTarball( mywrapper):
   # Add lines to wrapper that wil unpack tarball; add additional setup steps here if necessary  
   mywrapper.write("cd $CONDOR_DIR_INPUT\n")
-  mywrapper.write("source /cvmfs/larsoft.opensciencegrid.org/products/setup\n")
-  mywrapper.write("setup root v6_22_06a -q e19:p383b:prof\n")
+  mywrapper.write("source /cvmfs/larsoft.opensciencegrid.org/spack-packages/setup-env.sh\n")
+  mywrapper.write("spack load root@6.28.12\n")
+  mywrapper.write("spack load cmake\n")
+  mywrapper.write("spack load gcc\n")
+  mywrapper.write("spack load fife-utils@3.7.4\n")
+  mywrapper.write("spack load py-numpy\n")
   mywrapper.write("tar -xvzf {}\n".format(outdir_tarball.split("/")[-1]))
   mywrapper.write("export MINERVA_PREFIX=`pwd`/{}\n".format(MAT))
-  # Set up test release
-  #mywrapper.write("pushd Tools/ProductionScriptsLite/cmt/\n")#assuming only one test release
-  #mywrapper.write("cmt config\n")
-  #mywrapper.write(". setup.sh\n")
-  #mywrapper.write("popd\n")
   mywrapper.write("pushd {}/bin\n".format(MAT))
   mywrapper.write("source setup.sh\n")
-  #mywrapper.write("cmt make\n")
-  #mywrapper.write(". setup.sh\n")
   mywrapper.write("popd\n")
-  #mywrapper.write("export LD_LIBRARY_PATH=/cvmfs/minerva.opensciencegrid.org/minerva/software_releases/v22r1p1/lcg/external/GSL/1.10/x86_64-slc7-gcc49-opt/lib:$LD_LIBRARY_PATH\n")
   mywrapper.write("pushd {}\n".format(MacroName))
   mywrapper.write("source setup_ccnue.sh {}\n".format(CONFIG))
-  mywrapper.write("source FeldmanCousins/py3env/bin/activate\n")
-  #mywrapper.write("make\n")
+  mywrapper.write("export LD_LIBRARY_PATH=${ROOTSYS}/lib/root:${LD_LIBRARY_PATH}\n")
+  mywrapper.write("source oscillations/py3env/bin/activate\n")
   
   mywrapper.write("popd\n")
-
-
-# def copyLocalFilesToPNFS( tupleName , dest_dir):
-
-#   if not os.path.isfile('%s/makeHists.py' % dest_dir):
-#     os.system( "cp makeHists.py %s" % dest_dir )
-
-# def clearLocalFilesFromPNFS():
-
-#   os.system( "rm -rf /pnfs/minerva/%s/users/finer/temp/" % PNFS_switch)
 
 def addBashLine( wrapper , command ):
 
@@ -62,7 +48,7 @@ def addBashLine( wrapper , command ):
   wrapper.write("echo '---------------'\n")
 
 
-def submitJob(tupleName):
+def submitJob(tupleName,tag):
 
   # Create wrapper
   wrapper_name = "grid_wrappers/%s/%s_wrapper.sh" % ( processingID , tupleName) 
@@ -72,53 +58,20 @@ def submitJob(tupleName):
   unpackTarball(my_wrapper)
 
   # This is the bash line that will be executed on the grid
-  my_wrapper.write( "cd $CCNUEROOT/FeldmanCousins\n")
+  my_wrapper.write( "cd $CCNUEROOT/oscillations\n")
   my_wrapper.write( "export USER=$(whoami)\n")
-  #my_wrapper.write( "export XRD_LOGLEVEL=\"Debug\"\n")
   my_wrapper.write( "source py3env/bin/activate\n")
-  my_wrapper.write( 'py3env/bin/python3 fitAsimovs.py --grid --output $CONDOR_DIR_HISTS %s 2>> $CONDOR_DIR_LOGS/%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-${PROCESS}.log\n' % (argstring,tupleName,tupleName))
+  my_wrapper.write( 'py3env/bin/python3 fitAsimovs.py --grid --output $CONDOR_DIR_HISTS 2>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log\n %s' % (tupleName,tag,tupleName,tag,argstring))
   my_wrapper.write("exit $?\n")
 
   my_wrapper.close()
   
   os.system( "chmod 777 %s" % wrapper_name )
   
-  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --append_condor_requirements='CpuFamily != 6' --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 36, os.environ["PWD"] , wrapper_name )
-  # Copy local files to PNFS, they aren't there already
-  #copyLocalFilesToPNFS(tupleName,outdir_logs) 
- 
-  print(cmd)
-  cmdname = "grid_asimov.sh"
-
-  if os.path.isfile(cmdname):
-    jobsubcmd = open(cmdname, 'a')
-  else:
-    jobsubcmd = open(cmdname, "w")
-    jobsubcmd.write("#!/bin/sh\n")
-
-  jobsubcmd.write(cmd+"\n")
-  jobsubcmd.close()
-  os.system( "chmod 777 %s" % cmdname)
-  #os.system(cmd)
- 
-  #sleepTime = 2 
-  #print("Sleeping for %i seconds\n" % sleepTime)
-  #time.sleep(sleepTime)
-
-  ## # Clear files from PNFS
-  ## clearLocalFilesFromPNFS()
+  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --append_condor_requirements='CpuFamily != 6' --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 36, os.environ["PWD"] , wrapper_name )
+  os.system(cmd)
 
 if __name__ == '__main__':
-  #if gridargs.cal_POT:
-  #  for playlist in gridargs.playlists:
-  #    for dataSwitch in ["mc","data"]:
-  #      if (gridargs.data_only and dataSwitch == "mc" ) or (gridargs.mc_only and dataSwitch == "data"):
-  #        continue
-#
-#        POT_used,POT_total = Utilities.getPOT(playlist,dataSwitch,gridargs.ntuple_tag,True)
-#        print playlist,POT_used,POT_total
-#    sys.exit(0)
-
   PNFS_switch = gridargs.PNFS_switch
   # Automatically generate unique output directory
   processingID = '%s_%s-%s' % ("FHC_RHC", dt.date.today() , dt.datetime.today().strftime("%H%M%S") )
@@ -140,11 +93,12 @@ if __name__ == '__main__':
   if os.path.exists("grid_asimov.sh"):
     os.system( "rm grid_asimov.sh")
 
-  for i in range(1,6):
+  for i in range(4,6):
     argstring=" ".join(anaargs)
     outdir_hists = "/pnfs/minerva/scratch/users/%s/%s_%s_Asimov_dchi2s_texts" % (os.environ["USER"],str(i),processingID)
     os.system( "mkdir -p %s" % outdir_hists )
     outdir_logs = "/pnfs/minerva/scratch/users/%s/%s_%s_Asimov_dchi2s_logs" % (os.environ["USER"],str(i),processingID)
     os.system( "mkdir -p %s" % outdir_logs )
     cmdString = "Asimovs_{}".format(i)
-    submitJob(cmdString)
+    tag = gridargs.ntuple_tag
+    submitJob(cmdString,tag)

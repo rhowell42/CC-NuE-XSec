@@ -68,7 +68,7 @@ def MakeSurface(histogram,outdir,deltam=1,U_tau4=0,makePlot=False,exclude="",lam
 
 if __name__ == "__main__":
     filename = "NuE_stitched_hists.root"
-    file_path = "{}/FeldmanCousins/rootfiles/{}".format(ccnueroot,filename)
+    file_path = "{}/oscillations/rootfiles/{}".format(ccnueroot,filename)
 
     sample_histogram = StitchedHistogram("sample")
     sample_histogram.Load(file_path)
