@@ -911,12 +911,12 @@ class StitchedHistogram:
                             self.numu_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
                             self.swap_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
 
-                self.ShortFlux(self.mc_hists[h1])
-                self.ShortFlux(self.data_hists[h1])
+                self.LongFlux(self.mc_hists[h1])
+                self.LongFlux(self.data_hists[h1])
                 if not self.dirty:
-                    self.ShortFlux(self.nue_hists[h1])
-                    self.ShortFlux(self.numu_hists[h1])
-                    self.ShortFlux(self.swap_hists[h1])
+                    self.LongFlux(self.nue_hists[h1])
+                    self.LongFlux(self.numu_hists[h1])
+                    self.LongFlux(self.swap_hists[h1])
 
         if type(self.mc_hist) == PlotUtils.MnvH1D:
             if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist):
@@ -943,19 +943,6 @@ class StitchedHistogram:
             for i in range(h.GetNbinsX()+1):
                 h.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
 
-    def ShortFlux(self,h):
-        name = "Flux"
-        if h.GetVertErrorBand(name).GetNHists() > 100:
-            h_hists = h.GetVertErrorBand(name).GetHists()
-            h_hists = [h_hists[i] for i in range(100)]
-            useSpread = h.GetVertErrorBand(name).GetUseSpreadError()
-            errband = h.GetVertErrorBand(name)
-            h.PopVertErrorBand(name)
-            h.AddVertErrorBand(name,h_hists)
-            h.GetVertErrorBand(name).SetUseSpreadError(useSpread)
-            for i in range(h.GetNbinsX()+1):
-                h.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
-
     def RenameBands(self,hist):
         for name in hist.GetVertErrorBandNames():
             if str(name) in errorbandDict.keys():
@@ -972,7 +959,7 @@ class StitchedHistogram:
             weights = np.loadtxt(name)
             cv = np.array(hist.GetCVHistoWithError())[1:-1]
             summed_dev = np.zeros(cv.shape)
-            for i in range(0,100):
+            for i in range(0,1009):
                 weight = weights[i]
                 flux_univ = np.array(hist.GetVertErrorBand("Flux").GetHist(i))[1:-1]
                 dev = flux_univ - cv
