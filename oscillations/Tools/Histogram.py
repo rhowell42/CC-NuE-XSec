@@ -928,21 +928,6 @@ class StitchedHistogram:
             else:
                 raise ValueError("Histograms are not all set when trying to sync error bands")
 
-    def LongFlux(self,h):
-        name = "Flux"
-        if h.GetVertErrorBand(name).GetNHists() < 1000:
-            cvClone = h.GetCVHistoWithStatError()
-            h_hists = h.GetVertErrorBand(name).GetHists()
-            h_hists = [h_hists[i] for i in range(h.GetVertErrorBand(name).GetNHists())]
-            h_hists.extend([cvClone.Clone() for i in range(1000-h.GetVertErrorBand(name).GetNHists())])
-            useSpread = h.GetVertErrorBand(name).GetUseSpreadError()
-            errband = h.GetVertErrorBand(name)
-            h.PopVertErrorBand(name)
-            h.AddVertErrorBand(name,h_hists)
-            h.GetVertErrorBand(name).SetUseSpreadError(useSpread)
-            for i in range(h.GetNbinsX()+1):
-                h.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
-
     def ShortFlux(self,h):
         name = "Flux"
         if h.GetVertErrorBand(name).GetNHists() > 100:
