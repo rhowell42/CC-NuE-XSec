@@ -137,9 +137,9 @@ make install
 - This will also make plots as given in $CONFIGPATH/config/DrawingConfig.py on the scaled and background subtracted histograms
 
 # Sterile Neutrino Oscillations
-The framework to perform sterile neutrion oscillation analyses is kept in FeldmanCousins/. This was built with Medium Energy in mind, but it could be modifed to work on Low Energy samples as well. This is heavily reliant on python libraries that are not available on the gpvms, so a virtual environment is used.
+The framework to perform sterile neutrion oscillation analyses is kept in oscillations/. This was built with Medium Energy in mind, but it could be modifed to work on Low Energy samples as well. This is heavily reliant on python libraries that are not available on the gpvms, so a virtual environment is used.
 ```
-cd FeldmanCousins/
+cd oscillations/
 python3 -m venv py3env
 source py3env/bin/activate
 pip install -r requirements.txt
