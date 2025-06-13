@@ -136,7 +136,6 @@ class KinematicsCalculator(object):
             if len(nParticles) < 1 or nParticles[0] < 1:
                 return False
         event = self.event
-
         #decide if whether it is muon or electron event, and get lepton kinematics
         self.reco_theta_lep_rad = event.LeptonTheta()
         self.reco_E_lep = event.LeptonEnergy()/1e3

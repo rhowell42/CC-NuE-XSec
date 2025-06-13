@@ -69,13 +69,13 @@ SAMPLE_CUTS = {
         "Vertex_Z",
         "Vertex_Apothem",
         "Etheta",
+        "Eavail",
+        "Pt",
     ]
 }
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
-    "Eavail",
-    "Pt",
 ]
 
 #######################################

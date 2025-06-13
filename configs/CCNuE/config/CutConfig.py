@@ -35,10 +35,11 @@ FIDUCIAL_APOTHEM = 850
 FIDUCIAL_Z_RANGE = [5980,8422]
 
 # Kinematics cutoffs
-ELECTRON_ENERGY_RANGE = [1.5, float("inf")] # in GeV
+ELECTRON_ENERGY_RANGE = [2.5, float('inf')] # in GeV
 NEUTRINO_ENERGY_RANGE = [0, 100] # in GeV.
 LEPTON_ANGLE_RANGE = [0, 20] # in deg
 RECO_Q3_RANGE = [0,4]
+TRUE_Q3_RANGE = [0,4]
 RECO_PT_RANGE= [.2,1.6]
 TRUE_PT_RANGE= [.2,1.6]
 TRUE_Q3_RANGE = [0,4]
@@ -47,17 +48,13 @@ PSIEE_FLAT_CUT = 0.5
 WEXP_CUT = 2
 visE_RANGE = [0.0,0.7]
 Ethetasquared_CUT = .003
-FRONT_DEDX_PI0_UPPERBOUND = 5
 
-EAVAIL_LOW = [0.0,0.05]
-EAVAIL_HIGH = [0.0,0.2]
-ELECTRON_ENERGY_CUTOFF = 2.5
 
 ############################################################################
 # choose the cuts you want from cut library
 
 SAMPLE_CUTS = {
-    "Signal" : [ 
+    "Signal" : [
         "NoCut",
         "HasTracks",
         "Vertex_Z",
@@ -66,7 +63,6 @@ SAMPLE_CUTS = {
         "DSCalVisE",
         "ODCalVisE",
         "StartPointVertexMultiplicity",
-        #"HasNoVertexMismatch",
         "VertexTrackMultiplicity",
         "Etheta",
         "MeanFrontdEdX",
@@ -75,6 +71,8 @@ SAMPLE_CUTS = {
         "TransverseGapScore",
         "DeadTime",
         "Afterpulsing",
+        "Eavail",
+        "Pt",
     ],
     "dEdX" : [
         "NoCut",
@@ -85,7 +83,6 @@ SAMPLE_CUTS = {
         "DSCalVisE",
         "ODCalVisE",
         "StartPointVertexMultiplicity",
-        #"HasNoVertexMismatch",
         "VertexTrackMultiplicity",
         "Etheta",
         "InverseMeanFrontdEdX",
@@ -94,12 +91,12 @@ SAMPLE_CUTS = {
         "TransverseGapScore",
         "DeadTime",
         "Afterpulsing",
+        "Eavail",
+        "Pt",
     ]
 }
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
-    "Eavail",
-    "Pt",
 ]
 #######################################

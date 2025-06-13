@@ -42,7 +42,7 @@ def plotRecoKin(mc, chainwrapper, outfile):
     nEvents = chainwrapper.GetEntries()
     if AnalysisConfig.testing and nEvents > 1000:
         nEvents = 1000
-
+    print("plotRecoKin, mc ",mc)
     setAlarm = AnalysisConfig.grid
     for counter in range(nEvents):
         #1/4 hour for 10k event, should be more than needed unless stuck in I/O
@@ -80,6 +80,7 @@ def plotTruthKin(chainwrapper,outfile):
         univ.LoadTools(kin_cal,eventClassifier)
     nEvents = chainwrapper.GetEntries()
     Plots = prepareTruthPlots(universes)
+    print("plotTruthKin")
     if AnalysisConfig.testing and nEvents > 1000:
         nEvents = 1000
     for counter in range(nEvents):
@@ -164,7 +165,6 @@ if __name__ == "__main__":
         if Reco :
             print("selecting reco")
             plotRecoKin(st=="mc", Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,None,AnalysisConfig.count[0],AnalysisConfig.count[1]), output_file)
-            print("done selection reco")
         if st=="mc" and Truth:
             print("selecting truth")
             plotTruthKin(Utilities.fileChain(AnalysisConfig.playlist,"mc",AnalysisConfig.ntuple_tag,"Truth",AnalysisConfig.count[0],AnalysisConfig.count[1]),output_file)

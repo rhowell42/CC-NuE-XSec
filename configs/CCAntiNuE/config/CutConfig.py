@@ -74,6 +74,8 @@ SAMPLE_CUTS = {
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
         "Etheta",
+        "Eavail",
+        "Pt",
         "MeanFrontdEdX",
     ],
     "dEdX" : [
@@ -93,13 +95,13 @@ SAMPLE_CUTS = {
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
         "Etheta",
+        "Eavail",
+        "Pt",
         "InverseMeanFrontdEdX",
     ]
 }
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
-    "Eavail",
-    "Pt",
 ]
 #######################################

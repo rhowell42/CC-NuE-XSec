@@ -114,8 +114,10 @@ TRUTH_CATEGORIES["CCNuEDIS"] = lambda event: IsCC(event) and IsNuE(event) and Is
 TRUTH_CATEGORIES["CCNuE2p2h"] = lambda event: IsCC(event) and IsNuE(event) and Is2p2h(event)
 TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNuE(event)
 
+#TRUTH_CATEGORIES["CCPi0Proton"] = lambda event: IsCC(event) and IsPi0InFinalState(event) and IsNotNue(event) and IsProtonInFinalState(event)
 TRUTH_CATEGORIES["CCPi0"] = lambda event: IsCC(event) and IsPi0InFinalState(event) and IsNotNue(event)
 TRUTH_CATEGORIES["NCCohPi0"] = lambda event: IsCoherent(event) and IsNC(event) and IsPi0InFinalState(event)
+#TRUTH_CATEGORIES["NCPi0Proton"] = lambda event: IsNC(event) and IsPi0InFinalState(event) and IsProtonInFinalState(event)
 TRUTH_CATEGORIES["NCPi0"] = lambda event: IsNC(event) and IsPi0InFinalState(event)
 TRUTH_CATEGORIES["CCPi"] = lambda event: IsCC(event) and IsChargedPionInFinalState(event)
 TRUTH_CATEGORIES["NCPi"] = lambda event: IsNC(event) and IsChargedPionInFinalState(event)

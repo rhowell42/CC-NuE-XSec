@@ -66,7 +66,6 @@ SAMPLE_CUTS = {
         "DSCalVisE",
         "ODCalVisE",
         "StartPointVertexMultiplicity",
-        #"HasNoVertexMismatch",
         "VertexTrackMultiplicity",
         "Etheta",
         "MeanFrontdEdX",
@@ -75,6 +74,8 @@ SAMPLE_CUTS = {
         "TransverseGapScore",
         "DeadTime",
         "Afterpulsing",
+        "Eavail",
+        "Pt",
     ],
     "dEdX" : [
         "NoCut",
@@ -85,7 +86,6 @@ SAMPLE_CUTS = {
         "DSCalVisE",
         "ODCalVisE",
         "StartPointVertexMultiplicity",
-        #"HasNoVertexMismatch",
         "VertexTrackMultiplicity",
         "Etheta",
         "InverseMeanFrontdEdX",
@@ -94,12 +94,12 @@ SAMPLE_CUTS = {
         "TransverseGapScore",
         "DeadTime",
         "Afterpulsing",
+        "Eavail",
+        "Pt",
     ]
 }
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
-    "Eavail",
-    "Pt",
 ]
 #######################################

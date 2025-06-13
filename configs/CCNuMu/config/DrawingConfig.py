@@ -140,16 +140,16 @@ del BackgroundDecomposition["CCNuE"]
 #}
 
 SignalDecomposition = {
-    "CCNuMuQE" :
+    "CCQE" :
     {
         "title" : "CC #nu_{#mu}-QE",
         "color": COLORS[5]
     },
-    "CCNuMu2p2h" : {
+    "CC2p2h" : {
         "title" : "CC #nu_{#mu}-2p2h",
         "color": COLORS[6]
     },
-    "CCNuMuDelta" : {
+    "CCDelta" : {
         "title" : "CC #nu_{#mu}-Delta Res",
         "color": COLORS[1]
     },
@@ -157,11 +157,11 @@ SignalDecomposition = {
         "title" : "CC #nu_{#mu} Res",
         "color": COLORS[2]
     },
-    "CCNuMuDIS" : {
+    "CCDIS" : {
         "title" : "CC #nu_{#mu}-DIS",
         "color": COLORS[2]
     },
-    "CCNuMuWrongSign": {
+    "CCWrongSign": {
         "title" : "CC #nu_{#mu} wrong sign", 
         "color": COLORS[7]
     }

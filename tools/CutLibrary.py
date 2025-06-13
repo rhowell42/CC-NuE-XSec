@@ -337,6 +337,12 @@ CUT_CONFIGS = {
         "cut_fn": lambda vals: vals>0 and vals <= CutConfig.WEXP_CUT,
         "variable_range": [0.5* i for i in range(0,11)]
     },
+    "Eavail": {
+        "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
+        "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1],
+        "variable_range": [0.4* i for i in range(0,11)]
+    },
+    
     "FHC_proton": {
         "value_getter": lambda event, nprong: event,
         "cut_fn": lambda val: passHybridProtonNodeCut(val,10),
@@ -411,7 +417,7 @@ CUT_CONFIGS = {
         "value_getter": lambda event, nprong: event.MasterAnaDev_proton_endPointZ,
         "cut_fn": lambda val: val <= CutConfig.RECO_PROTON_END,
     },
-    
+
     #"HasNoMichelElectrons": {
     #"value_getter": lambda event, nprong: (event.michel_digits, event.michel_energy, event.michel_slice_energy),
     #   "cut_fn": lambda vals: all([not(vals[0][i] < 35 and vals[1][i] < 55 and vals[2][i] < 100 and vals[1][i]/vals[0][i] > 0.8) for i in range(len(vals[0]))])

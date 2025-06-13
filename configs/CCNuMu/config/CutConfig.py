@@ -63,6 +63,8 @@ SAMPLE_CUTS = {
         "Vertex_Z",
         "Vertex_Apothem",
         "Etheta",
+        "Eavail",
+        "Pt",
         #"ZDifference",
         #"ZDifference_vtx",
         #"ProtonEnd",
@@ -72,8 +74,6 @@ SAMPLE_CUTS = {
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
-    "Eavail",
-    "Pt",
 ]
 
 #######################################
