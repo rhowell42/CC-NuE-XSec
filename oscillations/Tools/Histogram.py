@@ -177,10 +177,10 @@ class StitchedHistogram:
             self.inv_covariance = np.linalg.inv(covariance)
             self.inv_covariance_sans_flux = np.linalg.inv(cov_sans_flux)
 
-            #np.savetxt("ryan_Cov.csv",covariance,delimiter=',')
-            #np.savetxt("ryan_CovSansFlux.csv",cov_sans_flux,delimiter=',')
-            #np.savetxt("ryan_InvCov.csv",self.inv_covariance,delimiter=',')
-            #np.savetxt("ryan_InvCovSansFlux.csv",self.inv_covariance_sans_flux,delimiter=',')
+            np.savetxt("ryan_Cov.csv",covariance,delimiter=',')
+            np.savetxt("ryan_CovSansFlux.csv",cov_sans_flux,delimiter=',')
+            np.savetxt("ryan_InvCov.csv",self.inv_covariance,delimiter=',')
+            np.savetxt("ryan_InvCovSansFlux.csv",self.inv_covariance_sans_flux,delimiter=',')
         else:
             raise ValueError("MC and Data histograms must be defined before setting inv_covariance matrix")
 
