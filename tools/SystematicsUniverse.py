@@ -994,10 +994,6 @@ class LeakageUniverse(CVUniverse):
     def __init__(self,chain,nsigma):
         super().__init__(chain,nsigma)  # Call the parent's constructor
 
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.cv_universe, attr, None)
-
     def GetLeakageCorrection(self): 
         return super().GetLeakageCorrection() + ( self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS if abs(self.mc_primaryLepton) ==11 else 0)
 
