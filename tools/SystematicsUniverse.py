@@ -624,6 +624,14 @@ class MuonAngleXResolutionUniverse():
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
+    def GetWeight(self, test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight*= self.universe.GetWeightRatioToCV()
+        return(weight)
+
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonAngleXResolutionUniverse(chain,i) for i in OneSigmaShift]
@@ -636,6 +644,14 @@ class MuonResolutionUniverse():
     def __getattr__(self, attr):
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
+
+    def GetWeight(self, test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight*= self.universe.GetWeightRatioToCV()
+        return(weight)
 
     @staticmethod
     def GetSystematicsUniverses(chain):
@@ -650,6 +666,14 @@ class MuonAngleYResolutionUniverse():
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
+    def GetWeight(self, test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight*= self.universe.GetWeightRatioToCV()
+        return(weight)
+
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonAngleYResolutionUniverse(chain,i) for i in OneSigmaShift]
@@ -662,6 +686,14 @@ class MuonUniverseMinerva():
     def __getattr__(self, attr):
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
+
+    def GetWeight(self, test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight*= self.universe.GetWeightRatioToCV()
+        return(weight)
 
     @staticmethod
     def GetSystematicsUniverses(chain):
@@ -676,6 +708,14 @@ class MuonUniverseMinos():
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
+    def GetWeight(self, test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight*= self.universe.GetWeightRatioToCV()
+        return weight
+
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonUniverseMinos(chain,i) for i in OneSigmaShift]
@@ -689,25 +729,29 @@ class MinosEfficiencyUniverse():
          if self.HasNoBackExitingTracks:
              return 1
          else:
-             return super(MinosEfficiencyUniverse,self).GetMinosEfficiencyWeight()
+             return self.universe.GetMinosEfficiencyWeight()
 
     def __getattr__(self, attr):
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
+
+    def GetWeight(self, test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight*= self.GetMyMinosEfficiencyWeight()
+        return weight
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MinosEfficiencyUniverse(chain,i) for i in OneSigmaShift]
 
 ###########################################################################
-class ElectronEnergyShiftUniverse():
+class ElectronEnergyShiftUniverse(CVUniverse):
     def __init__(self,chain, nsigma,region):
-        self.cv_universe = CVUniverse(chain,nsigma)
+        super().__init__(chain,nsigma)  # Call the parent's constructor
         self.region = region
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.cv_universe, attr, None)
 
     def GetEMEnergyShift(self):
         return self.nsigma*SystematicsConfig.EM_ENERGY_SCALE_UNCERTAINTY[self.region]*self.GetVecElem("prong_"+self.region+"CalibE",0)
@@ -724,15 +768,11 @@ class ElectronEnergyShiftUniverse():
 
 
 ###########################################################################
-class ElectronAngleShiftUniverse():
-    def __init__(self,chain, nsigma):
-        self.cv_universe = CVUniverse(chain,nsigma)
+class ElectronAngleShiftUniverse(CVUniverse):
+    def __init__(self,chain,nsigma):
+        super().__init__(chain,nsigma)  # Call the parent's constructor
         self.axis_angle = random.random()*math.pi
         self.shift_angle = random.gauss(0,self.nsigma*SystematicsConfig.LEPTON_ANGLE_UNCERTAINTY)
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.cv_universe, attr, None)
 
     def ShortName(self):
         return "eltheta"
@@ -741,7 +781,7 @@ class ElectronAngleShiftUniverse():
         return "Election Candidate Angle"
 
     def ElectronP3D(self):
-        p = super(ElectronAngleShiftUniverse,self).ElectronP3D()
+        p = super().ElectronP3D()
         unit_3_vector = p/p.R()
         normal_vector1 = p.Cross(ROOT.Math.XYZVector(1.0,0,0))
         if normal_vector1.R() != 0:
@@ -751,8 +791,9 @@ class ElectronAngleShiftUniverse():
         r2 = ROOT.Math.AxisAngle(rotation_axis,self.shift_angle)
         return r2(p)
 
+    @property
     def ElectronTheta2(self):
-        theta = super(ElectronAngleShiftUniverse,self).ElectronTheta()
+        theta = super(ElectronAngleShiftUniverseElectronTheta())
         return theta+self.shift_angle
 
     @staticmethod
@@ -762,13 +803,9 @@ class ElectronAngleShiftUniverse():
     
 
 ###########################################################################
-class BirksShiftUniverse():
+class BirksShiftUniverse(CVUniverse):
     def __init__(self,chain, nsigma):
-        self.cv_universe = CVUniverse(chain,nsigma)
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.cv_universe, attr, None)
+        super().__init__(chain,nsigma)  # Call the parent's constructor
 
     @property
     def prong_part_score(self):
@@ -794,14 +831,10 @@ class BirksShiftUniverse():
 
 ###########################################################################
 
-class BeamAngleShiftUniverse():
+class BeamAngleShiftUniverse(CVUniverse):
     def __init__(self,chain, nsigma, x):
-        self.cv_universe = CVUniverse(chain,nsigma)
+        super().__init__(chain,nsigma)  # Call the parent's constructor
         self.rotation =  ROOT.Math.RotationX(SystematicsConfig.BEAM_XANGLE_UNCERTAINTY*nsigma) if x else ROOT.Math.RotationY(SystematicsConfig.BEAM_YANGLE_UNCERTAINTY*nsigma)
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.cv_universe, attr, None)
 
     def ShortName(self):
         return "beam_angle"
@@ -810,7 +843,7 @@ class BeamAngleShiftUniverse():
         return "Beam Angle"
 
     def ElectronP3D(self):
-        p = super(BeamAngleShiftUniverse,self).ElectronP3D()
+        p = super().ElectronP3D()
         return self.rotation(p)
 
     @staticmethod
@@ -849,7 +882,7 @@ class TargetMassUniverse():
 
     def GetStandardWeight(self):
         weight = self.cv_universe.GetStandardWeight()
-        weight*= self.GetWeightRatioToCV()
+        weight*= self.universe.GetWeightRatioToCV()
         return weight
 
     def __getattr__(self, attr):
@@ -957,16 +990,16 @@ class SusaValenciaUniverse():
     def GetSystematicsUniverses(chain):
         return [SusaValenciaUniverse(chain,1)]
 
-class LeakageUniverse():
+class LeakageUniverse(CVUniverse):
     def __init__(self,chain,nsigma):
-        self.cv_universe = CVUniverse(chain,nsigma)
+        super().__init__(chain,nsigma)  # Call the parent's constructor
 
     def __getattr__(self, attr):
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.cv_universe, attr, None)
 
     def GetLeakageCorrection(self): 
-        return super(LeakageUniverse,self).GetLeakageCorrection() + ( self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS if abs(self.mc_primaryLepton) ==11 else 0)
+        return super().GetLeakageCorrection() + ( self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS if abs(self.mc_primaryLepton) ==11 else 0)
 
     def ShortName(self):
         return "Leakage_Uncertainty"
