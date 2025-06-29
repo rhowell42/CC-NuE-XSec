@@ -269,7 +269,6 @@ class CVUniverse(ROOT.PythonMinervaUniverse):
 
     def ElectronP3D(self):
         electronp = self.GetVecOfVecDouble("prong_part_E")
-        #print([electronp[0][i] for i in range(4)])
         scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
         p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
         r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
@@ -423,7 +422,7 @@ class GenieUniverse():
 
     def GetStandardWeight(self):
         weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGenieWeight()
+        weight *= self.universe.GetWeightRatioToCV()
         return weight
 
     def __getattr__(self, attr):
@@ -448,7 +447,7 @@ class GenieRvx1piUniverse():
 
     def GetStandardWeight(self):
         weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGenieWeight()
+        weight *= self.universe.GetWeightRatioToCV()
         return weight
 
     @staticmethod
@@ -469,7 +468,7 @@ class GenieFaCCQEUniverse():
 
     def GetStandardWeight(self):
         weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGenieWeight()
+        weight *= self.universe.GetWeightRatioToCV()
         return weight
 
     @staticmethod
@@ -493,7 +492,7 @@ class GenieNormCCResUniverse():
 
     def GetStandardWeight(self):
         weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGenieWeight()
+        weight *= self.universe.GetWeightRatioToCV()
         return weight
 
     @staticmethod
@@ -514,7 +513,7 @@ class GenieMaResUniverse():
 
     def GetStandardWeight(self):
         weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGenieWeight()
+        weight *= self.universe.GetWeightRatioToCV()
         return weight
 
     @staticmethod
@@ -535,15 +534,12 @@ class GenieMvResUniverse():
 
     def GetStandardWeight(self):
         weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGenieWeight()
+        weight *= self.universe.GetWeightRatioToCV()
         return weight
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieMvResUniverse(chain,i) for i in OneSigmaShift]
-
-# I don't think nu_e analysis need minos shift
-# class MinosUniverse(ROOT.PlotUtils.GenieUniverse(ROOT.PythonMinervaUniverse), CVUniverse):
 
 class Universe2p2h():
     def __init__(self,chain,universe_number):
@@ -553,6 +549,14 @@ class Universe2p2h():
     def __getattr__(self, attr):
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
+
+    def GetWeight(self,test=None):
+        return self.GetStandardWeight()
+
+    def GetStandardWeight(self):
+        weight = self.cv_universe.GetStandardWeight()
+        weight *= self.universe.GetWeightRatioToCV()
+        return weight
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
@@ -740,7 +744,7 @@ class MinosEfficiencyUniverse():
 
     def GetStandardWeight(self):
         weight = self.cv_universe.GetStandardWeight()
-        weight*= self.GetMyMinosEfficiencyWeight()
+        weight*= self.universe.GetWeightRatioToCV()
         return weight
 
     @staticmethod
@@ -791,9 +795,8 @@ class ElectronAngleShiftUniverse(CVUniverse):
         r2 = ROOT.Math.AxisAngle(rotation_axis,self.shift_angle)
         return r2(p)
 
-    @property
-    def ElectronTheta2(self):
-        theta = super(ElectronAngleShiftUniverseElectronTheta())
+    def ElectronTheta(self):
+        theta = super().ElectronTheta()
         return theta+self.shift_angle
 
     @staticmethod
@@ -865,7 +868,7 @@ class GeantHadronUniverse():
 
     def GetStandardWeight(self):
         weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGeantHadronWeight()
+        weight *= self.universe.GetWeightRatioToCV()
         return weight
 
     @staticmethod
@@ -1144,10 +1147,14 @@ if __name__ == "__main__":
 
     univs = GetAllSystematicsUniverses(chainWrapper,False)
 
+    cvVal = 0
     for u in univs.keys():
         print(u)
         for univ in univs[u]:
             univ.SetEntry(5)
-            weight = univ.GetWeight(False)
+            if u == "cv":
+                cvVal = univ.GetWeight(False)
+                continue
+            weight = univ.GetWeight(False)/cvVal
             print(weight)
         print("")
