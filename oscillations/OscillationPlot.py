@@ -379,7 +379,7 @@ class PanelPlot:
 
     def PlotFeldmanCousins(self, FC_excl, FC_sens, limits):
         contour_labels = [str(i)+'%' for i in limits]
-        contour_colors = ['blue','red']
+        contour_colors = ['red','blue']
 
         X,Y = np.meshgrid(self.x,self.y)
 
@@ -412,7 +412,7 @@ class PanelPlot:
     def PlotLegend(self,limits):
         handles = []
         contour_labels = [str(i)+"%" for i in limits]
-        contour_colors = ['blue','red','green']
+        contour_colors = ['red','blue','green']
 
         for c in range(len(contour_labels)):
             line = plt.Line2D([0,0], [0,0], color=contour_colors[c], linestyle='dashed')
@@ -521,7 +521,7 @@ class PanelPlot:
         self.axes.text(self.x[7],self.y[7],s=str_to_latex[self.panel]+ "= {:.5f}".format(self.p[index]),bbox=textprops,c="black",fontweight="bold")
 
         contour_labels = [str(i)+'%' for i in limits]
-        contour_colors = ['blue','red']
+        contour_colors = ['red','blue']
 
         X,Y = np.meshgrid(self.x,self.y)
 
@@ -596,8 +596,8 @@ if __name__ == "__main__":
 
     stereo = ExperimentContour("STEREO 95% Excl.","exp_results/stereo_2Dexcl.csv",False,"black",h_index=0)
     minos = ExperimentContour("MINOS 90% Excl.","exp_results/MINOS.csv",False,"black",h_index=1)
-    prospect = ExperimentContour("PROSPECT 95% Excl.","exp_results/prospect.csv",False,"yellow",h_index=2)
-    katrin = ExperimentContour("KATRIN 95% Excl.","exp_results/katrin.csv",False,"purple",h_index=3)
+    prospect = ExperimentContour("PROSPECT 95% Excl.","exp_results/prospect.csv",False,"blue",h_index=2)
+    katrin = ExperimentContour("KATRIN 95% Excl.","exp_results/katrin_noMass.csv",False,"purple",h_index=3)
     microboone = ExperimentContour("MicroBooNE 95% Excl.","exp_results/microboone.csv",False,"teal",h_index=4)
     neutrino4 = ExperimentContour("Neutrino-4 $2\sigma$ Conf.",["exp_results/n4_c1.csv","exp_results/n4_c2.csv","exp_results/n4_c3.csv","exp_results/n4_c4.csv"],True,"pink",h_index=2)
     raa = ExperimentContour("RAA 90% Allowed","exp_results/RAA.csv",True,"gray",h_index=3)
