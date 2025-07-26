@@ -95,9 +95,13 @@ if __name__ == "__main__":
     plotter.SetInverseCovariance(invCov)
     plotter.SetLambda(AnalysisConfig.lambdaValue)
     plotter.SetExclude(AnalysisConfig.exclude)
-    #for i,umu4 in enumerate(np.linspace(0,0.41,100)):
-        #n4['umu4'] = umu4
-        #plotter.PlotOscillationEffects(n4,"Neutrino4_{}".format(i),plotSamples=True)
+    nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
+    sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="AllSamples")
+    sample_histogram.PlotStitchedHistogram(fluxSolution=nullSolution,plotName="StitchedHistogram")
+    exit()
+    for i,umu4 in enumerate(np.linspace(0,0.41,100)):
+        n4['umu4'] = umu4
+        plotter.PlotOscillationEffects(n4,"Neutrino4_{}".format(i),plotSamples=True)
 
 
     #invCov = np.loadtxt("data_minus_mc_COV.csv",delimiter=',')
@@ -108,7 +112,7 @@ if __name__ == "__main__":
     #plotter.PlotScatteringIntegrals()
     #plotter.PlotFluxReweight()
     #plotter.PlotProfileEffects()
-    plotter.PlotFluxProfilingEffects("profile_effect")
+    #plotter.PlotFluxProfilingEffects("profile_effect")
     #plotter.PlotOscillationEffects(n4,"Neutrino4",plotSamples=True)
     
 

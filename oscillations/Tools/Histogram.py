@@ -973,6 +973,82 @@ class StitchedHistogram:
         reweight(name,self.mc_hist)
         reweight(name,self.data_hist)
 
+    def PlotStitchedHistogram(self,fluxSolution=None,plotName="sample"):
+        margin = .12
+        bottomFraction = .2
+        MNVPLOTTER = PlotUtils.MnvPlotter()
+        MNVPLOTTER.draw_normalized_to_bin_width=False
+        self.SetPlottingStyle()
+
+        h_mc = self.mc_hist.Clone()
+        h_data = self.data_hist.Clone()
+
+        if fluxSolution is not None:
+            mc = np.array(h_mc)[1:-1]
+            band = h_mc.GetVertErrorBand("Flux")
+            nhists = band.GetNHists()
+            universes = np.array([np.array(band.GetHist(i))[1:-1] for i in range(nhists)])
+            cv_table = np.array([mc for i in range(len(universes))])
+            A = universes - cv_table
+
+            new_cv = mc + fluxSolution @ A
+            weights = h_mc.GetCVHistoWithStatError()
+            for i in range(1,weights.GetNbinsX()+1):
+                weight = weights.GetBinContent(i) / new_cv[i-1] if new_cv[i-1] != 0 else weights.GetBinContent(i)
+                weights.SetBinContent(i,weight)
+                weights.SetBinError(i,0)
+
+            h_mc.DivideSingle(h_mc,weights)
+            h_mc.PopVertErrorBand("Flux")
+            h_mc.AddMissingErrorBandsAndFillWithCV(h_data)
+
+        overall = ROOT.TCanvas(plotName)
+        top = ROOT.TPad("DATAMC", "DATAMC", 0, bottomFraction, 1, 1)
+        bottom = ROOT.TPad("Ratio", "Ratio", 0, 0, 1, bottomFraction+margin)
+
+        top.SetLogy()
+        top.Draw()
+        bottom.Draw()
+
+        top.cd()
+
+        MNVPLOTTER.DrawDataMCWithErrorBand(h_data,h_mc,1,"TR")
+     
+        bottom.cd()
+        bottom.SetTopMargin(0)
+        bottom.SetBottomMargin(0.3)
+
+        ratio = h_data.Clone()
+        ratio.Divide(ratio, h_mc)
+
+        #Now fill mcRatio with 1 for bin content and fractional error
+        mcRatio = h_mc.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
+        for whichBin in range(1, mcRatio.GetXaxis().GetNbins()+1): 
+            mcRatio.SetBinError(whichBin, max(mcRatio.GetBinContent(whichBin), 1e-9))
+            mcRatio.SetBinContent(whichBin, 1)
+
+        #Error envelope for the MC
+        mcRatio.SetLineColor(ROOT.kRed)
+        mcRatio.SetLineWidth(2)
+        mcRatio.SetMarkerStyle(0)
+        mcRatio.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
+        mcRatio.GetYaxis().SetTitle("Data/Null Hypothesis")
+        mcRatio.SetMinimum(0)
+        mcRatio.SetMaximum(2)
+        RatioAxis(mcRatio,MNVPLOTTER)
+
+        mcRatio.Draw("E2")
+        
+        ratio.SetLineColor(ROOT.kBlack)
+        #ratio.SetLineWidth(3)
+        ratio.Draw('E1 X0 SAME')
+
+        straightLine = mcRatio.Clone()
+        straightLine.SetFillStyle(0)
+        straightLine.Draw("HIST SAME")
+        ROOT.gStyle.SetOptTitle(1)
+        overall.Print("plots/{}.png".format(plotName))
+
     def PlotSamples(self,fluxSolution=None,plotName="sample"):
         margin = .12
         bottomFraction = .2

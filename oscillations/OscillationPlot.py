@@ -213,7 +213,7 @@ class ExperimentContour:
             axis.fill(x,y,color=self.color,alpha=0.4)
         else:
             self.SetPatch("line")
-            axis.plot(x,y,color=self.color,linestyle=self.style)
+            axis.plot(x,y,color=self.color,linestyle=self.style,alpha=0.4)
 
     def Plot(self,axis,xaxis,yaxis,line,panel):
         axes = self.data.keys()
@@ -611,6 +611,7 @@ if __name__ == "__main__":
 
     if AnalysisConfig.animate:
         for i in range(len(str_to_axis["dm2"])):
+            '''
             pplot.SetXaxis("ue4")
             pplot.SetYaxis("umu4")
             pplot.SetPanel("dm2")
@@ -618,7 +619,7 @@ if __name__ == "__main__":
             name = "plots/ue4_vs_umu4_%02d.png" % i
             pplot.SetName(name)
             pplot.Animate(excl,sens,limits,i)
-
+            '''
             pplot.SetXaxis("ue4")
             pplot.SetYaxis("dm2")
             pplot.SetPanel("umu4")
@@ -626,14 +627,14 @@ if __name__ == "__main__":
             name = "plots/ue4_vs_dm2_%02d.png" % i
             pplot.SetName(name)
             pplot.Animate(excl,sens,limits,i)
-            
+            '''
             pplot.SetXaxis("umu4")
             pplot.SetPanel("ue4")
             sens,excl = GetFCSlice(data_chi2s,asimov_chi2s,results,i,str_to_index["ue4"])
             name = "plots/umu4_vs_dm2_%02d.png" % i
             pplot.SetName(name)
             pplot.Animate(excl,sens,limits,i)
-
+            '''
     elif AnalysisConfig.compare_profiles:
         lam = 1
         best_fit = 101.24

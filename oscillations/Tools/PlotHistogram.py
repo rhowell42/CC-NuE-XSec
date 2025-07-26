@@ -597,6 +597,7 @@ class PlottingContainer:
 
     def PlotOscillationEffects(self,parameters,name="",plotSamples=False,usePseudo=False):
         histogram = copy.deepcopy(self.histogram)
+        OscillateHistogram(histogram, parameters['m'], parameters['ue4'], parameters['umu4'], parameters['utau4'])
         exclude = self.exclude
         lam = self.lam
 
@@ -710,6 +711,7 @@ class PlottingContainer:
 
         plots = histogram.keys
         histogram = copy.deepcopy(self.histogram)
+        OscillateHistogram(histogram, parameters['m'], parameters['ue4'], parameters['umu4'], parameters['utau4'])
         nullSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo,useOsc=True,exclude=exclude,lam=lam)
         plots.append("fhc_ratio")
         plots.append("rhc_ratio")
