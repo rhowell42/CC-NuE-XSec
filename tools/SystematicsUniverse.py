@@ -39,12 +39,13 @@ M_mu_sqr = M_mu**2
 class CVPythonUniverse():
     is_pc = False
     def __init__(self, chain, nsigma = None): #nsigma is None for data because we don't shift data
-        super(CVPythonUniverse,self).__init__(chain,0 if nsigma is None else nsigma)
         self.weight = None
         self.tuning_weight = None
         self.InitWithoutSuper(chain,nsigma)
 
     def InitWithoutSuper(self,chain,nsigma):
+        self.weight = None
+        self.tuning_weight = None
         self.nEntries = chain.GetEntries()
         self.mc = nsigma is not None
         self.chain=chain
@@ -100,7 +101,6 @@ class CVPythonUniverse():
         self.weight = None
         self.tuning_weight = None
         CVPythonUniverse.LLR = None
-        super(CVPythonUniverse,self).SetEntry(n_entry)
 
     def SetLeptonType(self):
         if abs(SystematicsConfig.AnaNuPDG) == 12: 
@@ -397,8 +397,6 @@ class CVSystematicUniverse(ROOT.PythonMinervaUniverse, CVPythonUniverse):
 
 class FluxUniverse( ROOT.PlotUtils.FluxUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,universe_number):
-        self.weight = None
-        self.tuning_weight = None
         super(FluxUniverse,self).__init__(chain,1,universe_number)
         super(ROOT.PlotUtils.FluxUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,1)
 
@@ -408,8 +406,6 @@ class FluxUniverse( ROOT.PlotUtils.FluxUniverse(ROOT.PythonMinervaUniverse),CVPy
 
 class GenieUniverse(ROOT.PlotUtils.GenieUniverse(ROOT.PythonMinervaUniverse), CVPythonUniverse):
     def __init__(self,chain,nsigma,universe_name):
-        self.weight = None
-        self.tuning_weight = None
         super(GenieUniverse,self).__init__(chain,nsigma,universe_name)
         super(ROOT.PlotUtils.GenieUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
@@ -419,8 +415,6 @@ class GenieUniverse(ROOT.PlotUtils.GenieUniverse(ROOT.PythonMinervaUniverse), CV
 
 class GenieRvx1piUniverse(ROOT.PlotUtils.GenieRvx1piUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma,universe_name):
-        self.weight = None
-        self.tuning_weight = None
         super(GenieRvx1piUniverse,self).__init__(chain,nsigma,universe_name)
         super(ROOT.PlotUtils.GenieRvx1piUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
@@ -430,8 +424,6 @@ class GenieRvx1piUniverse(ROOT.PlotUtils.GenieRvx1piUniverse(ROOT.PythonMinervaU
 
 class GenieFaCCQEUniverse(ROOT.PlotUtils.GenieFaCCQEUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma,universe_number):
-        self.weight = None
-        self.tuning_weight = None
         super(GenieFaCCQEUniverse,self).__init__(chain,nsigma,universe_number)
         super(ROOT.PlotUtils.GenieFaCCQEUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
@@ -444,8 +436,6 @@ class GenieFaCCQEUniverse(ROOT.PlotUtils.GenieFaCCQEUniverse(ROOT.PythonMinervaU
 
 class GenieNormCCResUniverse(ROOT.PlotUtils.GenieNormCCResUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.weight = None
-        self.tuning_weight = None
         super(GenieNormCCResUniverse,self).__init__(chain,nsigma)
         super(ROOT.PlotUtils.GenieNormCCResUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
@@ -455,8 +445,6 @@ class GenieNormCCResUniverse(ROOT.PlotUtils.GenieNormCCResUniverse(ROOT.PythonMi
 
 class GenieMaResUniverse(ROOT.PlotUtils.GenieMaResUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.weight = None
-        self.tuning_weight = None
         super(GenieMaResUniverse,self).__init__(chain,nsigma)
         super(ROOT.PlotUtils.GenieMaResUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
@@ -466,8 +454,6 @@ class GenieMaResUniverse(ROOT.PlotUtils.GenieMaResUniverse(ROOT.PythonMinervaUni
 
 class GenieMvResUniverse(ROOT.PlotUtils.GenieMvResUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.weight = None
-        self.tuning_weight = None
         super(GenieMvResUniverse,self).__init__(chain,nsigma)
         super(ROOT.PlotUtils.GenieMvResUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
@@ -480,8 +466,6 @@ class GenieMvResUniverse(ROOT.PlotUtils.GenieMvResUniverse(ROOT.PythonMinervaUni
 
 class Universe2p2h(ROOT.PlotUtils.Universe2p2h(ROOT.PythonMinervaUniverse), CVPythonUniverse):
     def __init__(self,chain,universe_number):
-        self.weight = None
-        self.tuning_weight = None
         super(Universe2p2h,self).__init__(chain,1,universe_number)
         super(ROOT.PlotUtils.Universe2p2h(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,1)
 
@@ -490,10 +474,7 @@ class Universe2p2h(ROOT.PlotUtils.Universe2p2h(ROOT.PythonMinervaUniverse), CVPy
         return [Universe2p2h(chain, i) for i in SystematicsConfig.UNIVERSES_2P2H]
 
 class RPAUniverse(ROOT.PlotUtils.RPAUniverse(ROOT.PythonMinervaUniverse), CVPythonUniverse):
-
     def __init__(self,chain, universe_number,q2_region):
-        self.weight = None
-        self.tuning_weight = None
         super(RPAUniverse,self).__init__(chain,1,universe_number,q2_region)
         super(ROOT.PlotUtils.RPAUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain, 1)
 
@@ -505,8 +486,6 @@ class ResponseUniverse(ROOT.PlotUtils.ResponseUniverse(ROOT.PythonMinervaUnivers
     def __init__(self,chain,nsigma,name):
         super(ResponseUniverse,self).__init__(chain,nsigma,name)
         super(ROOT.PlotUtils.ResponseUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,1)
-        self.weight = None
-        self.tuning_weight = None
         self.re = "^blob_.*_E_(tracker|ecal|od|nucl|hcal)$"
 
     def __getattr__(self,attrName):
@@ -526,8 +505,6 @@ class ResponseUniverse(ROOT.PlotUtils.ResponseUniverse(ROOT.PythonMinervaUnivers
 
 class LowQ2PionUniverse(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma,channel):
-        self.weight = None
-        self.tuning_weight = None
         super(LowQ2PionUniverse,self).__init__(chain,nsigma)
         super(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
         self.channel = channel.upper() if channel is not None else None
@@ -546,8 +523,6 @@ class LowQ2PionUniverse(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUnive
 
 class LowQ2PionUniverseAlt(CVPythonUniverse):
     def __init__(self,chain,channel):
-        self.weight = None
-        self.tuning_weight = None
         super(LowQ2PionUniverseAlt,self).__init__(chain, 0)
         self.channel = channel
 
@@ -569,8 +544,6 @@ class LowQ2PionUniverseAlt(CVPythonUniverse):
 
 class MuonAngleXResolutionUniverse(ROOT.PlotUtils.MuonAngleXResolutionUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.weight = None
-        self.tuning_weight = None
         super(MuonAngleXResolutionUniverse,self).__init__(chain,nsigma)
         super(ROOT.PlotUtils.MuonAngleXResolutionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
@@ -581,8 +554,6 @@ class MuonAngleXResolutionUniverse(ROOT.PlotUtils.MuonAngleXResolutionUniverse(R
 
 class MuonResolutionUniverse(ROOT.PlotUtils.MuonResolutionUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.weight = None
-        self.tuning_weight = None
         super(MuonResolutionUniverse,self).__init__(chain,nsigma)
         super(ROOT.PlotUtils.MuonResolutionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
@@ -592,8 +563,6 @@ class MuonResolutionUniverse(ROOT.PlotUtils.MuonResolutionUniverse(ROOT.PythonMi
 
 class MuonAngleYResolutionUniverse(ROOT.PlotUtils.MuonAngleYResolutionUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.weight = None
-        self.tuning_weight = None
         super(MuonAngleYResolutionUniverse,self).__init__(chain,nsigma)
         super(ROOT.PlotUtils.MuonAngleYResolutionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
@@ -604,8 +573,6 @@ class MuonAngleYResolutionUniverse(ROOT.PlotUtils.MuonAngleYResolutionUniverse(R
 
 class MuonUniverseMinerva(ROOT.PlotUtils.MuonUniverseMinerva(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.weight = None
-        self.tuning_weight = None
         super(MuonUniverseMinerva,self).__init__(chain,nsigma)
         super(ROOT.PlotUtils.MuonUniverseMinerva(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
@@ -617,8 +584,6 @@ class MuonUniverseMinerva(ROOT.PlotUtils.MuonUniverseMinerva(ROOT.PythonMinervaU
 
 class MuonUniverseMinos(ROOT.PlotUtils.MuonUniverseMinos(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.weight = None
-        self.tuning_weight = None
         super(MuonUniverseMinos,self).__init__(chain,nsigma)
         super(ROOT.PlotUtils.MuonUniverseMinos(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
@@ -629,8 +594,6 @@ class MuonUniverseMinos(ROOT.PlotUtils.MuonUniverseMinos(ROOT.PythonMinervaUnive
 
 class MinosEfficiencyUniverse(ROOT.PlotUtils.MinosEfficiencyUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.weight = None
-        self.tuning_weight = None
         super(MinosEfficiencyUniverse,self).__init__(chain,nsigma)
         super(ROOT.PlotUtils.MinosEfficiencyUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
@@ -648,8 +611,6 @@ class MinosEfficiencyUniverse(ROOT.PlotUtils.MinosEfficiencyUniverse(ROOT.Python
 ###########################################################################
 class ElectronEnergyShiftUniverse(CVSystematicUniverse):
     def __init__(self,chain, nsigma,region):
-        self.weight = None
-        self.tuning_weight = None
         super(ElectronEnergyShiftUniverse,self).__init__(chain, nsigma)
         self.region = region
 
@@ -670,8 +631,6 @@ class ElectronEnergyShiftUniverse(CVSystematicUniverse):
 ###########################################################################
 class ElectronAngleShiftUniverse(CVSystematicUniverse):
     def __init__(self,chain, nsigma):
-        self.weight = None
-        self.tuning_weight = None
         super(ElectronAngleShiftUniverse,self).__init__(chain, nsigma)
         self.axis_angle = random.random()*math.pi
         self.shift_angle = random.gauss(0,self.nsigma*SystematicsConfig.LEPTON_ANGLE_UNCERTAINTY)
@@ -754,8 +713,6 @@ class BeamAngleShiftUniverse(CVSystematicUniverse):
 
 class GeantHadronUniverse(ROOT.PlotUtils.GeantHadronUniverse(ROOT.PythonMinervaUniverse), CVPythonUniverse):
     def __init__(self,chain,nsigma,pdg):
-        self.weight = None
-        self.tuning_weight = None
         super(GeantHadronUniverse,self).__init__(chain,nsigma,pdg)
         super(ROOT.PlotUtils.GeantHadronUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
@@ -765,8 +722,6 @@ class GeantHadronUniverse(ROOT.PlotUtils.GeantHadronUniverse(ROOT.PythonMinervaU
 
 class TargetMassUniverse(ROOT.PlotUtils.TargetMassScintillatorUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.weight = None
-        self.tuning_weight = None
         super(TargetMassUniverse,self).__init__(chain,nsigma)
         super(ROOT.PlotUtils.TargetMassScintillatorUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
     def GetStandardWeight(self):
@@ -890,25 +845,25 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             playlist = Utilities.PlaylistLookup(chain.GetValue("mc_run",0))
 
         if not is_pc:
-            ROOT.PythonMinervaUniverse.SetPlaylist(playlist)
+            CVSystematicUniverse.SetPlaylist(playlist)
             #Set NuE constraint
-            ROOT.PythonMinervaUniverse.SetNuEConstraint(SystematicsConfig.USE_NUE_CONSTRAINT)
+            CVSystematicUniverse.SetNuEConstraint(SystematicsConfig.USE_NUE_CONSTRAINT)
         else:
-            ROOT.PythonMinervaUniverse.SetPlaylist("dummy")
-            ROOT.PythonMinervaUniverse.SetNuEConstraint(False)
+            CVSystematicUniverse.SetPlaylist("dummy")
+            CVSystematicUniverse.SetNuEConstraint(False)
 
         #Set nu_type
-        ROOT.PythonMinervaUniverse.SetAnalysisNuPDG(SystematicsConfig.AnaNuPDG)
+        CVSystematicUniverse.SetAnalysisNuPDG(SystematicsConfig.AnaNuPDG)
 
         #Set NonResPi weight
-        ROOT.PythonMinervaUniverse.SetNonResPiReweight(True)
-        ROOT.PythonMinervaUniverse.SetDeuteriumGeniePiTune(True)
-        ROOT.PythonMinervaUniverse.SetZExpansionFaReweight(bool(SystematicsConfig.NumZExpansionUniverses)) 
-        ROOT.PythonMinervaUniverse.SetNFluxUniverses(SystematicsConfig.NUM_FLUX_UNIVERSE)
-        ROOT.PythonMinervaUniverse.RPAMaterials(True)
+        CVSystematicUniverse.SetNonResPiReweight(True)
+        CVSystematicUniverse.SetDeuteriumGeniePiTune(True)
+        CVSystematicUniverse.SetZExpansionFaReweight(bool(SystematicsConfig.NumZExpansionUniverses)) 
+        CVSystematicUniverse.SetNFluxUniverses(SystematicsConfig.NUM_FLUX_UNIVERSE)
+        CVSystematicUniverse.RPAMaterials(True)
 
         if chain.GetTree().GetName() == "Truth":
-            ROOT.PythonMinervaUniverse.SetTruth(True)
+            CVSystematicUniverse.SetTruth(True)
 
         if exclude is None or "all" not in exclude:
             # Vertical shift first to skip some cut calculation
@@ -959,7 +914,7 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             # #universes.extend(NonResonantPionUniverse.GetSystematicsUniverses(chain ))
 
             #LowQ2PionUniverse
-            universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
+            #universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
             #universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain )) used for warping study variant
 
             # #birk shift universe
@@ -1003,9 +958,7 @@ if __name__ == "__main__":
     #path = "/pnfs/minerva/persistent/users/jyhan/NuECCQE/v21r1p1_recoilE_final/mcme1A/grid/central_value/minerva/ana/v21r1p1/00/11/00/17/SIM_minerva_00110017_Subruns_0325_NuECCQE_Ana_Tuple_v21r1p1.root"
     path = "/pnfs/minerva/persistent/DataPreservation/p4/FullDetector/Merged_mc_ana_me1A_DualVertex_p4/MasterAnaDev_mc_AnaTuple_run00110011_Playlist.root"
     
-    chain = ROOT.TChain("MasterAnaDev")
     chainWrapper = PlotUtils.ChainWrapper("MasterAnaDev")
-    chain.Add(path)
     chainWrapper.Add(path)
     chainWrapper.GetValue("prong_part_score",0)
     univs = GetAllSystematicsUniverses(chainWrapper,False)
