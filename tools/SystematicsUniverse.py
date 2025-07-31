@@ -392,8 +392,8 @@ class CVSystematicUniverse(ROOT.PythonMinervaUniverse, CVPythonUniverse):
     def __init__(self,chain,nsigma):
         self.weight = None
         self.tuning_weight = None
-        super(CVSystematicUniverse,self).__init__(chain,0 if nsigma is None else nsigma)
-        super(ROOT.PythonMinervaUniverse,self).InitWithoutSuper(chain,1)
+        super(CVSystematicUniverse,self).__init__(chain)
+        super(ROOT.PythonMinervaUniverse,self).InitWithoutSuper(chain, None)
 
 class FluxUniverse( ROOT.PlotUtils.FluxUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,universe_number):
