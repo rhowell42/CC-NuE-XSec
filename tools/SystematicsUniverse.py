@@ -96,12 +96,6 @@ class CVPythonUniverse():
         self.kin_cal = kinematicCalculator
         self.classifier = eventClassifier
 
-    def SetEntry(self,n_entry):
-        #go to another event, discard weight calculated.
-        self.weight = None
-        self.tuning_weight = None
-        CVPythonUniverse.LLR = None
-
     def SetLeptonType(self):
         if abs(SystematicsConfig.AnaNuPDG) == 12: 
             self.LeptonTheta = self.ElectronTheta
@@ -138,6 +132,7 @@ class CVPythonUniverse():
     def GetStandardWeight(self):
         weight = 1.0
         weight *= self.GetGenieWeight()
+
 
         ### take care of flavor swapped sample below ###
         pdg = self.mc_incoming
@@ -390,10 +385,20 @@ class CVPythonUniverse():
 
 class CVSystematicUniverse(ROOT.PythonMinervaUniverse, CVPythonUniverse):
     def __init__(self,chain,nsigma):
+        #self.weight = None
+        #self.tuning_weight = None
+        super(CVSystematicUniverse,self).__init__(chain,0 if nsigma is None else nsigma)
+        super(ROOT.PythonMinervaUniverse,self).InitWithoutSuper(chain, 1 if nsigma is not None else None)
+
+    def SetEntry(self,n_entry):
+        #go to another event, discard weight calculated.
         self.weight = None
         self.tuning_weight = None
-        super(CVSystematicUniverse,self).__init__(chain)
-        super(ROOT.PythonMinervaUniverse,self).InitWithoutSuper(chain, None)
+        CVPythonUniverse.LLR = None
+        super(CVSystematicUniverse,self).SetEntry(n_entry)
+
+    def __repr__(self):
+        return self.LatexName()+" Universe at sigma: "+ str(self.GetSigma())
 
 class FluxUniverse( ROOT.PlotUtils.FluxUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,universe_number):
