@@ -328,8 +328,9 @@ if __name__ == "__main__":
     #sample_histogram.SetPlottingStyle()
     sample_histogram.DebugPlots()
     
-    #invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
-    #nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
+    invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
+    nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
+    sample_histogram.PlotStitchedHistogram(nullSolution,"bin_width_normalized",True)
 
     #sample_histogram.PlotSamples(nullSolution)
     #DataMCCVPlot(mnv_data,mnv_mc,"mc_stitched_v2.png")

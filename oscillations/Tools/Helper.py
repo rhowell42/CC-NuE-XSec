@@ -5,6 +5,116 @@ import json
 
 legend_text_size = .025
 
+def plot_side_by_side(hists,narrow_pads=None, narrow_factor=0.5):
+    if not hists:
+        return
+
+    n = len(hists)
+    if narrow_pads is None:
+        narrow_pads = []
+
+    # Compute global min/max for log scale
+    global_max = max(h.GetMaximum() for h in hists)
+    global_min = min(h.GetBinContent(b)
+                     for h in hists
+                     for b in range(1, h.GetNbinsX()+1)
+                     if h.GetBinContent(b) > 0)
+
+    # Desired widths before margin adjustments
+    base_widths = []
+    for i in range(1, n+1):
+        w = narrow_factor if i in narrow_pads else 1.0
+        base_widths.append(w)
+    total_base_width = sum(base_widths)
+
+    # Margins (in pad coordinates)
+    left_margin = 0.14
+    right_margin = 0.05
+    bottom_margin = 0.14
+    top_margin = 0.05
+
+    # Convert to total drawable widths so first pad isn't visually smaller
+    drawable_widths = []
+    for i in range(1, n+1):
+        # Pad width in canvas space
+        pad_width = base_widths[i-1] / total_base_width
+        # Drawable width = pad width * (1 - left_margin - right_margin)
+        lm = left_margin if i == 1 else 0.0
+        rm = right_margin if i == n else 0.0
+        drawable_widths.append(pad_width * (1 - lm - rm))
+
+    # Make all non-narrow pads have same drawable width
+    max_drawable = max(drawable_widths[i-1] for i in range(1, n+1) if i not in narrow_pads)
+    scale_factor = max_drawable / drawable_widths[0] if 1 not in narrow_pads else 1.0
+
+    # Adjust base widths to equalize drawable space
+    adjusted_widths = []
+    for i in range(1, n+1):
+        lm = left_margin if i == 1 else 0.0
+        rm = right_margin if i == n else 0.0
+        drawable_target = max_drawable if i not in narrow_pads else max_drawable * narrow_factor
+        pad_width = drawable_target / (1 - lm - rm)
+        adjusted_widths.append(pad_width)
+
+    # Normalize adjusted widths to [0,1] total
+    total_adjusted = sum(adjusted_widths)
+    norm_widths = [w / total_adjusted for w in adjusted_widths]
+
+    # Create canvas
+    c = ROOT.TCanvas("c", "Custom Pads", 1200, 400)
+
+    # Place pads with margins
+    x_start = 0.0
+    pads = []
+    for i, wnorm in enumerate(norm_widths, start=1):
+        x_end = x_start + wnorm
+        pad = ROOT.TPad(f"pad{i}", "", x_start, 0, x_end, 1.0)
+        pad.SetLogy(True)
+        pad.SetBottomMargin(bottom_margin)
+        pad.SetTopMargin(top_margin)
+        pad.SetLeftMargin(left_margin if i == 1 else 0.0)
+        pad.SetRightMargin(right_margin if i == n else 0.0)
+        pad.Draw()
+        pads.append(pad)
+        x_start = x_end
+
+    # Uniform label/tick label sizes in **canvas coordinates**
+    # Scale label sizes by inverse pad size so they look identical
+    target_label_size = 0.05  # fraction of canvas height
+    target_title_size = 0.06  # fraction of canvas height
+
+    for i, (pad, h) in enumerate(zip(pads, hists), start=1):
+        pad.cd()
+        h.SetMaximum(global_max * 1.2)
+        h.SetMinimum(global_min / 2.0)
+
+        pw = pad.GetWw()  # pad width in pixels
+        ph = pad.GetWh()  # pad height in pixels
+        cw = c.GetWw()    # canvas width in pixels
+        ch = c.GetWh()    # canvas height in pixels
+
+        # Adjust sizes to be consistent across pads
+        x_scale = cw / pw
+        y_scale = ch / ph
+        h.GetXaxis().SetLabelSize(target_label_size * y_scale)
+        h.GetXaxis().SetTitleSize(target_title_size * y_scale)
+        h.GetYaxis().SetLabelSize(target_label_size * x_scale)
+        h.GetYaxis().SetTitleSize(target_title_size * x_scale)
+
+        if i in narrow_pads:
+            h.GetXaxis().SetNdivisions(2,5,0,ROOT.kFALSE)
+        else:
+            h.GetXaxis().SetNdivisions(4,5,0,ROOT.kFALSE)
+
+        if i != 1:
+            h.GetYaxis().SetLabelSize(0)
+            h.GetYaxis().SetTitleSize(0)
+
+        h.Draw("HIST")
+
+    c.Update()
+    return c
+
 def GetSliceIndices(fname,exclude,keys):
     bin_config = {}
     with open(fname, "r") as file:

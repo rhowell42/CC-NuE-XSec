@@ -445,8 +445,22 @@ class StitchedHistogram:
             histogram_config[h] = {"start" : n_bins_new}
             for i in range(1,self.mc_hists[h].GetNbinsX()+1): # skip under and overflow bins
                 if self.mc_hists[h].GetBinContent(i) > minBinCont:
+                    print(h,i,self.mc_hists[h].GetBinLowEdge(i),self.mc_hists[h].GetBinLowEdge(i)+self.mc_hists[h].GetBinWidth(i))
                     n_bins_new+=1
-                    self.bin_dictionary[n_bins_new] = {"sample":h,"bin":i}
+                    bin_width = self.mc_hists[h].GetBinWidth(i)
+                    if "elastic" in h:
+                        bin_norm = 2
+                    else:
+                        bin_norm = self.mc_hists[h].GetBinWidth(i)
+
+                    bin_center = self.mc_hists[h].GetBinCenter(i)
+                    self.bin_dictionary[n_bins_new] = {
+                            "sample":h,
+                            "bin":i,
+                            "bin_width":bin_width,
+                            "bin_norm":bin_norm,
+                            "bin_center":bin_center
+                            }
                     
             histogram_config[h]["end"] = n_bins_new-1
 
@@ -967,13 +981,12 @@ class StitchedHistogram:
             for i in range(hist.GetNbinsX()):
                 hist.SetBinContent(i,hist.GetBinContent(i)+summed_dev[i])
 
-
             hist.PopVertErrorBand("Flux")
 
         reweight(name,self.mc_hist)
         reweight(name,self.data_hist)
 
-    def PlotStitchedHistogram(self,fluxSolution=None,plotName="sample"):
+    def PlotStitchedHistogram(self,fluxSolution=None,plotName="sample",bin_width_norm=False):
         margin = .12
         bottomFraction = .2
         MNVPLOTTER = PlotUtils.MnvPlotter()
@@ -1001,6 +1014,29 @@ class StitchedHistogram:
             h_mc.DivideSingle(h_mc,weights)
             h_mc.PopVertErrorBand("Flux")
             h_mc.AddMissingErrorBandsAndFillWithCV(h_data)
+
+        if bin_width_norm:
+            mc_hists = []
+            ticks = []
+            for h in self.stitchKeys:
+                mc_temp = self.mc_hists[h].Clone()
+                if "elastic" in h:
+                    mc_temp.Scale(2,"width")
+                    ticks.append([0,5,10,15,20])
+                elif "ratio" not in h:
+                    mc_temp.Scale(1,"width")
+                    if "imd" in h:
+                        ticks.append([0,5,50])
+                    else:
+                        ticks.append([0,5,50,15,20])
+                else:
+                    ticks.append([0,5,10,15,20])
+
+                mc_hists.append(mc_temp)
+
+            names = ["FHC #nu+e","FHC IMD","FHC #nu_{#mu}", "FHC #nu_{#mu}/#nu_{e}","RHC #nu+e","RHC IMD","RHC #nu_{#mu}", "RHC #nu_{#mu}/#nu_{e}"]
+            canvas = plot_side_by_side(mc_hists,narrow_pads=[2,5])
+            canvas.Print("plots/{}.png".format(plotName))
 
         overall = ROOT.TCanvas(plotName)
         top = ROOT.TPad("DATAMC", "DATAMC", 0, bottomFraction, 1, 1)
