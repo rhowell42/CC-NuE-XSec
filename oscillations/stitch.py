@@ -264,6 +264,19 @@ if __name__ == "__main__":
     fhcnueelnumu.Add(fhcnueelanumu)
     rhcnueelnumu.Add(rhcnueelanumu)
 
+    # ---------------------- Elastic scattering flavor universes ----------------------
+    for i in range(0,fhcnueelnumu.GetNbinsX()+1):
+        for u in range(fhcnueelnumu.GetVertErrorBand("Flux").GetNHists()):
+            newBin = h_fhc_elastic_mc.GetVertErrorBand("Flux").GetHist(u).GetBinContent(i)
+            ratio = fhcnueelnumu.GetBinContent(i)/h_fhc_elastic_mc.GetBinContent(i) if newBin != 0 else 0
+            fhcnueelnumu.GetVertErrorBand("Flux").GetHist(u).SetBinContent(i,newBin*ratio)
+            fhcnueelnue.GetVertErrorBand("Flux").GetHist(u).SetBinContent(i,newBin*(1-ratio))
+
+            newBin = h_rhc_elastic_mc.GetVertErrorBand("Flux").GetHist(u).GetBinContent(i)
+            ratio = rhcnueelnumu.GetBinContent(i)/h_rhc_elastic_mc.GetBinContent(i) if newBin != 0 else 0
+            rhcnueelnumu.GetVertErrorBand("Flux").GetHist(u).SetBinContent(i,newBin*ratio)
+            rhcnueelnue.GetVertErrorBand("Flux").GetHist(u).SetBinContent(i,newBin*(1-ratio))
+
     h2_fhc_elastic_template_nue.Add(h2_fhc_elastic_template_anue)
     h2_fhc_elastic_template_numu.Add(h2_fhc_elastic_template_anumu)
     h2_rhc_elastic_template_nue.Add(h2_rhc_elastic_template_anue)
@@ -301,6 +314,7 @@ if __name__ == "__main__":
 
     # ----- Process Systematics and Synchronize across histograms ----- #
     sample_histogram.CleanErrorBands(errsToRemove)
+    old_histogram = copy.deepcopy(sample_histogram)
 
     if AnalysisConfig.ratio: # do we want to replace selection samples with flavor ratios
         if "fhc" not in AnalysisConfig.exclude: # do we care about the fhc component
@@ -330,7 +344,19 @@ if __name__ == "__main__":
     
     invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
     nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
-    sample_histogram.PlotStitchedHistogram(nullSolution,"bin_width_normalized",True)
+
+    chi2, penalty = Chi2DataMC(sample_histogram,fluxSolution=nullSolution,invCov=invCov,exclude='ratio',lam=1,marginalize=True)
+    chi2-=penalty
+    #chi2, penalty = Chi2DataMC(sample_histogram,marginalize=False)
+    sample_histogram.PlotStitchedHistogram(nullSolution,"bin_width_normalized_ratio",True,chi2,penalty)
+
+    if True:
+        old_histogram.Stitch()
+        invCov=old_histogram.GetInverseCovarianceMatrix(sansFlux=True)
+        chi2, penalty = Chi2DataMC(old_histogram,fluxSolution=nullSolution,invCov=invCov,exclude='ratio',lam=1,marginalize=True)
+        chi2-=penalty
+        #chi2, penalty = Chi2DataMC(sample_histogram,marginalize=False)
+        old_histogram.PlotStitchedHistogram(nullSolution,"bin_width_normalized_noratio",True,chi2,penalty)
 
     #sample_histogram.PlotSamples(nullSolution)
     #DataMCCVPlot(mnv_data,mnv_mc,"mc_stitched_v2.png")

@@ -76,9 +76,13 @@ if __name__ == "__main__":
     delta_ms = np.logspace(-1,2,100)
     delta_m = delta_ms[AnalysisConfig.delta_m]
 
+    cat_to_exclude = AnalysisConfig.exclude_systematic
+    sample_histogram.RemoveSystematics(cat_to_exclude)
+
     if not AnalysisConfig.grid: # surface plot
         m_toloop = np.logspace(-1,2,100)
         for m in m_toloop:
+            print("running over delta_m^2 = {}".format(m))
             MakeSurface(sample_histogram,AnalysisConfig.output_dir,m,AnalysisConfig.U_tau4,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
     else:
         MakeSurface(sample_histogram,AnalysisConfig.output_dir,delta_m,AnalysisConfig.U_tau4,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
