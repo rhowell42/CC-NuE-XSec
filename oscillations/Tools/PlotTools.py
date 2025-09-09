@@ -565,6 +565,90 @@ def PlotOscillationRatios(sample_histogram,parameters,name="",plotSamples=False,
 
     c1.Print("plots/{}_stitched_ratios_{:.1f}_{:.3f}_{:.4f}.png".format(name,parameters["m"],parameters['ue4'],parameters['umu4']))
 
+def PlotOscillationGrid(sample_histogram,parameters,name="",exclude="",lam=1):
+    plots = histogram.keys
+    nullSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo,exclude=exclude,lam=lam)
+    plots.append("fhc_ratio")
+    plots.append("rhc_ratio")
+    histogram.titles["fhc_ratio"] = "FHC CC #nu_{#mu}/#nu_{e} Ratio"
+    histogram.titles["rhc_ratio"] = "RHC CC anti #nu_{#mu}/#nu_{e} Ratio"
+
+    mc_hists = []
+    osc_hists = []
+    data_hists = []
+    titles = []
+
+    for i,plot in enumerate(plots):
+        title = histogram.titles[plot]
+        titles.append(title)
+
+        if 'ratio' in plot:
+            numu_hists,numu_total_hist = OscillateSubHistogram(histogram,plot[:3]+'_numu_selection',parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
+            nue_hists,nue_total_hist = OscillateSubHistogram(histogram,plot[:3]+'_nue_selection',parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
+
+            total_hist = numu_total_hist.Clone()
+            total_hist.Divide(total_hist,nue_total_hist)
+            swap_fraction = total_hist.Clone()
+            norm_fraction = total_hist.Clone()
+
+            hists = []
+            for j,nue in enumerate(nue_hists):
+                if "#mu" in nue.GetTitle():
+                    swap_fraction.Divide(nue,swap_fraction)
+                    norm_fraction.Add(swap_fraction,-1)
+
+                    norm_fraction.SetTitle("#nu_{#mu}/#nu_{e}")
+                    norm_fraction.SetFillStyle(3244)
+                    norm_fraction.SetLineColor(ROOT.kRed)
+                    norm_fraction.SetFillColor(ROOT.kRed)
+
+                    swap_fraction.SetTitle("#nu_{#mu}/"+nue.GetTitle())
+                    swap_fraction.SetFillStyle(3244)
+                    swap_fraction.SetLineColor(ROOT.kBlue)
+                    swap_fraction.SetFillColor(ROOT.kBlue)
+
+                    hists.append(norm_fraction)
+                    hists.append(swap_fraction)
+
+            h_data = histogram.data_hists[plot[:3]+'_numu_selection'].Clone()
+            h_data.Divide(h_data,histogram.data_hists[plot[:3]+'_nue_selection'])
+            subSample = histogram.mc_hists[plot[:3]+'_numu_selection'].Clone()
+            subSample.Divide(subSample,histogram.mc_hists[plot[:3]+'_nue_selection'])
+        else:
+            hists,total_hist = OscillateSubHistogram(histogram,plot,parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
+            h_data = histogram.data_hists[plot].Clone()
+            subSample = histogram.mc_hists[plot].Clone()
+
+        cv = np.array(subSample)[1:-1]
+        mc = np.array(total_hist)[1:-1]
+
+        weights = ReweightCV(total_hist,fluxSolution=nullSolution,cv=cv,mc=mc)
+        total_hist.PopVertErrorBand("Flux")
+        total_hist.AddMissingErrorBandsAndFillWithCV(h_data)
+
+        TArray = ROOT.TObjArray()
+        for hist in hists:
+            hist.DivideSingle(hist,weights)
+            if 'elastic' in plot:
+                hist.Scale(2,'width')
+            elif 'ratio' not in plot:
+                hist.Scale(1,'width')
+            TArray.Add(hist)
+
+        if "elastic" in plot:
+            h_data.Scale(2,'width')
+            total_hist.Scale(2,'width')
+        elif 'ratio' not in plot:
+            h_data.Scale(1,'width')
+            total_hist.Scale(1,'width')
+
+        mc_hists.append(TArray)
+        osc_hists.append(total_hist)
+        data_hists.append(h_data)
+
+    overall = plot_osc_side_by_side(mc_hists, osc_hists, data_hists, titles,MNVPLOTTER)
+    overall.Print("plots/grid_oscillated_{:.1f}_{:.3f}_{:.4f}.png".format(parameters["m"],parameters['ue4'],parameters['umu4']))
+
 def PlotOscillationEffects(sample_histogram,parameters,name="",plotSamples=False,usePseudo=False,exclude="",lam=1):
     histogram = copy.deepcopy(sample_histogram)
     invCov=histogram.GetInverseCovarianceMatrix(sansFlux=True)

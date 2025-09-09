@@ -81,7 +81,7 @@ if __name__ == "__main__":
     n4 = {
             'm':7,
             'ue4':.14,
-            'umu4':.003,
+            'umu4':.01,
             'utau4':0.
         }
     nulltest = {
@@ -89,6 +89,12 @@ if __name__ == "__main__":
             'ue4':0,
             'umu4':0,
             'utau4':0
+        }
+    bestfit = {
+            'm':0.18,
+            'ue4':0.15,
+            'umu4':0.41,
+            'utau4':0.0
         }
 
     plotter = PlottingContainer("test",sample_histogram)
@@ -98,11 +104,31 @@ if __name__ == "__main__":
     nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
     sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="AllSamples")
     sample_histogram.PlotStitchedHistogram(fluxSolution=nullSolution,plotName="StitchedHistogram")
-    exit()
-    for i,umu4 in enumerate(np.linspace(0,0.41,100)):
-        n4['umu4'] = umu4
-        plotter.PlotOscillationEffects(n4,"Neutrino4_{}".format(i),plotSamples=True)
 
+    plotter.PlotOscillationEffects(bestfit,"BestFit",plotSamples=True)
+    plotter.PlotOscillationEffects(n4,"n4",plotSamples=True)
+    plotter.PlotOscillationEffects(nulltest,"nulltest",plotSamples=True)
+    U_mu4s = 0.41*np.logspace(-5,0,100)
+    U_mu4s[0] = 0
+    for i,umu4 in enumerate(U_mu4s):
+        n4['umu4'] = umu4
+        plotter.PlotOscillationEffects(n4,"Neutrino4_{:02d}".format(i),plotSamples=True)
+    exit()
+
+
+    #for i,tau4 in enumerate(np.linspace(0,0.66,20)):
+    #    nulltest['m'] = 10
+    #    nulltest['ue4'] = 0.1
+    #    nulltest['umu4'] = 0.01
+    #    nulltest['utau4'] = tau4
+    #    plotter.PlotOscillationEffects(nulltest,"Utau4_{:02d}".format(i),plotSamples=True)
+
+    for i,dm2 in enumerate(np.logspace(-1,2,100)):
+        n4['m'] = dm2
+        n4['ue4'] = 0.1
+        n4['umu4'] = 0.01
+        plotter.PlotOscillationEffects(n4,"Deltam2_{:02d}".format(i),plotSamples=True)
+    
 
     #invCov = np.loadtxt("data_minus_mc_COV.csv",delimiter=',')
     #invCov = np.linalg.inv(invCov)

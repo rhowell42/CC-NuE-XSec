@@ -604,6 +604,13 @@ class PlottingContainer:
         invCov=self.invCov
         chi2_model,model_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,useOsc=True,setHists=True,usePseudo=usePseudo,exclude=exclude,lam=lam)
         chi2_null,null_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,usePseudo=usePseudo,setHists=True,exclude=exclude,lam=lam)
+        plot_texts = ["Null Hyp. #chi^{2} = "+"{:.2f} + {:.2f}".format(chi2_null-null_pen,null_pen),
+                "Osc. Model #chi^{2} = "+"{:.2f} + {:.2f}".format(chi2_model-model_pen,model_pen),
+                "#Delta m^{2} = "+"{}".format(parameters["m"])+" eV^{2}",
+                "|U_{e4}|^{2} = "+"{}".format(parameters["ue4"]),
+                "|U_{#mu4}|^{2} = "+"{:.6f}".format(parameters["umu4"]),
+                "|U_{#tau4}|^{2} = "+"{}".format(parameters["utau4"])
+                ]
 
         h_null = histogram.GetMCHistogram()
         h_osc = histogram.GetOscillatedHistogram()
@@ -711,15 +718,26 @@ class PlottingContainer:
 
         plots = histogram.keys
         histogram = copy.deepcopy(self.histogram)
+        nullSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo,exclude=exclude,lam=lam)
         OscillateHistogram(histogram, parameters['m'], parameters['ue4'], parameters['umu4'], parameters['utau4'])
-        nullSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo,useOsc=True,exclude=exclude,lam=lam)
-        plots.append("fhc_ratio")
-        plots.append("rhc_ratio")
-        histogram.titles["fhc_ratio"] = "FHC CC #nu_{#mu}/#nu_{e} Ratio"
-        histogram.titles["rhc_ratio"] = "RHC CC anti #nu_{#mu}/#nu_{e} Ratio"
+        oscSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo,useOsc=True,exclude=exclude,lam=lam)
+        #plots.append("fhc_ratio")
+        #plots.append("rhc_ratio")
+        #histogram.titles["fhc_ratio"] = "FHC CC #nu_{#mu}/#nu_{e} Ratio"
+        #histogram.titles["rhc_ratio"] = "RHC CC anti #nu_{#mu}/#nu_{e} Ratio"
+
+        mc_hists = []
+        null_hists = []
+        osc_hists = []
+        data_hists = []
+        titles = []
+
+        plots = [item for item in plots if "nue" not in item]
+        plots.insert(3, plots.pop(6))
 
         for i,plot in enumerate(plots):
             title = histogram.titles[plot]
+            titles.append(title)
             margin = .12
             bottomFraction = .2
             overall = ROOT.TCanvas(plot)
@@ -731,6 +749,7 @@ class PlottingContainer:
 
             top.cd()
 
+            hists = []
             if 'ratio' in plot:
                 numu_hists,numu_total_hist = OscillateSubHistogram(histogram,plot[:3]+'_numu_selection',parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
                 nue_hists,nue_total_hist = OscillateSubHistogram(histogram,plot[:3]+'_nue_selection',parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
@@ -739,8 +758,23 @@ class PlottingContainer:
                 total_hist.Divide(total_hist,nue_total_hist)
                 swap_fraction = total_hist.Clone()
                 norm_fraction = total_hist.Clone()
+                numu_rat_hist = numu_total_hist.Clone()
+                nue_rat_hist = nue_total_hist.Clone()
 
-                hists = []
+                for m in range(numu_total_hist.GetNbinsX()+1):
+                    frac = total_hist.GetBinContent(m)/numu_rat_hist.GetBinContent(m) if numu_rat_hist.GetBinContent(m) != 0 else 0
+                    numu_rat_hist.SetBinContent(m,frac*total_hist.GetBinContent(m))
+                    nue_rat_hist.SetBinContent(m,(1-frac)*total_hist.GetBinContent(m))
+                    for u in range(nue_rat_hist.GetVertErrorBand("Flux").GetNHists()):
+                        numu_rat_hist.GetVertErrorBand("Flux").GetHist(u).SetBinContent(m,numu_rat_hist.GetBinContent(m)*frac)
+                        nue_rat_hist.GetVertErrorBand("Flux").GetHist(u).SetBinContent(m,nue_rat_hist.GetBinContent(m)*(1-frac))
+
+                numu_rat_hist.SetTitle("numu")
+                nue_rat_hist.SetTitle("nue")
+                hists.append(numu_rat_hist)
+                hists.append(nue_rat_hist)
+
+                """
                 for j,nue in enumerate(nue_hists):
                     if "#mu" in nue.GetTitle():
                         swap_fraction.Divide(nue,swap_fraction)
@@ -758,7 +792,7 @@ class PlottingContainer:
 
                         hists.append(norm_fraction)
                         hists.append(swap_fraction)
-
+                """
                 h_data = histogram.data_hists[plot[:3]+'_numu_selection'].Clone()
                 h_data.Divide(h_data,histogram.data_hists[plot[:3]+'_nue_selection'])
                 subSample = histogram.mc_hists[plot[:3]+'_numu_selection'].Clone()
@@ -771,67 +805,66 @@ class PlottingContainer:
             cv = np.array(subSample)[1:-1]
             mc = np.array(total_hist)[1:-1]
 
-            weights = ReweightCV(total_hist,fluxSolution=nullSolution)
+            null_hist = histogram.mc_hists[plot].Clone()
+
+            weights1 = ReweightCV(null_hist, fluxSolution=nullSolution)
+            null_hist.PopVertErrorBand("Flux")
+
+            weights2 = ReweightCV(total_hist,fluxSolution=oscSolution)
+
             total_hist.PopVertErrorBand("Flux")
             total_hist.AddMissingErrorBandsAndFillWithCV(h_data)
 
-            TArray = ROOT.TObjArray()
+            TArray = []
             for hist in hists:
                 if hist.Integral() <= 0:
                     continue
-                weights = ReweightCV(hist,fluxSolution=nullSolution)
+                weights = ReweightCV(hist,fluxSolution=oscSolution)
                 if 'elastic' in plot:
                     hist.Scale(2,'width')
                 elif 'ratio' not in plot:
                     hist.Scale(1,'width')
-                TArray.Add(hist)
+
+                if "tau" in hist.GetTitle():
+                    hist.SetFillColorAlpha(ROOT.kGray, 0.6)
+                elif "ratio" in plot:
+                    hist.SetFillColorAlpha(ROOT.kViolet,0.6)
+                elif "mu" in hist.GetTitle():
+                    hist.SetFillColorAlpha(ROOT.kBlue, 0.6)
+                else:
+                    hist.SetFillColorAlpha(ROOT.kRed, 0.6)
+                hist.SetLineWidth(0)
+                TArray.append(hist)
 
             if "elastic" in plot:
                 h_data.Scale(2,'width')
                 total_hist.Scale(2,'width')
+                null_hist.Scale(2,'width')
             elif 'ratio' not in plot:
                 h_data.Scale(1,'width')
                 total_hist.Scale(1,'width')
+                null_hist.Scale(1,'width')
 
-            MNVPLOTTER.DrawDataStackedMC(h_data,TArray,1.,"TR","Data",-1,-1,-1) 
-            for obj in top.GetListOfPrimitives():
-                if type(obj) == ROOT.TH1D:
-                    obj.SetTitle(title)
+            if "elastic" in plot:
+                total_hist.SetTitle("#nu+e")
+            elif "imd" in plot:
+                total_hist.SetTitle("#nu_{#mu}+e^{-}#rightarrow #mu^{-}+#nu_{e}")
+            elif "mu" in plot:
+                total_hist.SetTitle("CC #nu_{#mu}")
+            elif "ratio" in plot:
+                total_hist.SetTitle("CC #nu_{#mu}/#nu_{e}")
+            else:
+                total_hist.SetTitle("CC #nu_{e}")
 
-            header = "|U_{#mu4}|^{2}="+"{:.5f}".format(parameters["umu4"])
-            MNVPLOTTER.AddPlotLabel(header,.75,.75)
-            bottom.cd()
-            bottom.SetTopMargin(0)
-            bottom.SetBottomMargin(0.3)
+            if "fhc" in plot:
+                total_hist.GetYaxis().SetTitle("#nu-mode    Events/GeV")
+            else:
+                total_hist.GetYaxis().SetTitle("#bar{#nu}-mode    Events/GeV")
 
-            ratio = h_data.Clone()
-            ratio.Divide(ratio, total_hist)
-
-            #Now fill mcRatio with 1 for bin content and fractional error
-            total_hist.PopVertErrorBand("Flux")
-            mcRatio = total_hist.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
-            for whichBin in range(1, mcRatio.GetXaxis().GetNbins()+1): 
-                mcRatio.SetBinError(whichBin, max(mcRatio.GetBinContent(whichBin), 1e-9))
-                mcRatio.SetBinContent(whichBin, 1)
-
-            #Error envelope for the MC
-            mcRatio.SetLineColor(ROOT.kRed)
-            mcRatio.SetLineWidth(2)
-            mcRatio.SetMarkerStyle(0)
-            mcRatio.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
-            mcRatio.SetFillStyle(1001)
-            mcRatio.GetYaxis().SetTitle("Data/Model")
-            mcRatio.GetXaxis().SetTitle(ratio.GetXaxis().GetTitle())
-            mcRatio.SetMinimum(.7)
-            mcRatio.SetMaximum(1.3)
-            RatioAxis(mcRatio,MNVPLOTTER)
-            mcRatio.Draw("E2")
-
-            ratio.Draw('E1 X0 SAME')
-
-            straightLine = mcRatio.Clone()
-            straightLine.SetFillStyle(0)
-            straightLine.Draw("HIST SAME")
-            ROOT.gStyle.SetOptTitle(1)
-
-            overall.Print("plots/{}_{}_oscillated_{:.1f}_{:.3f}_{:.4f}.png".format(name,plot,parameters["m"],parameters['ue4'],parameters['umu4']))
+            mc_hists.append(TArray)
+            osc_hists.append(total_hist)
+            null_hists.append(null_hist)
+            data_hists.append(h_data)
+        
+        overall = plot_osc_side_by_side(mc_hists,null_hists,osc_hists,data_hists,titles,plot_texts,MNVPLOTTER,narrow_pads=[1,4])
+        overall.Print("plots/{}_oscillated_{:.1f}_{:.3f}_{:.4f}.png".format(name,parameters["m"],parameters['ue4'],parameters['umu4']))

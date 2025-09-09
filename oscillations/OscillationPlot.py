@@ -18,12 +18,13 @@ from matplotlib.ticker import MaxNLocator
 from matplotlib.ticker import FixedLocator
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
+import matplotlib.patheffects as patheffects
 
 ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 
 str_to_latex = {
-        "dm2"   : r"$\Delta m^{2}$",
+        "dm2"   : r"$\Delta m^{2}$ [ $eV^{2}$ ]",
         "ue4"   : r"$|U_{e4}|^{2}$",
         "umu4"  : r"$|U_{\mu4}|^{2}$",
         "utau4" : r"$|U_{{\tau 4}}|^2"
@@ -52,6 +53,8 @@ str_to_zoom = {
         "ue4"   : 5e-3,
         "umu4"  : 5e-4
         }
+
+fill_exclusions = False
 
 hatch_styles = ["//",r"\\","+","oo","**"]
 
@@ -138,7 +141,7 @@ class ExperimentContour:
     def SetPatch(self,graphic):
         graphic = graphic.lower()
         if graphic == "line":
-            self.patch = Line2D([0], [0], color=self.color, linestyle=self.style)
+            self.patch = Line2D([0], [0], color=self.color, linestyle=self.style, alpha=0.4)
         elif graphic == "patch":
             self.patch = Patch(color=self.color) 
         elif graphic == "hatch":
@@ -152,29 +155,55 @@ class ExperimentContour:
     def GetTitle(self):
         return(self.title)
 
-    def GetIntersects(self,data_ref,data_comp,axis,line):
-        intersections = []
-        if line > data_comp[0]:
-            intersections.append(data_ref[0])
+    def GetIntersects(self,data_ref,data_comp,axis,line,intName):
+        if not isinstance(self.fname,list):
+            intersections = []
+            if line > data_comp[0]:
+                intersections.append(data_ref[0])
 
-        for i in range(1,len(data_ref)-1):
-            if line > data_comp[i] and line < data_comp[i-1]:
-                intersections.append(data_ref[i])
-            elif line < data_comp[i] and line > data_comp[i-1]:
-                intersections.append(data_ref[i])
+            for i in range(1,len(data_ref)-1):
+                if line > data_comp[i] and line < data_comp[i-1]:
+                    intersections.append(data_ref[i])
+                elif line < data_comp[i] and line > data_comp[i-1]:
+                    intersections.append(data_ref[i])
 
-        if line > data_comp[-1]:
-            intersections.append(data_ref[-1])
-        box1 = []
-        box2 = []
-        if len(intersections) > 0:
-            for i in range(0,len(intersections),2):
-                point1 = intersections[i]
-                point2 = intersections[i+1]
+            if line > data_comp[-1]:
+                if "MINOS" in self.fname:
+                    intersections.append(str_to_axis[intName][-1])
+                else:
+                    intersections.append(data_ref[-1])
 
-                box1.append([axis[0],axis[0],axis[-1],axis[-1]])
-                box2.append([point1,point2,point2,point1])
-        return(box1,box2)
+            box1 = []
+            box2 = []
+            if len(intersections) > 0:
+                for i in range(0,len(intersections),2):
+                    point1 = intersections[i]
+                    point2 = intersections[i+1]
+
+                    box1.append([axis[0],axis[0],axis[-1],axis[-1]])
+                    box2.append([point1,point2,point2,point1])
+
+            return(box1,box2)
+        else:
+            intersections = []
+
+            for i in range(1,len(data_ref)-1):
+                if line > data_comp[i] and line < data_comp[i-1]:
+                    intersections.append(data_ref[i])
+                elif line < data_comp[i] and line > data_comp[i-1]:
+                    intersections.append(data_ref[i])
+
+            box1 = []
+            box2 = []
+            if len(intersections) > 1:
+                for i in range(0,len(intersections),2):
+                    point1 = intersections[i]
+                    point2 = intersections[i+1]
+
+                    box1.append([axis[0],axis[0],axis[-1],axis[-1]])
+                    box2.append([point1,point2,point2,point1])
+
+            return(box1,box2)
 
     def TranslateMixing(self,panel,line):
         if panel == 'dm2':
@@ -182,12 +211,11 @@ class ExperimentContour:
             for i in range(1,len(self.data['dm2'])):
                 if self.data['dm2'][i] > line and self.data['dm2'][i-1] < line:
                     intersect = self.data['ue4_umu4'][i] # want largest intersect for limits, so don't break
-            
             ue4_0 = intersect / (4*str_to_axis["umu4"][0])
             ue4_1 = intersect / (4*str_to_axis["umu4"][-1])
             umu4_0 = intersect / (4*str_to_axis["ue4"][0])
             umu4_1 = intersect / (4*str_to_axis["ue4"][-1])
-            return(np.array([ue4_0,ue4_1]),np.array([umu4_1,umu4_0]))
+            return(np.array([ue4_0,ue4_1]),np.array([str_to_axis["umu4"][0],str_to_axis["umu4"][-1]]))
         else:
             x = []
             y = []
@@ -232,12 +260,12 @@ class ExperimentContour:
                     if xaxis not in axes:
                         ydata = self.data[yaxis][i]
                         pdata = self.data[panel][i]
-                        boxx,boxy = self.GetIntersects(ydata,pdata,str_to_axis[xaxis],line)
+                        boxx,boxy = self.GetIntersects(ydata,pdata,str_to_axis[xaxis],line,yaxis)
                         self.PlotBox(axis,boxx,boxy)
                     elif yaxis not in axes:
                         xdata = self.data[xaxis][i]
                         pdata = self.data[panel][i]
-                        boxx,boxy = self.GetIntersects(xdata,pdata,str_to_axis[yaxis],line)
+                        boxx,boxy = self.GetIntersects(xdata,pdata,str_to_axis[yaxis],line,xaxis)
                         self.PlotBox(axis,boxy,boxx)
         else:
             if xaxis in axes and yaxis in axes:
@@ -251,12 +279,12 @@ class ExperimentContour:
                 if xaxis not in axes:
                     ydata = self.data[yaxis]
                     pdata = self.data[panel]
-                    boxx,boxy = self.GetIntersects(ydata,pdata,str_to_axis[xaxis],line)
+                    boxx,boxy = self.GetIntersects(ydata,pdata,str_to_axis[xaxis],line,yaxis)
                     self.PlotBox(axis,boxx,boxy)
                 elif yaxis not in axes:
                     xdata = self.data[xaxis]
                     pdata = self.data[panel]
-                    boxx,boxy = self.GetIntersects(xdata,pdata,str_to_axis[yaxis],line)
+                    boxx,boxy = self.GetIntersects(xdata,pdata,str_to_axis[yaxis],line,xaxis)
                     self.PlotBox(axis,boxy,boxx)
 
 class PanelPlot:
@@ -308,6 +336,8 @@ class PanelPlot:
             plabel = self.p[self.indices[i]]
             if self.panel == "dm2":
                 text += "= {:.1f}".format(plabel)
+                if i == 6:
+                    texty=0.1
             elif self.panel == "ue4":
                 text += "= {:.3f}".format(plabel)
             elif self.panel == "umu4":
@@ -385,7 +415,11 @@ class PanelPlot:
 
         for i,ax in enumerate(self.axes.flatten()):
             self.sens = ax.contour(X,Y,FC_sens[i],levels=limits,colors=contour_colors,origin="lower",linestyles='dashed')
-            self.excl = ax.contour(X,Y,FC_excl[i],levels=limits,colors=contour_colors,origin="lower")
+            if fill_exclusions:
+                self.sens.set(path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
+                self.excl = ax.contourf(X,Y,FC_excl[i],levels=[95,100],alpha=0.6,colors=contour_colors,origin="lower")
+            else:
+                self.excl = ax.contour(X,Y,FC_excl[i],levels=limits,colors=contour_colors,origin="lower")
 
     def PlotFeldmanCousinsLists(self, FC_excl, FC_sens, colors, limits):
         contour_labels = [str(i)+'%' for i in limits]
@@ -396,6 +430,7 @@ class PanelPlot:
             for j in range(len(colors)):
                 self.sens = ax.contour(X,Y,FC_sens[j][i],levels=limits,colors=colors[j],origin="lower",linestyles='dashed')
                 self.excl = ax.contour(X,Y,FC_excl[j][i],levels=limits,colors=colors[j],origin="lower")
+                self.excl.set(path_effects=[patheffects.withTickedStroke()])
 
     def PlotExclusions(self):
         for i,ax in enumerate(self.axes.flatten()):
@@ -415,10 +450,17 @@ class PanelPlot:
         contour_colors = ['red','blue','green']
 
         for c in range(len(contour_labels)):
-            line = plt.Line2D([0,0], [0,0], color=contour_colors[c], linestyle='dashed')
+            if fill_exclusions:
+                line = plt.Line2D([0,0], [0,0], color=contour_colors[c],linestyle='dashed',path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
+            else:
+                line = plt.Line2D([0,0], [0,0], color=contour_colors[c],linestyle='dashed')
+
             handles.append(line)
         for c in range(len(contour_labels)):
-            line = plt.Line2D([0,0], [0,0], color=contour_colors[c])
+            if fill_exclusions:
+                line = Patch(color=contour_colors[c])
+            else:
+                line = plt.Line2D([0,0], [0,0], color=contour_colors[c])
             handles.append(line)
             
         ph = [plt.plot([],marker="", ls="")[0]]*2
@@ -578,9 +620,9 @@ if __name__ == "__main__":
     #fitter = Fitter(sample_histogram,invCov=invCov,lam=lam,exclude=exclude)
     #best_fit,res = fitter.DoFit()
 
-    title = 'MINERvA Sterile Neutrino Search\nFlux Profiling $\lambda={}$ '.format(lam)
+    title = 'MINERvA Sterile Neutrino Search'
     if exclude == 'ratio':
-        title+='Sans Flavor Ratio'
+        #title+='Sans Flavor Ratio'
         best_fit = 139.336
     elif lam == 1:
         best_fit = 101.24
@@ -606,8 +648,11 @@ if __name__ == "__main__":
     raa.SetPatch("Patch")
 
     limits = [95]
+
     pplot.AddExclusions([stereo,minos,prospect,katrin,microboone])
-    pplot.AddAlloweds([neutrino4,raa])
+
+    if not fill_exclusions:
+        pplot.AddAlloweds([neutrino4,raa])
 
     if AnalysisConfig.animate:
         for i in range(len(str_to_axis["dm2"])):
@@ -734,9 +779,8 @@ if __name__ == "__main__":
         pplot.Zoom()
 
     else:
-        title = 'MINERvA Sterile Neutrino Search\nFlux Profiling $\lambda={}$ '.format(lam)
+        title = 'MINERvA Sterile Neutrino Search'
         if exclude == 'ratio':
-            title+='Sans Flavor Ratio'
             best_fit = 139.336
         elif lam == 1:
             best_fit = 101.24
@@ -745,6 +789,14 @@ if __name__ == "__main__":
         data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
         asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
         results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+        
+        pplot.SetXaxis("ue4")
+        pplot.SetYaxis("umu4")
+        pplot.SetPanel("dm2")
+        sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
+        pplot.SetName("plots/FC_ue4_vs_umu4_lambda{}_exclude_{}.png".format(lam,exclude))
+        pplot.MakePlot(excl_list,sens_list,limits)
+        pplot.Zoom()
 
         pplot.SetXaxis("ue4")
         pplot.SetYaxis("dm2")
@@ -759,13 +811,5 @@ if __name__ == "__main__":
         pplot.SetPanel("ue4")
         sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
         pplot.SetName("plots/FC_umu4_vs_dm2_lambda{}_exclude_{}.png".format(lam,exclude))
-        pplot.MakePlot(excl_list,sens_list,limits)
-        pplot.Zoom()
-        
-        pplot.SetXaxis("ue4")
-        pplot.SetYaxis("umu4")
-        pplot.SetPanel("dm2")
-        sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
-        pplot.SetName("plots/FC_ue4_vs_umu4_lambda{}_exclude_{}.png".format(lam,exclude))
         pplot.MakePlot(excl_list,sens_list,limits)
         pplot.Zoom()

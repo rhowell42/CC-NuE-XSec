@@ -14,7 +14,7 @@ import math
 from array import array
 
 from config.SignalDef import SWAP_SIGNAL_DEFINITION, SIGNAL_DEFINITION
-from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS 
+from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS, ERROR_GROUPS_CONFIG
 from tools import Utilities
 from tools.PlotLibrary import HistHolder
 ccnueroot = os.environ.get('CCNUEROOT')
@@ -445,7 +445,7 @@ class StitchedHistogram:
             histogram_config[h] = {"start" : n_bins_new}
             for i in range(1,self.mc_hists[h].GetNbinsX()+1): # skip under and overflow bins
                 if self.mc_hists[h].GetBinContent(i) > minBinCont:
-                    print(h,i,self.mc_hists[h].GetBinLowEdge(i),self.mc_hists[h].GetBinLowEdge(i)+self.mc_hists[h].GetBinWidth(i))
+                    #print(h,i,self.mc_hists[h].GetBinLowEdge(i),self.mc_hists[h].GetBinLowEdge(i)+self.mc_hists[h].GetBinWidth(i))
                     n_bins_new+=1
                     bin_width = self.mc_hists[h].GetBinWidth(i)
                     if "elastic" in h:
@@ -454,14 +454,8 @@ class StitchedHistogram:
                         bin_norm = self.mc_hists[h].GetBinWidth(i)
 
                     bin_center = self.mc_hists[h].GetBinCenter(i)
-                    self.bin_dictionary[n_bins_new] = {
-                            "sample":h,
-                            "bin":i,
-                            "bin_width":bin_width,
-                            "bin_norm":bin_norm,
-                            "bin_center":bin_center
-                            }
-                    
+                    self.bin_dictionary[n_bins_new] = {"sample":h,"bin":i}
+
             histogram_config[h]["end"] = n_bins_new-1
 
         with open("HIST_CONFIG.json","w") as file:
@@ -803,6 +797,23 @@ class StitchedHistogram:
                     bin_c = h_swap.GetBinContent(c,sample_i)
                 self.swap_template.SetBinContent(i, c, bin_c/colInt if colInt > 0 else 0)
 
+    def RemoveSystematics(self, exclude):
+        for name in self.mc_hist.GetVertErrorBandNames():
+            if name in list(ERROR_GROUPS_CONFIG[exclude.upper()].values())[0]:
+                print("removing {} from systematics".format(name))
+                self.mc_hist.PopVertErrorBand(name)
+                self.data_hist.PopVertErrorBand(name)
+                self.pseudo_hist.PopVertErrorBand(name)
+                for h in self.stitchKeys:
+                    self.mc_hists[h].PopVertErrorBand(name)
+                    self.data_hists[h].PopVertErrorBand(name)
+                    if h in self.nue_hists:
+                        self.nue_hists[h].PopVertErrorBand(name)
+                        self.numu_hists[h].PopVertErrorBand(name)
+                        self.swap_hists[h].PopVertErrorBand(name)
+        self.SetCovarianceMatrices()
+        self.SetAMatrix()
+
     def StitchThis(self):
         for i in range(1,self.mc_hist.GetNbinsX()+1):
             h = self.bin_dictionary[i]['sample']
@@ -824,6 +835,7 @@ class StitchedHistogram:
 
             # no statistical error on elastic scattering special production
             if 'elastic' in h or 'imd' in h:
+                self.mc_hists[h].SetBinError(sample_i,0)
                 self.mc_hist.SetBinError(i,0)
                 self.nue_hist.SetBinError(i,0)
                 self.numu_hist.SetBinError(i,0)
@@ -955,6 +967,32 @@ class StitchedHistogram:
             for i in range(h.GetNbinsX()+1):
                 h.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
 
+
+    def ReweightCV(self,histogram,fluxSolution,cv=None,mc=None):
+        if cv is None:
+            cv = np.array(histogram)[1:-1]
+        
+        band = histogram.GetVertErrorBand("Flux")
+        nhists = band.GetNHists()
+        nhists = 100
+        universes = np.array([np.array(band.GetHist(l))[1:-1] for l in range(nhists)])
+        cv_table = np.array([cv for l in range(len(universes))])
+        A = universes - cv_table
+
+        if mc is None:
+            mc = cv
+
+        new_cv = mc + fluxSolution @ A
+
+        weights = histogram.GetCVHistoWithStatError()
+        for j in range(1,weights.GetNbinsX()+1):
+            weight = weights.GetBinContent(j) / new_cv[j-1] if new_cv[j-1] != 0 else weights.GetBinContent(j)
+            weights.SetBinContent(j,weight)
+            weights.SetBinError(j,0)
+
+        histogram.DivideSingle(histogram,weights)
+        return(weights)
+
     def RenameBands(self,hist):
         for name in hist.GetVertErrorBandNames():
             if str(name) in errorbandDict.keys():
@@ -986,11 +1024,18 @@ class StitchedHistogram:
         reweight(name,self.mc_hist)
         reweight(name,self.data_hist)
 
-    def PlotStitchedHistogram(self,fluxSolution=None,plotName="sample",bin_width_norm=False):
+    def PlotStitchedHistogram(self,fluxSolution=None,plotName="sample",bin_width_norm=False,chi2=0,penalty=0):
         margin = .12
         bottomFraction = .2
         MNVPLOTTER = PlotUtils.MnvPlotter()
         MNVPLOTTER.draw_normalized_to_bin_width=False
+        MNVPLOTTER.error_summary_group_map.clear();
+        for k,v in CONSOLIDATED_ERROR_GROUPS.items():
+            vec = ROOT.vector("std::string")()
+            for vs in v :
+                vec.push_back(vs)
+            MNVPLOTTER.error_summary_group_map[k]= vec
+
         self.SetPlottingStyle()
 
         h_mc = self.mc_hist.Clone()
@@ -1017,14 +1062,26 @@ class StitchedHistogram:
 
         if bin_width_norm:
             mc_hists = []
+            mc_errs = []
+            data_hists = []
             ticks = []
+
             for h in self.stitchKeys:
                 mc_temp = self.mc_hists[h].Clone()
+                weights = self.ReweightCV(mc_temp,fluxSolution=fluxSolution)
+                mc_temp.PopVertErrorBand("Flux")
+
+                mc_errs_temp = mc_temp.GetCVHistoWithError()
+                data_temp = self.data_hists[h].Clone()
                 if "elastic" in h:
                     mc_temp.Scale(2,"width")
+                    mc_errs_temp.Scale(2,"width")
+                    data_temp.Scale(2,"width")
                     ticks.append([0,5,10,15,20])
                 elif "ratio" not in h:
                     mc_temp.Scale(1,"width")
+                    mc_errs_temp.Scale(1,"width")
+                    data_temp.Scale(1,"width")
                     if "imd" in h:
                         ticks.append([0,5,50])
                     else:
@@ -1033,57 +1090,29 @@ class StitchedHistogram:
                     ticks.append([0,5,10,15,20])
 
                 mc_hists.append(mc_temp)
+                mc_errs.append(mc_errs_temp)
+                data_hists.append(data_temp)
 
-            names = ["FHC #nu+e","FHC IMD","FHC #nu_{#mu}", "FHC #nu_{#mu}/#nu_{e}","RHC #nu+e","RHC IMD","RHC #nu_{#mu}", "RHC #nu_{#mu}/#nu_{e}"]
-            canvas = plot_side_by_side(mc_hists,narrow_pads=[2,5])
+            if any("ratio" in h for h in self.mc_hists):
+                mc_hists.insert(3, mc_hists.pop(6))
+                mc_errs.insert(3, mc_errs.pop(6))
+                data_hists.insert(3, data_hists.pop(6))
+                names = ["#nu+e","#nu_{#mu}+e^{-}#rightarrow #mu^{-}+#nu_{e}","CC #nu_{#mu}", "CC #nu_{#mu}/#nu_{e}","#nu+e","IMD","CC #nu_{#mu}", "CC #nu_{#mu}/#nu_{e}"]
+            else:
+                names = ["#nu+e","#nu_{#mu}+e^{-}#rightarrow #mu^{-}+#nu_{e}","CC #nu_{#mu}", "CC #nu_{e}","#nu+e","IMD","CC #nu_{#mu}", "CC #nu_{e}"]
+
+            for i in range(len(mc_hists)):
+                mc_hists[i].SetTitle(names[i])
+                if i < 4:
+                    mc_hists[i].GetYaxis().SetTitle("#nu-mode    Events/GeV")
+                else:
+                    mc_hists[i].GetYaxis().SetTitle("#bar{#nu}-mode    Events/GeV")
+
+            canvas = plot_side_by_side(mc_hists,mc_errs,data_hists,narrow_pads=[1,4],chi2=chi2,penalty=penalty)
             canvas.Print("plots/{}.png".format(plotName))
 
-        overall = ROOT.TCanvas(plotName)
-        top = ROOT.TPad("DATAMC", "DATAMC", 0, bottomFraction, 1, 1)
-        bottom = ROOT.TPad("Ratio", "Ratio", 0, 0, 1, bottomFraction+margin)
-
-        top.SetLogy()
-        top.Draw()
-        bottom.Draw()
-
-        top.cd()
-
-        MNVPLOTTER.DrawDataMCWithErrorBand(h_data,h_mc,1,"TR")
-     
-        bottom.cd()
-        bottom.SetTopMargin(0)
-        bottom.SetBottomMargin(0.3)
-
-        ratio = h_data.Clone()
-        ratio.Divide(ratio, h_mc)
-
-        #Now fill mcRatio with 1 for bin content and fractional error
-        mcRatio = h_mc.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
-        for whichBin in range(1, mcRatio.GetXaxis().GetNbins()+1): 
-            mcRatio.SetBinError(whichBin, max(mcRatio.GetBinContent(whichBin), 1e-9))
-            mcRatio.SetBinContent(whichBin, 1)
-
-        #Error envelope for the MC
-        mcRatio.SetLineColor(ROOT.kRed)
-        mcRatio.SetLineWidth(2)
-        mcRatio.SetMarkerStyle(0)
-        mcRatio.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
-        mcRatio.GetYaxis().SetTitle("Data/Null Hypothesis")
-        mcRatio.SetMinimum(0)
-        mcRatio.SetMaximum(2)
-        RatioAxis(mcRatio,MNVPLOTTER)
-
-        mcRatio.Draw("E2")
-        
-        ratio.SetLineColor(ROOT.kBlack)
-        #ratio.SetLineWidth(3)
-        ratio.Draw('E1 X0 SAME')
-
-        straightLine = mcRatio.Clone()
-        straightLine.SetFillStyle(0)
-        straightLine.Draw("HIST SAME")
-        ROOT.gStyle.SetOptTitle(1)
-        overall.Print("plots/{}.png".format(plotName))
+            err_canvas = plot_errs_side_by_side(mc_hists,[1,4],0.5,MNVPLOTTER)
+            err_canvas.Print("plots/{}_errors.png".format(plotName))
 
     def PlotSamples(self,fluxSolution=None,plotName="sample"):
         margin = .12

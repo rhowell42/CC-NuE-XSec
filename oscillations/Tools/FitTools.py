@@ -88,7 +88,7 @@ class Fitter():
         return(chi2)
 
 
-def FluxSolution(histogram,invCov=None,useOsc=False,usePseudo=False,exclude="",lam=1):
+def FluxSolution(histogram,invCov=None,useOsc=False,usePseudo=False,exclude="ratio",lam=1):
     if usePseudo:
         dataHist = histogram.GetPseudoHistogram()
     else:
@@ -326,8 +326,12 @@ def OscillateSubHistogram(histogram,name,m,U_e4,U_mu4,U_tau4):
         swap_sin = sin_average(i,m,hist_swapTemp,False)
 
         P_ee = float(1 - 4*U_e4*(1-U_e4)*nue_sin)
-
-        P_mue = float(4*(U_e4)*(U_mu4)*swap_sin)
+        
+        if ('elastic' in name):
+            scale = 1
+            P_mue = float(4*(U_e4)*(U_mu4)*swap_sin) * scale
+        else:
+            P_mue = float(4*(U_e4)*(U_mu4)*swap_sin)
 
         P_mumu = float(1 - 4*U_mu4*(1-U_mu4)*numu_sin)
 
@@ -392,7 +396,7 @@ def OscillateSubHistogram(histogram,name,m,U_e4,U_mu4,U_tau4):
     nue.SetTitle("#nu_{e}")
     numu.SetTitle("#nu_{#mu}")
     numunue.SetTitle("#nu_{#mu}#rightarrow #nu_{e}")
-    nutau.SetTitle("#nu_{#tau}")
+    nutau.SetTitle("#nu_{#mu}#rightarrow #nu_{#tau}")
     histogram.data_hists[name].SetTitle("Oscillated {}".format(name))
 
     if 'elastic' in name:
