@@ -397,6 +397,12 @@ parser.add_argument("-U", "--U_tau4",
                     type=float,
                     default=0
 )
+parser.add_argument("-excludeSys", "--exclude_systematic",
+                    dest = "exclude_systematic",
+                    help="Systematic category to exclude",
+                    type=str,
+                    default=""
+)
 
 options = parser.parse_args()
 
