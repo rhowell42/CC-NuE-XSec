@@ -51,6 +51,9 @@ class CVPythonUniverse():
         self.chain=chain
         self.pcweighter = pcweight.MyWeighter
 
+    def ResetWeight(self):
+        self.weight = None
+
     # magic function that allow direct access to TBranch by Universe.TBranch, but prohibit any python magic variable being generated.
     def __getattr__(self,attrName):
         def makelist(x):
@@ -132,7 +135,6 @@ class CVPythonUniverse():
     def GetStandardWeight(self):
         weight = 1.0
         weight *= self.GetGenieWeight()
-
 
         ### take care of flavor swapped sample below ###
         pdg = self.mc_incoming
@@ -396,6 +398,7 @@ class CVSystematicUniverse(ROOT.PythonMinervaUniverse, CVPythonUniverse):
         self.tuning_weight = None
         CVPythonUniverse.LLR = None
         super(CVSystematicUniverse,self).SetEntry(n_entry)
+        super(ROOT.PythonMinervaUniverse,self).ResetWeight()
 
     def __repr__(self):
         return self.LatexName()+" Universe at sigma: "+ str(self.GetSigma())
@@ -841,9 +844,6 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
         #data has only cv universe
         universes.append(CVSystematicUniverse(chain, None))
     else:
-        #append cv universe
-        universes.append(CVSystematicUniverse(chain,0))
-        
         #Set Playlist, only MC cares about playlist
         if playlist is None:
             #attempt guess playlist from the chain
@@ -869,6 +869,9 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
 
         if chain.GetTree().GetName() == "Truth":
             CVSystematicUniverse.SetTruth(True)
+
+        #append cv universe
+        universes.append(CVSystematicUniverse(chain,0))
 
         if exclude is None or "all" not in exclude:
             # Vertical shift first to skip some cut calculation
@@ -919,7 +922,7 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             # #universes.extend(NonResonantPionUniverse.GetSystematicsUniverses(chain ))
 
             #LowQ2PionUniverse
-            #universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
             #universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain )) used for warping study variant
 
             # #birk shift universe
