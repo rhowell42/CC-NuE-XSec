@@ -271,6 +271,13 @@ parser.add_argument("-i", "--input",
                     default=BLUEARC
 )
 
+parser.add_argument("-f", "--file",
+                    dest = "selection_file",
+                    help="Path to a merged selection histogram.",
+                    default=BLUEARC
+)
+
+
 parser.add_argument("--plot_tag", "--plot-tag",
                     dest = "plot_tag",
                     help="Add ending tag for plots to distinguish them.",

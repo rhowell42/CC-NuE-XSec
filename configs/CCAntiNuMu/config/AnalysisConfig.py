@@ -275,6 +275,13 @@ parser.add_argument("-i", "--input",
                     default=BLUEARC
 )
 
+parser.add_argument("-f", "--file",
+                    dest = "selection_file",
+                    help="Path to a merged selection histogram.",
+                    default=BLUEARC
+)
+
+
 parser.add_argument("--ntuple_tag", "--ntuple-tag",
                     help="Use ntuple playlist tagged by given tag.",
                     default="LLR"
