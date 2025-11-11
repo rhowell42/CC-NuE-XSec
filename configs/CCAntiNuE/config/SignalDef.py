@@ -114,7 +114,7 @@ TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and (IsNuE(event) 
 TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsNuE(event)
 TRUTH_CATEGORIES["CCNuEQE"] = lambda event: IsCC(event) and IsNuEBar(event) and IsQE(event)
 TRUTH_CATEGORIES["CCNuEDelta"] = lambda event: IsCC(event) and IsNuEBar(event) and IsDelta(event)
-TRUTH_CATEGORIES["CCNuEDIS"] = lambda event: IsCC(event) and IsNuEBaar(event) and IsDIS(event)
+TRUTH_CATEGORIES["CCNuEDIS"] = lambda event: IsCC(event) and IsNuEBar(event) and IsDIS(event)
 TRUTH_CATEGORIES["CCNuE2p2h"] = lambda event: IsCC(event) and IsNuEBar(event) and Is2p2h(event)
 TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNuE(event)
 
