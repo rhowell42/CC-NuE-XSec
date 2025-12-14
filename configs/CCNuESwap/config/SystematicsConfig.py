@@ -280,10 +280,7 @@ CONSOLIDATED_ERROR_GROUPS_CONFIG = {
     "Detector model": [DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS],
     "Interaction model": [GENIE_ERROR_GROUPS,FSI_ERROR_GROUPS],
     "MnvTunes" :[MINERVA_TUNNING_ERROR_GROUPS],
-<<<<<<< HEAD
     "Muon Reconstruction" :[{"Muon Energy":["Muon_Energy_MINERvA","Muon_Energy_MINOS","Muon_Energy_Resolution"]}],
-=======
->>>>>>> feature/sterile_neutrino
     "Alternative Tunning methods" : [BKG_TUNNING_ERROR_GROUPS]
    # "Others":[DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS,GENIE_ERROR_GROUPS,FSI_ERROR_GROUPS,MINERVA_TUNNING_ERROR_GROUPS],
 }

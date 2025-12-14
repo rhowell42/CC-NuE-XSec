@@ -81,28 +81,15 @@ IsUnknown  = lambda event : event.mc_intType == 10
 IsNuE = lambda event: abs(event.mc_incoming) == 12
 IsNuMu = lambda event: abs(event.mc_incoming) == 14
 IsAntiNu = lambda event: event.mc_incoming < 0 # assuming only neutrino incomes
-<<<<<<< HEAD
-=======
-IsNu = lambda event: event.mc_incoming > 0
->>>>>>> feature/sterile_neutrino
 IsNue = lambda event: event.mc_incoming == 12
 IsNueBar = lambda event: event.mc_incoming == -12
 IsNumu = lambda event: event.mc_incoming == 14
 IsNumuBar = lambda event: event.mc_incoming == -14
-<<<<<<< HEAD
-=======
-
->>>>>>> feature/sterile_neutrino
 IsPi0InFinalState = lambda event: 111 in event.mc_FSPartPDG
 IsChargedPionInFinalState = lambda event: 211 in event.mc_FSPartPDG or -211 in event.mc_FSPartPDG
 IsProtonInFinalState = lambda event: 2212 in event.mc_FSPartPDG
 IsMultiMeson = lambda event: countPDG(event.mc_FSPartPDG, [211,-211, 321,-321,323,-323,111,130,310,311])>1
 IsSinglePion = lambda event: countPDG(event.mc_FSPartPDG, [211]) == 1 and countPDG(event.mc_FSPartPDG, [-211, 321,-321,323,-323,111,130,310,311]) == 0
-<<<<<<< HEAD
-=======
-IsNucleon = lambda event: 2212 in event.mc_FSPartPDG or 2112 in event.mc_FSPartPDG
->>>>>>> feature/sterile_neutrino
-
 
 IsHeavyBaryon = lambda event: 3112 in event.mc_FSPartPDG or 3122 in event.mc_FSPartPDG or 3212 in event.mc_FSPartPDG or 3222 in event.mc_FSPartPDG or 4112 in event.mc_FSPartPDG or 4122 in event.mc_FSPartPDG or 4212 in event.mc_FSPartPDG or 4222 in event.mc_FSPartPDG
 IsMeson = lambda event: 211 in event.mc_FSPartPDG or -211 in event.mc_FSPartPDG or 321 in event.mc_FSPartPDG or -321 in event.mc_FSPartPDG or 323 in event.mc_FSPartPDG or -323 in event.mc_FSPartPDG  or 111 in event.mc_FSPartPDG or 130 in event.mc_FSPartPDG or 310 in event.mc_FSPartPDG or 311 in event.mc_FSPartPDG
@@ -117,30 +104,19 @@ def IsInKinematicPhaseSpace(event):
 TRUTH_CATEGORIES = OrderedDict()
 TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
 TRUTH_CATEGORIES["NuEElastic"] = lambda event: IsElastic(event)
-<<<<<<< HEAD
 TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and (IsNuE(event) or IsNueBar(event)) and not IsInKinematicPhaseSpace(event)
 
 TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsNueBar(event)
-=======
-TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and IsNuE(event) and not IsInKinematicPhaseSpace(event)
-
-TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsNue(event) and IsAntiNu(event)
->>>>>>> feature/sterile_neutrino
 TRUTH_CATEGORIES["CCNuEQE"] = lambda event: IsCC(event) and IsNuE(event) and IsQE(event)
 TRUTH_CATEGORIES["CCNuEDelta"] = lambda event: IsCC(event) and IsNuE(event) and IsDelta(event)
 TRUTH_CATEGORIES["CCNuEDIS"] = lambda event: IsCC(event) and IsNuE(event) and IsDIS(event)
 TRUTH_CATEGORIES["CCNuE2p2h"] = lambda event: IsCC(event) and IsNuE(event) and Is2p2h(event)
 TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNuE(event)
 
-<<<<<<< HEAD
 #TRUTH_CATEGORIES["CCPi0Proton"] = lambda event: IsCC(event) and IsPi0InFinalState(event) and IsNotNue(event) and IsProtonInFinalState(event)
 TRUTH_CATEGORIES["CCPi0"] = lambda event: IsCC(event) and IsPi0InFinalState(event) and IsNotNue(event)
 TRUTH_CATEGORIES["NCCohPi0"] = lambda event: IsCoherent(event) and IsNC(event) and IsPi0InFinalState(event)
 #TRUTH_CATEGORIES["NCPi0Proton"] = lambda event: IsNC(event) and IsPi0InFinalState(event) and IsProtonInFinalState(event)
-=======
-TRUTH_CATEGORIES["CCPi0"] = lambda event: IsCC(event) and IsPi0InFinalState(event) and IsNotNue(event)
-TRUTH_CATEGORIES["NCCohPi0"] = lambda event: IsCoherent(event) and IsNC(event) and IsPi0InFinalState(event)
->>>>>>> feature/sterile_neutrino
 TRUTH_CATEGORIES["NCPi0"] = lambda event: IsNC(event) and IsPi0InFinalState(event)
 TRUTH_CATEGORIES["CCPi"] = lambda event: IsCC(event) and IsChargedPionInFinalState(event)
 TRUTH_CATEGORIES["NCPi"] = lambda event: IsNC(event) and IsChargedPionInFinalState(event)
@@ -154,11 +130,7 @@ SIGNAL_DEFINATION = [
     "CCNuEDIS",
     "CCNuE",
     "CCNuE2p2h",
-<<<<<<< HEAD
     "CCNuEWrongSign",
-=======
-    "CCNuEWrongSign"
->>>>>>> feature/sterile_neutrino
 ]
 
 EXTRA_OTHER = [

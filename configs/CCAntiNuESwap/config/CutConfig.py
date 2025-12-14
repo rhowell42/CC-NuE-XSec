@@ -75,11 +75,8 @@ SAMPLE_CUTS = {
         "VertexTrackMultiplicity",
         "Etheta",
         "MeanFrontdEdX",
-<<<<<<< HEAD
         "Eavail",
         "Pt",
-=======
->>>>>>> feature/sterile_neutrino
     ],
     "dEdX" : [
         "NoCut",
@@ -99,20 +96,12 @@ SAMPLE_CUTS = {
         "VertexTrackMultiplicity",
         "Etheta",
         "InverseMeanFrontdEdX",
-<<<<<<< HEAD
         "Eavail",
         "Pt",
-=======
->>>>>>> feature/sterile_neutrino
     ]
 }
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
-<<<<<<< HEAD
-=======
-    "Eavail",
-    "Pt",
->>>>>>> feature/sterile_neutrino
 ]
 #######################################

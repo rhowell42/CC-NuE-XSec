@@ -77,13 +77,7 @@ IsNotNue = lambda event: abs(event.mc_incoming) != 12
 IsPC = lambda event: event.mc_processType ==5
 IsUnknown  = lambda event : event.mc_intType == 10
 
-<<<<<<< HEAD
 IsNuE = lambda event: abs(event.mc_incoming) == 12
-=======
-
-IsNuE = lambda event: event.mc_incoming == -12
-IsAntiNuE = lambda event: event.mc_incoming == 12
->>>>>>> feature/sterile_neutrino
 IsNuMu = lambda event: abs(event.mc_incoming) == 14
 IsAntiNu = lambda event: event.mc_incoming < 0 # assuming only neutrino incomes
 IsNu = lambda event: event.mc_incoming > 0
@@ -110,7 +104,6 @@ def IsInKinematicPhaseSpace(event):
 
 # In case a event satisfy multiple definations, the first takes priority.
 TRUTH_CATEGORIES = OrderedDict()
-<<<<<<< HEAD
 TRUTH_CATEGORIES["NC"] = lambda event: IsNC(event)
 TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNuE(event)
 TRUTH_CATEGORIES["CCWrongSign"] = lambda event: IsCC(event) and IsAntiNu(event)
@@ -129,27 +122,6 @@ SIGNAL_DEFINATION = [
     "CCDIS",
     "CCOther",
     "CCWrongSign"
-=======
-TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
-TRUTH_CATEGORIES["NuEElastic"] = lambda event: IsElastic(event)
-TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and IsNuMu(event) and not IsInKinematicPhaseSpace(event)
-
-TRUTH_CATEGORIES["CCNuMuWrongSign"] = lambda event: IsCC(event) and IsNuMu(event) and IsAntiNu
-TRUTH_CATEGORIES["CCNuMuQE"] = lambda event: IsCC(event) and IsNuMu(event) and IsQE(event)
-TRUTH_CATEGORIES["CCNuMuDelta"] = lambda event: IsCC(event) and IsNuMu(event) and IsDelta(event)
-TRUTH_CATEGORIES["CCNuMuDIS"] = lambda event: IsCC(event) and IsNuMu(event) and IsDIS(event)
-TRUTH_CATEGORIES["CCNuMu2p2h"] = lambda event: IsCC(event) and IsNuMu(event) and Is2p2h(event)
-TRUTH_CATEGORIES["CCNuMu"] = lambda event: IsCC(event) and IsNuMu(event)
-
-# My signal is one or more of the listed categories.
-SIGNAL_DEFINATION = [
-    "CCNuMuQE",
-    "CCNuMuDelta",
-    "CCNuMuDIS",
-    "CCNuMu",
-    "CCNuMu2p2h",
-    "CCNuMuWrongSign"
->>>>>>> feature/sterile_neutrino
 ]
 EXTRA_OTHER = [
 ]

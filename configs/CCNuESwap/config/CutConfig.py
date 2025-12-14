@@ -59,32 +59,16 @@ ELECTRON_ENERGY_CUTOFF = 2.5
 SAMPLE_CUTS = {
     "Signal" : [ 
         "NoCut",
-<<<<<<< HEAD
         "HasTracks",
         "Vertex_Z",
         "HasNoBackExitingTracks",
         "EMLikeTrackScore",
         "DSCalVisE",
         "ODCalVisE",
-=======
-        "HasNoBackExitingTracks",
-        "HasTracks",
-        "Vertex_Z",
-        "Vertex_Apothem",
-        "EMLikeTrackScore",
-        "DSCalVisE",
-        "ODCalVisE",
-        "DeadTime",
-        "Afterpulsing",
-        "NonMIPClusFrac",
-        "TransverseGapScore",
-        "HasNoVertexMismatch", 
->>>>>>> feature/sterile_neutrino
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
         "Etheta",
         "MeanFrontdEdX",
-<<<<<<< HEAD
         "Vertex_Apothem",
         "NonMIPClusFrac",
         "TransverseGapScore",
@@ -101,28 +85,10 @@ SAMPLE_CUTS = {
         "EMLikeTrackScore",
         "DSCalVisE",
         "ODCalVisE",
-=======
-    ],
-    "dEdX" : [
-        "NoCut",
-        "HasNoBackExitingTracks",
-        "HasTracks",
-        "Vertex_Z",
-        "Vertex_Apothem",
-        "EMLikeTrackScore",
-        "DSCalVisE",
-        "ODCalVisE",
-        "DeadTime",
-        "Afterpulsing",
-        "NonMIPClusFrac",
-        "TransverseGapScore",
-        "HasNoVertexMismatch",
->>>>>>> feature/sterile_neutrino
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
         "Etheta",
         "InverseMeanFrontdEdX",
-<<<<<<< HEAD
         "Vertex_Apothem",
         "NonMIPClusFrac",
         "TransverseGapScore",
@@ -130,17 +96,10 @@ SAMPLE_CUTS = {
         "Afterpulsing",
         "Eavail",
         "Pt",
-=======
->>>>>>> feature/sterile_neutrino
     ]
 }
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
-<<<<<<< HEAD
-=======
-    "Eavail",
-    "Pt",
->>>>>>> feature/sterile_neutrino
 ]
 #######################################

@@ -18,11 +18,7 @@ OD_CAL_VISE_CUT = 0.05
 PSI_FLAT_CUT = 0.1
 FRONT_DEDX_CUT = 2.4  # in MeV/cm
 PID_SCORE_CUT = 0.7
-<<<<<<< HEAD
 MIN_VERTEX_TRACK_MULTIPLICITY = 2
-=======
-MIN_VERTEX_TRACK_MULTIPLICITY = 1
->>>>>>> feature/sterile_neutrino
 MAX_VERTEX_TRACK_MULTIPLICITY = 6 
 
 NONMIP_CLUS_FRAC_CUT = 0.4
@@ -67,11 +63,8 @@ SAMPLE_CUTS = {
         "Vertex_Z",
         "Vertex_Apothem",
         "Etheta",
-<<<<<<< HEAD
         "Eavail",
         "Pt",
-=======
->>>>>>> feature/sterile_neutrino
         #"ZDifference",
         #"ZDifference_vtx",
         #"ProtonEnd",
@@ -81,11 +74,6 @@ SAMPLE_CUTS = {
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
-<<<<<<< HEAD
-=======
-    "Eavail",
-    "Pt",
->>>>>>> feature/sterile_neutrino
 ]
 
 #######################################

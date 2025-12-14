@@ -337,7 +337,6 @@ CUT_CONFIGS = {
         "cut_fn": lambda vals: vals>0 and vals <= CutConfig.WEXP_CUT,
         "variable_range": [0.5* i for i in range(0,11)]
     },
-<<<<<<< HEAD
     "Eavail": {
         "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
         "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1],
@@ -350,14 +349,6 @@ CUT_CONFIGS = {
         #"cut_fn": lambda val: passSingleProtonCut(val,0),
         "variable_range": [0.1* i for i in range(0,11)]
     },
-=======
-    "FHC_proton": {
-        "value_getter": lambda event, nprong: event,
-        "cut_fn": lambda val: passHybridProtonNodeCut(val,10),
-        #"cut_fn": lambda val: passSingleProtonCut(val,0),
-        "variable_range": [0.1* i for i in range(0,11)]
-    },
->>>>>>> feature/sterile_neutrino
     "Pt": {
         "value_getter": lambda event, nprong: event.kin_cal.reco_Pt_lep,
         "cut_fn": lambda val: CutConfig.RECO_PT_RANGE[0] <= val < CutConfig.RECO_PT_RANGE[1],
@@ -426,16 +417,6 @@ CUT_CONFIGS = {
         "value_getter": lambda event, nprong: event.MasterAnaDev_proton_endPointZ,
         "cut_fn": lambda val: val <= CutConfig.RECO_PROTON_END,
     },
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> feature/sterile_neutrino
-    #"HasNoMichelElectrons": {
-    #"value_getter": lambda event, nprong: (event.michel_digits, event.michel_energy, event.michel_slice_energy),
-    #   "cut_fn": lambda vals: all([not(vals[0][i] < 35 and vals[1][i] < 55 and vals[2][i] < 100 and vals[1][i]/vals[0][i] > 0.8) for i in range(len(vals[0]))])
-    #},#Better way for this?
-    
     "DeadTime": {
         "value_getter": lambda event, nprong: event.phys_n_dead_discr_pair_upstream_prim_track_proj,
         "cut_fn": lambda val: val >= 0 and val <= 1,

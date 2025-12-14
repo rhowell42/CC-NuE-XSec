@@ -567,7 +567,7 @@ PLOT_SETTINGS= {
     },
     "Background Subbed Data":
     {
-        "name" : "EN4_ERROR_data_bkgSubbed",
+        "name" : "EN4_data_bkgSubbed",
         "title" : "E_{e}+E_{avail} (GeV)",
         #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
         "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],

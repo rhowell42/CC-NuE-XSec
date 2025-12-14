@@ -15,7 +15,7 @@ from array import array
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
 from Tools.FitTools import *
-from Tools.PlotTools import *
+from Tools.OscillationPlotTools import *
 from config.AnalysisConfig import AnalysisConfig
 
 # Get This from Rob. Thanks Rob.

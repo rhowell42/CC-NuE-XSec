@@ -247,11 +247,7 @@ parser.add_argument("--pc",
 parser.add_argument("--plot_tag", "--plot-tag",
                     dest = "plot_tag",
                     help="Add ending tag for plots to distinguish them.",
-<<<<<<< HEAD
                     default=""
-=======
-                    default=BLUEARC
->>>>>>> feature/sterile_neutrino
 )
 parser.add_argument("--signal",
                     dest="signal",

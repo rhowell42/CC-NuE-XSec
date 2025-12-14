@@ -219,7 +219,6 @@ def PlaylistLookup(run):
 
     #Low Energy
     # neutrino mode (FHC)
-<<<<<<< HEAD
     elif run >= 10200 and run <= 10250:
         return "minerva1"
     elif run >= 10250 and run <= 10255:
@@ -231,7 +230,6 @@ def PlaylistLookup(run):
     # anti-neutrino mode (RHC)
     elif run >= 50200 and run <= 50250:
         return "minerva5"
-=======
     elif run >= 20000001 and run <= 23970019:
         return "minervale1"
     elif run >= 30860001 and run <= 30989999:
@@ -257,7 +255,6 @@ def PlaylistLookup(run):
         return "minervale5b"
     elif run >= 34150002 and run <= 34910054:
         return "minervale10"
->>>>>>> feature/sterile_neutrino
     else:
         return None
 
@@ -277,7 +274,7 @@ def GetHistogram(ifile,plot):
     hist = ifile.Get(plot)
     ROOT.SetOwnership(hist,True)
     if not hist:
-        print ("histogram not found: "+plot)
+        #print ("histogram not found: "+plot)
         return None
     return hist
 

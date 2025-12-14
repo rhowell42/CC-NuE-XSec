@@ -153,15 +153,9 @@ SignalDecomposition = {
         "title" : "CC #nu_{#mu}-Delta Res",
         "color": COLORS[1]
     },
-<<<<<<< HEAD
     "Other" : {
         "title" : "CC #nu_{#mu} Res",
         "color": COLORS[2]
-=======
-    "CCOther": {
-        "title" : "CC #nu_{#mu}-Res", 
-        "color": COLORS[4]
->>>>>>> feature/sterile_neutrino
     },
     "CCDIS" : {
         "title" : "CC #nu_{#mu}-DIS",
@@ -574,17 +568,10 @@ PLOTS_TO_MAKE = [
     #{"name":"Available Energy vs Lepton Pt"},
     #{"name":"Front dEdX"},
     {"name":"Biased Neutrino Energy"},
-<<<<<<< HEAD
     #{"name":"Biased Neutrino Energy",
     #     "plot_type" : "err"},
     #{"name":"True Energy vs Biased Neutrino Energy",
     #        "plot_type" : 'migration'},
-=======
-    {"name":"Biased Neutrino Energy",
-         "plot_type" : "err"},
-    {"name":"True Energy vs Biased Neutrino Energy",
-            "plot_type" : 'migration'},
->>>>>>> feature/sterile_neutrino
     #{"name":"Reco Energy vs L/E",
     #    "plot_type" : "migration"},
     #{"name":"True Energy vs Biased Neutrino Energy",

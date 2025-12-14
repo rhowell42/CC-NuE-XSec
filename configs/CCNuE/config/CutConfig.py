@@ -35,11 +35,7 @@ FIDUCIAL_APOTHEM = 850
 FIDUCIAL_Z_RANGE = [5980,8422]
 
 # Kinematics cutoffs
-<<<<<<< HEAD
 ELECTRON_ENERGY_RANGE = [2.5, float('inf')] # in GeV
-=======
-ELECTRON_ENERGY_RANGE = [1.5, float("inf")] # in GeV
->>>>>>> feature/sterile_neutrino
 NEUTRINO_ENERGY_RANGE = [0, 100] # in GeV.
 LEPTON_ANGLE_RANGE = [0, 20] # in deg
 RECO_Q3_RANGE = [0,4]
@@ -54,10 +50,6 @@ PSIEE_FLAT_CUT = 0.5
 WEXP_CUT = 2
 visE_RANGE = [0.0,0.7]
 Ethetasquared_CUT = .003
-<<<<<<< HEAD
-=======
-FRONT_DEDX_PI0_UPPERBOUND = 5
->>>>>>> feature/sterile_neutrino
 
 EAVAIL_LOW = [0.0,0.05]
 EAVAIL_HIGH = [0.0,0.2]
@@ -67,7 +59,6 @@ ELECTRON_ENERGY_CUTOFF = 2.5
 # choose the cuts you want from cut library
 
 SAMPLE_CUTS = {
-<<<<<<< HEAD
     "Signal" : [
         "NoCut",
         "HasTracks",
@@ -80,7 +71,6 @@ SAMPLE_CUTS = {
         "VertexTrackMultiplicity",
         "Etheta",
         "MeanFrontdEdX",
-<<<<<<< HEAD
         "Vertex_Apothem",
         "NonMIPClusFrac",
         "TransverseGapScore",
@@ -108,36 +98,10 @@ SAMPLE_CUTS = {
         "Afterpulsing",
         "Eavail",
         "Pt",
-=======
-    ],
-    "dEdX" : [
-        "NoCut",
-        "HasNoBackExitingTracks",
-        "HasTracks",
-        "Vertex_Z",
-        "Vertex_Apothem",
-        "EMLikeTrackScore",
-        "DSCalVisE",
-        "ODCalVisE",
-        "DeadTime",
-        "Afterpulsing",
-        "NonMIPClusFrac",
-        "TransverseGapScore",
-        "HasNoVertexMismatch",
-        "StartPointVertexMultiplicity",
-        "VertexTrackMultiplicity",
-        "Etheta",
-        "InverseMeanFrontdEdX",
->>>>>>> feature/sterile_neutrino
     ]
 }
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
-<<<<<<< HEAD
-=======
-    "Eavail",
-    "Pt",
->>>>>>> feature/sterile_neutrino
 ]
 #######################################

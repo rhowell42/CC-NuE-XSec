@@ -842,7 +842,6 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_mcme1Gscattering.txt"
-<<<<<<< HEAD
             }
         }
     },
@@ -889,8 +888,6 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_mcle13Cp6.txt"
-=======
->>>>>>> feature/sterile_neutrino
             }
         }
     }

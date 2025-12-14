@@ -69,21 +69,13 @@ SAMPLE_CUTS = {
         "Vertex_Z",
         "Vertex_Apothem",
         "Etheta",
-<<<<<<< HEAD
         "Eavail",
         "Pt",
-=======
->>>>>>> feature/sterile_neutrino
     ]
 }
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
-<<<<<<< HEAD
-=======
-    "Eavail",
-    "Pt",
->>>>>>> feature/sterile_neutrino
 ]
 
 #######################################
