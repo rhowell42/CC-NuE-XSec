@@ -190,7 +190,7 @@ class _AnalysisConfig(object):
     def BackgroundFitPath(self, playlist, tag, is_output = True):
         return self.FilePath(self.output_dir if is_output else self.input_dir,
                              "bkgfit", playlist, "" , tag+"_"+self.selection_tag+"_"+self.ntuple_tag+".root")
-    
+
     def PlotPath(self, plot_name, sideband,tag=""):
         return self.FilePath(self.output_dir,"plot/"+plot_name, sideband, "" , self.selection_tag+"_"+tag)
 
@@ -273,7 +273,7 @@ parser.add_argument("-i", "--input",
 
 parser.add_argument("--ntuple_tag", "--ntuple-tag",
                     help="Use ntuple playlist tagged by given tag.",
-                    default="LLR"
+                    default="MAD"
 )
 
 parser.add_argument("--selection_tag","--selection-tag",
