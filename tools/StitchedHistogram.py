@@ -164,7 +164,7 @@ class StitchedHistogram:
 
             cv = np.array(self.mc_hist)[1:-1]
             self.A = self.mc_flux_universes - np.array([cv for i in range(nhists)])
-            np.savetxt("ryan_Amatrix.csv",self.A,delimiter=',')
+            np.savetxt("csvs/ryan_Amatrix.csv",self.A,delimiter=',')
 
     def SetCovarianceMatrices(self):
         if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist) and type(self.mc_hist) == PlotUtils.MnvH1D:
@@ -181,10 +181,10 @@ class StitchedHistogram:
             self.inv_covariance = np.linalg.inv(covariance)
             self.inv_covariance_sans_flux = np.linalg.inv(cov_sans_flux)
 
-            np.savetxt("ryan_Cov.csv",covariance,delimiter=',')
-            np.savetxt("ryan_CovSansFlux.csv",cov_sans_flux,delimiter=',')
-            np.savetxt("ryan_InvCov.csv",self.inv_covariance,delimiter=',')
-            np.savetxt("ryan_InvCovSansFlux.csv",self.inv_covariance_sans_flux,delimiter=',')
+            np.savetxt("csvs/ryan_Cov.csv",covariance,delimiter=',')
+            np.savetxt("csvs/ryan_CovSansFlux.csv",cov_sans_flux,delimiter=',')
+            np.savetxt("csvs/ryan_InvCov.csv",self.inv_covariance,delimiter=',')
+            np.savetxt("csvs/ryan_InvCovSansFlux.csv",self.inv_covariance_sans_flux,delimiter=',')
         else:
             raise ValueError("MC and Data histograms must be defined before setting inv_covariance matrix")
 
