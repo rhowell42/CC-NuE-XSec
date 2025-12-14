@@ -118,6 +118,8 @@ def GetLowQ2PiWeight(event,shift=0):
     return weight_LowQ2Pi.getWeight(q2, channel, shift) if is_ccres else 1.0
 
 def GetFluxWeight(event, i_universe = None):
+    print("here!")
+    exit()
     global flux_reweighter
     if flux_reweighter is None:
         flux_reweighter =  FluxReweighter(-12,False,

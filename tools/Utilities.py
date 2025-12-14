@@ -348,3 +348,18 @@ def getFilesAndPOTScale(playlist, type_path_map, ntuple_tag,raw_pot = False):
         return files[0],files[1],pot_scale,pots[0],pots[1]
     else:
         return files[0],files[1],pot_scale
+
+def getSwapFilesAndPOTScale(type_path_map):
+    pots = [None,None]
+    files = [None,None]
+    for i,t in enumerate(["swap","mc"]):
+        try:
+            path = type_path_map[t]
+        except KeyError:
+            continue
+        pots[i]= getPOTFromFile(path)
+        files[i]=ROOT.TFile(path) or None
+    print(pots[0], pots[1], 'Swap MC ') 
+    pot_scale = pots[0]/pots[1] if pots.count(None) == 0 else 1.0
+    
+    return files[0],files[1],pot_scale,pots[0],pots[1]
