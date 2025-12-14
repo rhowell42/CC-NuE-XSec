@@ -1,0 +1,92 @@
+{
+    "fhc_ccnumu": {
+        "playlist": "FHC_Selection_100Univ",
+        "selection_tag": "thesis_muon",
+        "directory_tag": "nu_mu",
+        "selection_variable": "Biased Neutrino Energy",
+        "selection_template": "Reco Energy vs L/E",
+        "preservation_templates": ["True Energy vs Biased Neutrino Energy", "True Energy vs L/E"],
+        "signal_categories": ["CCQE","CCDelta","CC2p2h","CCDIS","CCOther","CCWrongSign"]
+    },
+    "fhc_ccnue": {
+        "playlist": "FHC_Selection_100Univ",
+        "selection_tag": "thesis",
+        "selection_variable": "Biased Neutrino Energy",
+        "selection_template": "Reco Energy vs L/E",
+        "background_tag": "N4_tune",
+        "directory_tag": "nu_e",
+        "preservation_templates": ["True Energy vs Biased Neutrino Energy","Estimator vs Front dEdX", "True Energy vs L/E"],
+        "signal_categories": ["CCNuEQE","CCNuEDelta","CCNuEDIS","CCNuE","CCNuE2p2h","CCNuEWrongSign"]
+    },
+    "rhc_ccnumu": {
+        "playlist": "RHC_Selection_1000Univ",
+        "selection_tag": "thesis_muon",
+        "selection_variable": "Biased Neutrino Energy",
+        "selection_template": "Reco Energy vs L/E",
+        "directory_tag": "antinu_mu",
+        "preservation_templates": ["True Energy vs Biased Neutrino Energy", "True Energy vs L/E"],
+        "signal_categories": ["CCQE","CCDelta","CC2p2h","CCDIS","CCOther","CCWrongSign"]
+    },
+    "rhc_ccnue": {
+        "playlist": "RHC_Selection_1000Univ",
+        "selection_tag": "thesis",
+        "selection_variable": "Biased Neutrino Energy",
+        "selection_template": "Reco Energy vs L/E",
+        "background_tag": "N4_tune",
+        "directory_tag": "antinu_e",
+        "preservation_templates": ["True Energy vs Biased Neutrino Energy","Estimator vs Front dEdX", "True Energy vs L/E"],
+        "signal_categories": ["CCNuEQE","CCNuEDelta","CCNuEDIS","CCNuE","CCNuE2p2h","CCNuEWrongSign"]
+    },
+    "fhc_elastic": {
+        "mc": {
+            "file":"/exp/minerva/data/users/rhowell/nueel/DeepikaMc_LauraData_Mnv.root",
+            "hist":"mnv_eff_cor_mc",
+            "template_file":"/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_scattering_scatter_MAD.root",
+            "template_hist_prefix":"nue_scattering_template_NoCuts_",
+            "pdg_hist_file":"rootfiles/NuEnumberEvents/ElectronEnergySpectrum_FHC_withoutconstraint.root",
+            "pdg_hist_prefix":"electron_energy_"
+        },
+        "data": {
+            "file":"/exp/minerva/data/users/rhowell/nueel/DeepikaMc_LauraData_Mnv.root",
+            "hist":"mnv_eff_cor_data"
+        }
+    },
+    "rhc_elastic": {
+        "mc": {
+            "file":"/exp/minerva/data/users/rhowell/nueel/electronE_bkgsub_FullSetFinalv2_nobinnorm.root",
+            "hist":"mc_fluxonly",
+            "template_file":"/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_scattering_scatter_MAD.root",
+            "template_hist_prefix":"nue_scattering_template_NoCuts_",
+            "pdg_hist_file":"rootfiles/NuEnumberEvents/ElectronEnergySpectrum_RHC_withoutconstraint.root",
+            "pdg_hist_prefix":"electron_energy_"
+        },
+        "data": {
+            "file":"/exp/minerva/data/users/rhowell/nueel/electronE_bkgsub_FullSetFinalv2_nobinnorm.root",
+            "hist":"data_bkgsub_effcor"
+        }
+    },
+    "fhc_imd": {
+        "mc": {
+            "file":"rootfiles/IMD/PubResult_v18_Combined.root",
+            "hist":"FHC_MC",
+            "template_file":"/exp/minerva/data/users/rhowell/nu_mu/FHC_imd_scattering_template.root",
+            "template_hist":"imd_scattering_template"
+        },
+        "data": {
+            "file":"rootfiles/IMD/PubResult_v18_Combined.root",
+            "hist":"FHC_Data"
+        }
+    },
+    "rhc_imd": {
+        "mc": {
+            "file":"rootfiles/IMD/PubResult_v18_Combined.root",
+            "hist":"RHC_MC",
+            "template_file":"/exp/minerva/data/users/rhowell/antinu_mu/RHC_imd_scattering_template.root",
+            "template_hist":"imd_scattering_template"
+        },
+        "data": {
+            "file":"rootfiles/IMD/PubResult_v18_Combined.root",
+            "hist":"RHC_Data"
+        }
+    }
+}

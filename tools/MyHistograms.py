@@ -90,6 +90,7 @@ class MnvResponseWrapper(object):
         self.migration_hist.AddUniverses(cv_universes)
 
     def FillUniverse(self,universe, reco_x,reco_y,truth_x,truth_y, wgt):
+
         mig_x = self.migration_hist.hist.GetXaxis().GetBinCenter(super(PlotUtils.MnvH2D, self.reco_hist.hist).FindBin(reco_x,reco_y))
         mig_y = self.migration_hist.hist.GetYaxis().GetBinCenter(super(PlotUtils.MnvH2D, self.truth_hist.hist).FindBin(truth_x,truth_y))
 
@@ -152,7 +153,6 @@ class PlotProcessor():
         self.histwrapper.AddUniverses(universes)
 
     def Process(self,universe):
-
         if all(cut(universe) for cut in self.cuts[::-1]):
             try:
                 value = [_(universe) for _ in self.value_getter]
@@ -171,6 +171,7 @@ class PlotProcessor():
             for v in map(lambda wgt,*args: (list(args),wgt), wgt, *value):
                 self.FillHist(universe,*v)
         else:
+            print("filling histogram",universe.LatexName(),value,wgt)
             self.FillHist(universe,value,wgt)
 
     def FillHist(self,universe,value,wgt):
