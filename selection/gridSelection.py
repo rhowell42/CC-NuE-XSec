@@ -17,7 +17,6 @@ def createTarball(outDir):
 
 def unpackTarball( mywrapper):
   mywrapper.write("cd $CONDOR_DIR_INPUT\n")
-<<<<<<< HEAD
 
   mywrapper.write("source /cvmfs/larsoft.opensciencegrid.org/spack-v0.22.0-fermi/setup-env.sh\n")
   mywrapper.write("spack load root@6.28.12 arch=linux-almalinux9-x86_64_v3\n")
@@ -27,14 +26,6 @@ def unpackTarball( mywrapper):
   mywrapper.write("spack load ifdhc-config@2.6.20%gcc@11.4.1 arch=linux-almalinux9-x86_64_v3\n")
   mywrapper.write("spack load py-numpy@1.24.3%gcc@12.2.0\n")
 
-=======
-  mywrapper.write("source /cvmfs/larsoft.opensciencegrid.org/spack-packages/setup-env.sh\n")
-  mywrapper.write("spack load root@6.28.12\n")
-  mywrapper.write("spack load cmake\n")
-  mywrapper.write("spack load gcc\n")
-  mywrapper.write("spack load fife-utils@3.7.4\n")
-  mywrapper.write("spack load py-numpy\n")
->>>>>>> feature/sterile_neutrino
   mywrapper.write("tar -xvzf {}\n".format(outdir_tarball.split("/")[-1]))
   mywrapper.write("export MINERVA_PREFIX=`pwd`/{}\n".format(MAT))
   mywrapper.write("pushd {}/bin\n".format(MAT))
@@ -71,12 +62,8 @@ def submitJob( tupleName):
   
   os.system( "chmod 777 %s" % wrapper_name )
   
-<<<<<<< HEAD
   avoidReqs = "--append_condor_requirements='(regexp(\".*fnpc7.*\",Machine) == FALSE)'"
   cmd = "jobsub_submit --group=minerva %s -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest\\\"' -c has_avx2==True --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % (avoidReqs , memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 36, os.environ["PWD"] , wrapper_name )
-=======
-  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 36, os.environ["PWD"] , wrapper_name )
->>>>>>> feature/sterile_neutrino
   os.system(cmd)
 
   #cmdname = "jobsub_commands/submit_wrapper.sh"
@@ -104,11 +91,7 @@ if __name__ == '__main__':
         continue
 
       if gridargs.memory is None:
-<<<<<<< HEAD
         memory = 1000 if dataSwitch == "data" else 10000
-=======
-        memory = 1000 if dataSwitch == "data" else 8000
->>>>>>> feature/sterile_neutrino
       else:
         memory = gridargs.memory
     

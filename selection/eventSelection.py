@@ -53,12 +53,8 @@ def plotRecoKin(mc, chainwrapper, outfile):
 
 
         for universe in chain.from_iterable(iter(universes.values())):
-<<<<<<< HEAD
             universe.SetEntry(counter)
             universe.ResetWeight()
-=======
-            universe.SetCVEntry(counter)
->>>>>>> feature/sterile_neutrino
             if mc and AnalysisConfig.skip_2p2h and universe.mc_intType==8:
                 continue
 
@@ -94,12 +90,8 @@ def plotTruthKin(chainwrapper,outfile):
             print(counter)
 
         for universe in chain.from_iterable(iter(universes.values())):
-<<<<<<< HEAD
             universe.SetEntry(counter)
             universe.ResetWeight()
-=======
-            universe.SetCVEntry(counter)
->>>>>>> feature/sterile_neutrino
 
             #only update kin_cal & eventClassifier when universe in not vertical only.
             if not universe.IsVerticalOnly():
@@ -168,10 +160,6 @@ if __name__ == "__main__":
     for st in AnalysisConfig.data_types:
         print(st)
         outputSelectionHistogram = AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,"data" in st,True)
-<<<<<<< HEAD
-       
-=======
->>>>>>> feature/sterile_neutrino
         output_file = ROOT.TFile.Open(outputSelectionHistogram,"RECREATE")
         
         CopyMetaTreeToOutPutFile(output_file)
