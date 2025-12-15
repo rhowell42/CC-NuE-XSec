@@ -116,7 +116,7 @@ class StitchedHistogram:
         self.data_hist = None
         self.pseudo_hist = None
 
-    def Use1000Universes(use):
+    def Use1000Universes(self,use):
         self.use_1000_flux_universes = use
 
     def AddTemplates(self,name,nue=None,numu=None,swap=None):
@@ -838,7 +838,7 @@ class StitchedHistogram:
             self.pseudo_hist.SetBinError(i,err_mc)
 
             # no statistical error on elastic scattering special production
-            if 'elastic' in h or 'imd' in h:
+            if 'elastic' in h or 'imd' in h or "nue" in h:
                 self.mc_hists[h].SetBinError(sample_i,0)
                 self.mc_hist.SetBinError(i,0)
                 self.nue_hist.SetBinError(i,0)
@@ -873,7 +873,7 @@ class StitchedHistogram:
         for i in range(1,self.mc_hist.GetNbinsX()+1):
             h = self.bin_dictionary[i]['sample']
             sample_i = self.bin_dictionary[i]['bin']
-
+            #print("filling bin {} in stitched histogram with bin {} from {}".format(i,sample_i,h))
             h_mc = self.mc_hists[h]
             h_data = self.data_hists[h]
 

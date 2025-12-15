@@ -25,7 +25,7 @@ for k,v in CONSOLIDATED_ERROR_GROUPS.items():
     for vs in v :
         vec.push_back(vs)
     MNVPLOTTER.error_summary_group_map[k]= vec
-errsToRemove = ["LowQ2Pi"]
+errsToRemove = ["LowQ2Pi","elETracker"]
 
 # Get This from Rob. Thanks Rob.
 # This helps python and ROOT not fight over deleting something, by stopping ROOT from trying to own the histogram. Thanks, Phil!
@@ -43,7 +43,7 @@ def addSignalHists(hist,cates):
 
     return(h_tot)
 
-def loadSwapFiles(sample,numuSample):
+def loadSwapFiles(sample,numuSample,sampleName):
     swapDir = "/exp/minerva/data/users/{}/{}".format(os.environ["USER"],sample["directory_tag"]+"_swap")
     playlist = sample["playlist"]
     selectionTag = sample["selection_tag"]
@@ -62,6 +62,7 @@ def loadSwapFiles(sample,numuSample):
     AnalysisConfig.playlist = numuSample["playlist"]
 
     type_path_map["mc"] = AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,False,False)
+    print("Loading files for {}".format(sampleName)) 
     swap_file,mc_file,pot_scale,swap_pot,mc_pot = Utilities.getSwapFilesAndPOTScale(type_path_map)
     swap_hist = HistHolder(sample["selection_variable"],swap_file,"Signal",True,swap_pot,mc_pot)
     swap_template = HistHolder(sample["selection_template"],swap_file,"Signal",True,swap_pot,mc_pot)
@@ -75,10 +76,9 @@ def loadSwapFiles(sample,numuSample):
 
     swap_hist = addSignalHists(swap_hist,cates)
     swap_template = addSignalHists(swap_template,cates)
-
     return swap_hist, swap_template, preservation_hists 
 
-def loadFiles(sample):
+def loadFiles(sample,sampleName=""):
     inputDir = "/exp/minerva/data/users/{}/{}".format(os.environ["USER"],sample["directory_tag"])
     playlist = sample["playlist"]
     selectionTag = sample["selection_tag"]
@@ -88,11 +88,12 @@ def loadFiles(sample):
     AnalysisConfig.selection_tag = selectionTag
     AnalysisConfig.playlist = playlist
 
+    print("Loading files for {}".format(sampleName)) 
     type_path_map = { t:AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,t =="data",False) for t in AnalysisConfig.data_types}
     data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale(AnalysisConfig.playlist,type_path_map,"MAD",True)
     standPOT = data_pot if data_pot is not None else mc_pot 
     mc_hist = HistHolder(sample["selection_variable"],mc_file,"Signal",True,mc_pot,standPOT)
-    data_hist = HistHolder(sample["selection_variable"],data_file,"Signal",True,data_pot,standPOT)
+    data_hist = HistHolder(sample["selection_variable"],data_file,"Signal",False,data_pot,standPOT)
     template_hist = HistHolder(sample["selection_template"],mc_file,"Signal",True,mc_pot,standPOT)
 
     preservation_hists  = []
@@ -102,14 +103,17 @@ def loadFiles(sample):
         temp = addSignalHists(temp,cates)
         if (temp):
             preservation_hists.append(temp)
+
+    data_hist.POTScale(binwidthScale)
+    mc_hist.POTScale(binwidthScale)
+    template_hist.POTScale(binwidthScale)
+
+    # Don't POTScale a bkg subtracted data histogram, they are alrady scaled
     if "background_tag" in sample:
         AnalysisConfig.bkgTune_tag = sample["background_tag"]
         filename = AnalysisConfig.BackgroundFitPath(AnalysisConfig.playlist, AnalysisConfig.bkgTune_tag, False)
         data_file =ROOT.TFile.Open(filename,"READ")
         data_hist = HistHolder("Background Subbed Data",data_file,"Signal",False,data_pot,standPOT)
-
-    data_hist.POTScale(binwidthScale)
-    mc_hist.POTScale(binwidthScale)
 
     data_hist = data_hist.GetHist()
     mc_hist = addSignalHists(mc_hist,cates)
@@ -139,14 +143,14 @@ if __name__ == "__main__":
     with open("SAMPLE_CONFIG.json", "r") as file:
         selectionSamples = json.load(file)
             
-    fhc_numu_selection_data, fhc_numu_selection_mc, fhc_numu_selection_template, fhc_numu_preservation_list = loadFiles(selectionSamples["fhc_ccnumu"])
-    rhc_numu_selection_data, rhc_numu_selection_mc, rhc_numu_selection_template, rhc_numu_preservation_list = loadFiles(selectionSamples["rhc_ccnumu"])
+    fhc_numu_selection_data, fhc_numu_selection_mc, fhc_numu_selection_template, fhc_numu_preservation_list = loadFiles(selectionSamples["fhc_ccnumu"],"fhc_ccnumu")
+    rhc_numu_selection_data, rhc_numu_selection_mc, rhc_numu_selection_template, rhc_numu_preservation_list = loadFiles(selectionSamples["rhc_ccnumu"],"rhc_ccnumu")
 
-    fhc_nue_selection_data, fhc_nue_selection_mc, fhc_nue_selection_template, fhc_nue_preservation_list = loadFiles(selectionSamples["fhc_ccnue"])
-    rhc_nue_selection_data, rhc_nue_selection_mc, rhc_nue_selection_template, rhc_nue_preservation_list = loadFiles(selectionSamples["rhc_ccnue"])
+    fhc_nue_selection_data, fhc_nue_selection_mc, fhc_nue_selection_template, fhc_nue_preservation_list = loadFiles(selectionSamples["fhc_ccnue"],"fhc_ccnue")
+    rhc_nue_selection_data, rhc_nue_selection_mc, rhc_nue_selection_template, rhc_nue_preservation_list = loadFiles(selectionSamples["rhc_ccnue"],"rhc_ccnue")
 
-    fhc_nue_selection_swap, fhc_nue_selection_swap_template, fhc_nue_swap_preservation_list = loadSwapFiles(selectionSamples["fhc_ccnue"],selectionSamples["fhc_ccnumu"])
-    rhc_nue_selection_swap, rhc_nue_selection_swap_template, rhc_nue_swap_preservation_list = loadSwapFiles(selectionSamples["rhc_ccnue"],selectionSamples["rhc_ccnumu"])
+    fhc_nue_selection_swap, fhc_nue_selection_swap_template, fhc_nue_swap_preservation_list = loadSwapFiles(selectionSamples["fhc_ccnue"],selectionSamples["fhc_ccnumu"],"fhc_ccnue_swap")
+    rhc_nue_selection_swap, rhc_nue_selection_swap_template, rhc_nue_swap_preservation_list = loadSwapFiles(selectionSamples["rhc_ccnue"],selectionSamples["rhc_ccnumu"],"rhc_ccnue_swap")
  
     fhc_elastic_template_nue = ROOT.TFile(selectionSamples["fhc_elastic"]["mc"]["template_file"]).Get(selectionSamples["fhc_elastic"]["mc"]["template_hist_prefix"]+"nue")
     fhc_elastic_template_numu = ROOT.TFile(selectionSamples["fhc_elastic"]["mc"]["template_file"]).Get(selectionSamples["fhc_elastic"]["mc"]["template_hist_prefix"]+"numu")
@@ -266,6 +270,7 @@ if __name__ == "__main__":
     
     # ---------------------- Create Stitched CV Histograms -----------------------------
     sample_histogram = StitchedHistogram("sample")
+    sample_histogram.Use1000Universes(True)
 
     sample_histogram.AddScatteringFlavors("electron_fhc_elastic",fhcnueelnue)
     sample_histogram.AddScatteringFlavors("electron_rhc_elastic",rhcnueelnue)
@@ -324,7 +329,7 @@ if __name__ == "__main__":
 
     sample_histogram.Write(filename)
     #sample_histogram.SetPlottingStyle()
-    sample_histogram.DebugPlots()
+    #sample_histogram.DebugPlots()
     
     invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
     nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
@@ -333,16 +338,16 @@ if __name__ == "__main__":
     chi2-=penalty
     #chi2, penalty = Chi2DataMC(sample_histogram,marginalize=False)
     sample_histogram.PlotStitchedHistogram(nullSolution,"bin_width_normalized_ratio",True,chi2,penalty)
-    sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="NewSamples")
+    #sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="NewSamples")
 
-    if True:
+    if False:
         old_histogram.Stitch()
         invCov=old_histogram.GetInverseCovarianceMatrix(sansFlux=True)
         chi2, penalty = Chi2DataMC(old_histogram,fluxSolution=nullSolution,invCov=invCov,exclude='ratio',lam=1,marginalize=True)
         chi2-=penalty
         #chi2, penalty = Chi2DataMC(sample_histogram,marginalize=False)
         old_histogram.PlotStitchedHistogram(nullSolution,"bin_width_normalized_noratio",True,chi2,penalty)
-        sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="NewSamplesNoRatio")
+        #sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="NewSamplesNoRatio")
 
     #sample_histogram.PlotSamples(nullSolution)
     #DataMCCVPlot(mnv_data,mnv_mc,"mc_stitched_v2.png")
