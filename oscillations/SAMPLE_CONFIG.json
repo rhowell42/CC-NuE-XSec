@@ -1,7 +1,7 @@
 {
     "fhc_ccnumu": {
-        "playlist": "FHC_Selection_100Univ",
-        "selection_tag": "thesis_muon",
+        "playlist": "FHC_Selection",
+        "selection_tag": "paper_muon",
         "directory_tag": "nu_mu",
         "selection_variable": "Biased Neutrino Energy",
         "selection_template": "Reco Energy vs L/E",
@@ -9,8 +9,9 @@
         "signal_categories": ["CCQE","CCDelta","CC2p2h","CCDIS","CCOther","CCWrongSign"]
     },
     "fhc_ccnue": {
-        "playlist": "FHC_Selection_100Univ",
-        "selection_tag": "thesis",
+        "playlist": "FHC_Selection",
+        "selection_tag": "paper",
+        "swap_tag":"thesis_swap",
         "selection_variable": "Biased Neutrino Energy",
         "selection_template": "Reco Energy vs L/E",
         "background_tag": "N4_tune",
@@ -19,8 +20,8 @@
         "signal_categories": ["CCNuEQE","CCNuEDelta","CCNuEDIS","CCNuE","CCNuE2p2h","CCNuEWrongSign"]
     },
     "rhc_ccnumu": {
-        "playlist": "RHC_Selection_1000Univ",
-        "selection_tag": "thesis_muon",
+        "playlist": "RHC_Selection",
+        "selection_tag": "paper_muon",
         "selection_variable": "Biased Neutrino Energy",
         "selection_template": "Reco Energy vs L/E",
         "directory_tag": "antinu_mu",
@@ -28,8 +29,9 @@
         "signal_categories": ["CCQE","CCDelta","CC2p2h","CCDIS","CCOther","CCWrongSign"]
     },
     "rhc_ccnue": {
-        "playlist": "RHC_Selection_1000Univ",
-        "selection_tag": "thesis",
+        "playlist": "RHC_Selection",
+        "selection_tag": "paper",
+        "swap_tag":"thesis_swap",
         "selection_variable": "Biased Neutrino Energy",
         "selection_template": "Reco Energy vs L/E",
         "background_tag": "N4_tune",

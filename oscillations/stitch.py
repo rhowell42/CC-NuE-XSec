@@ -46,11 +46,11 @@ def addSignalHists(hist,cates):
 def loadSwapFiles(sample,numuSample,sampleName):
     swapDir = "/exp/minerva/data/users/{}/{}".format(os.environ["USER"],sample["directory_tag"]+"_swap")
     playlist = sample["playlist"]
-    selectionTag = sample["selection_tag"]
+    selectionTag = sample["swap_tag"]
     cates = sample["signal_categories"]
 
     AnalysisConfig.input_dir = swapDir
-    AnalysisConfig.selection_tag = selectionTag + "_swap"
+    AnalysisConfig.selection_tag = selectionTag
     AnalysisConfig.playlist = playlist
 
     type_path_map = { "swap":AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,False,False)}
