@@ -635,6 +635,23 @@ class ElectronEnergyShiftUniverse(CVSystematicUniverse):
     def GetSystematicsUniverses(chain):
         return [ElectronEnergyShiftUniverse(chain, i,region) for region in SystematicsConfig.EM_ENERGY_SCALE_UNCERTAINTY for i in OneSigmaShift]
 
+###########################################################################
+class ElectronEnergyScaleUniverse(CVSystematicUniverse):
+    def __init__(self,chain, nsigma):
+        super(ElectronEnergyScaleUniverse,self).__init__(chain, nsigma)
+
+    def ElectronEnergyRaw(self):
+        return self.nsigma*SystematicsConfig.ELECTRON_ENERGY_SCALE* super(ElectronAngleShiftUniverse,self).ElectronEnergyRaw()
+
+    def ShortName(self):
+        return "electron_scale"
+
+    def LatexName(self):
+        return "Electron Energy Scale"
+
+    @staticmethod
+    def GetSystematicsUniverses(chain):
+        return [ElectronEnergyShiftUniverse(chain, i)  for i in OneSigmaShift]
 
 ###########################################################################
 class ElectronAngleShiftUniverse(CVSystematicUniverse):
@@ -894,6 +911,9 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
 
             #Electron momentum universe
             #universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
+
+            #Electron energy scale universe
+            universes.extend(ElectronEnergyScaleUniverse.GetSystematicsUniverses(chain))
 
             #beam angle shift universe
             universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
