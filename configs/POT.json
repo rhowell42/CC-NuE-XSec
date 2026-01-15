@@ -613,6 +613,22 @@
             }
         }
     },
+    "meFHC_nueel": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcmeFHC_nueel.txt"
+            }
+        }
+    },
+    "meRHC_nueel": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcmeRHC_nueel.txt"
+            }
+        }
+    },
     "me1A_swap": {
         "mc": {
             "MAD": {

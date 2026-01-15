@@ -1,0 +1,13 @@
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p4/NUEELSignal/FHC/MasterAnaDev_mc_AnaTuple_run00110000_Playlist.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p4/NUEELSignal/FHC/MasterAnaDev_mc_AnaTuple_run00110150_Playlist.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p4/NUEELSignal/FHC/MasterAnaDev_mc_AnaTuple_run00111000_Playlist.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p4/NUEELSignal/FHC/MasterAnaDev_mc_AnaTuple_run00111030_Playlist.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p4/NUEELSignal/FHC/MasterAnaDev_mc_AnaTuple_run00111100_Playlist.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p4/NUEELSignal/FHC/MasterAnaDev_mc_AnaTuple_run00111325_Playlist.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p4/NUEELSignal/FHC/MasterAnaDev_mc_AnaTuple_run00111490_Playlist.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p4/NUEELSignal/FHC/MasterAnaDev_mc_AnaTuple_run00112000_Playlist.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p4/NUEELSignal/FHC/MasterAnaDev_mc_AnaTuple_run00113000_Playlist.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p4/NUEELSignal/FHC/MasterAnaDev_mc_AnaTuple_run00113020_Playlist.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p4/NUEELSignal/FHC/MasterAnaDev_mc_AnaTuple_run00113055_Playlist.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p4/NUEELSignal/FHC/MasterAnaDev_mc_AnaTuple_run00113270_Playlist.root
+root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p4/NUEELSignal/FHC/MasterAnaDev_mc_AnaTuple_run00113375_Playlist.root
