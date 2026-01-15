@@ -267,8 +267,6 @@ class CVPythonUniverse():
         p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
         r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
         s=r(p)
-        if s is None:
-            print (p,r,tuple(list(electronp[0])[:3]))
         return s
 
     def ElectronProtonAngle(self):
@@ -641,7 +639,7 @@ class ElectronEnergyScaleUniverse(CVSystematicUniverse):
         super(ElectronEnergyScaleUniverse,self).__init__(chain, nsigma)
 
     def ElectronEnergyRaw(self):
-        return self.nsigma*SystematicsConfig.ELECTRON_ENERGY_SCALE* super(ElectronAngleShiftUniverse,self).ElectronEnergyRaw()
+        return self.nsigma*SystematicsConfig.ELECTRON_ENERGY_SCALE* super(ElectronEnergyScaleUniverse,self).ElectronEnergyRaw()
 
     def ShortName(self):
         return "electron_scale"
@@ -651,7 +649,7 @@ class ElectronEnergyScaleUniverse(CVSystematicUniverse):
 
     @staticmethod
     def GetSystematicsUniverses(chain):
-        return [ElectronEnergyShiftUniverse(chain, i)  for i in OneSigmaShift]
+        return [ElectronEnergyScaleUniverse(chain, i)  for i in OneSigmaShift]
 
 ###########################################################################
 class ElectronAngleShiftUniverse(CVSystematicUniverse):
