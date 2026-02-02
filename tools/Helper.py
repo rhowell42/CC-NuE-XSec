@@ -9,6 +9,63 @@ ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 
 legend_text_size = .025
 
+def UndoBinWidthNorm(histogram):
+    for i in range(0,histogram.GetNbinsX()+1):
+        width = histogram.GetBinWidth(i)
+        cont = histogram.GetBinContent(i)
+        new_cont = cont*width
+        if new_cont != 0:
+            histogram.SetBinContent(i,new_cont)
+
+        for name in histogram.GetVertErrorBandNames():
+            band = histogram.GetVertErrorBand(name)
+            cont = band.GetBinContent(i)
+            new_cont = cont*width
+            if new_cont != 0:
+                band.SetBinContent(i,new_cont)
+
+            for j in range(band.GetNHists()):
+                hist = band.GetHist(j)
+                cont = hist.GetBinContent(i)
+                new_cont = cont*width
+                if new_cont != 0:
+                    hist.SetBinContent(i,new_cont)
+
+def InvertID(hist):
+    for i in range(hist.GetNbinsX()+1):
+        if hist.GetBinContent(i) == 0:
+            hist.SetBinContent(i,1.0)
+            hist.SetBinError(i,0.0)
+        elif hist.GetBinContent(i) == 1:
+            hist.SetBinContent(i,0.0)
+            hist.SetBinError(i,0.0)
+
+def sin_average(q=0,dm2=0,template=None,yaxis=True):
+    avgsin = 0
+    total_N = 0
+
+    if yaxis:
+        length = template.GetNbinsY()+1
+        axis = template.GetYaxis()
+    else:
+        length = template.GetNbinsX()+1
+        axis = template.GetXaxis()
+
+    for b in range(length):
+        lowEdge = axis.GetBinLowEdge(b)
+        upEdge = axis.GetBinUpEdge(b)
+        bin_width = upEdge-lowEdge
+        bin_center = (upEdge+lowEdge)/2
+        N_bin = template.GetBinContent(q,b)
+        total_N+=N_bin
+        if N_bin == 0:
+            continue
+        nue_sin = np.sin(1.27*dm2*bin_center)**2
+        avgsin += nue_sin * N_bin
+    if total_N != 0:
+        avgsin = avgsin / total_N
+    return(avgsin)
+
 def plot_osc_side_by_side(mc_hists,null_hists,osc_hists,data_hists,titles,plot_text,MNVPLOTTER,narrow_pads=None,narrow_factor=0.5):
     if len(osc_hists) != 8:
         raise ValueError("Need exactly 8 histograms for 2x4 layout")
@@ -249,8 +306,8 @@ def plot_osc_side_by_side(mc_hists,null_hists,osc_hists,data_hists,titles,plot_t
     c.Update()
     return c
 
-def plot_errs_side_by_side(hists,narrow_pads,narrow_factor,MNVPLOTTER):
-    if len(hists) != 8:
+def plot_errs_side_by_side(hists,narrow_pads,narrow_factor,MNVPLOTTER,cName):
+    if len(hists) * len(hists[0]) != 8:
         raise ValueError("Need exactly 8 histograms for 2x4 layout")
 
     ROOT.gStyle.SetOptTitle(1)
@@ -265,7 +322,7 @@ def plot_errs_side_by_side(hists,narrow_pads,narrow_factor,MNVPLOTTER):
     top_margin = 0.18
 
     # Column widths (relative)
-    ncols, nrows = 4, 2
+    ncols, nrows = len(hists),len(hists[0])
     col_widths = []
     for c in range(ncols):
         w = narrow_factor if c in narrow_pads else 1.0
@@ -275,103 +332,108 @@ def plot_errs_side_by_side(hists,narrow_pads,narrow_factor,MNVPLOTTER):
     row_height = 1.0 / nrows
 
     # Create canvas
-    c = ROOT.TCanvas("cerr", "2x4 histograms", 1200, 800)
+    c = ROOT.TCanvas(cName, cName, 1200, 800)
 
     # Make pads
     pads = []
-    for i, h in enumerate(hists, start=1):
-        ROOT.gStyle.SetTitleFont(43,"");
-        ROOT.gStyle.SetTitleFontSize(28);
+    i = 0
+    for col in range(len(hists)):
+        for row in range(len(hists[0])):
+            i+=1
+            h = hists[col][row]
 
-        label_size = 14
-        title_size = 18
+            ROOT.gStyle.SetTitleFont(43,"");
+            ROOT.gStyle.SetTitleFontSize(28);
 
-        h.GetXaxis().SetTitleFont(43)
-        h.GetYaxis().SetTitleFont(43)
-        h.GetXaxis().SetLabelFont(43)
-        h.GetYaxis().SetLabelFont(43)
-        h.GetXaxis().SetLabelSize(label_size)
-        h.GetXaxis().SetTitleSize(title_size)
-        h.GetYaxis().SetLabelSize(label_size)
-        h.GetYaxis().SetTitleSize(title_size)
+            label_size = 14
+            title_size = 18
 
-        row = (i - 1) // ncols  # 0 = top, 1 = bottom
-        col = (i - 1) % ncols   # 0..3
+            h.GetXaxis().SetTitleFont(43)
+            h.GetYaxis().SetTitleFont(43)
+            h.GetXaxis().SetLabelFont(43)
+            h.GetYaxis().SetLabelFont(43)
+            h.GetXaxis().SetLabelSize(label_size)
+            h.GetXaxis().SetTitleSize(title_size)
+            h.GetYaxis().SetLabelSize(label_size)
+            h.GetYaxis().SetTitleSize(title_size)
 
-        # Hide y-axis except first col
-        if col != 0:
-            h.GetYaxis().SetLabelSize(0)
-            h.GetYaxis().SetTitleSize(0)
+            # Hide y-axis except first col
+            if col != 0:
+                h.GetYaxis().SetLabelSize(0)
+                h.GetYaxis().SetTitleSize(0)
 
-        # Hide x-axis labels except bottom row
-        if row != 1:
-            h.GetXaxis().SetLabelSize(0)
-            h.GetXaxis().SetTitleSize(0)
+            # Hide x-axis labels except bottom row
+            if row != 1:
+                h.GetXaxis().SetLabelSize(0)
+                h.GetXaxis().SetTitleSize(0)
 
-        # Titles: only show on top row
-        if row != 0:
-            h.SetTitle("")
+            # Titles: only show on top row
+            if row != 0:
+                h.SetTitle("")
 
-        # Force ticks at multiples of 5
-        if i in [2, 6]:
-            h.GetXaxis().SetNdivisions(303)
-        else:
-            h.GetXaxis().SetNdivisions(505)
+            # Force ticks at multiples of 5
+            if i in [2, 6]:
+                h.GetXaxis().SetNdivisions(303)
+            else:
+                h.GetXaxis().SetNdivisions(505)
 
-        # Compute pad coords
-        x1 = sum(norm_col_widths[:col])
-        x2 = sum(norm_col_widths[:col+1])
-        y2 = 1.0 - row * row_height
-        y1 = y2 - row_height
+            # Compute pad coords
+            x1 = sum(norm_col_widths[:col])
+            x2 = sum(norm_col_widths[:col+1])
+            y2 = 1.0 - row * row_height
+            y1 = y2 - row_height
 
-        pad = ROOT.TPad(f"pad{i}", "", x1, y1, x2, y2)
+            pad = ROOT.TPad(f"pad{i}", "", x1, y1, x2, y2)
 
-        # Margins
-        pad.SetLeftMargin(left_margin if col == 0 else 0.0)       # only leftmost has y labels
-        pad.SetRightMargin(right_margin if col == ncols-1 else 0.0)
-        pad.SetTopMargin(top_margin if row == 0 else 0)        # top row has titles
-        pad.SetBottomMargin(bottom_margin if row == 1 else 0)  # bottom row has x labels
+            # Margins
+            pad.SetLeftMargin(left_margin if col == 0 else 0.0)       # only leftmost has y labels
+            pad.SetRightMargin(right_margin if col == ncols-1 else 0.0)
+            pad.SetTopMargin(top_margin if row == 0 else 0)        # top row has titles
+            pad.SetBottomMargin(bottom_margin if row == 1 else 0)  # bottom row has x labels
 
-        pad.Draw()
-        pads.append(pad)
+            pad.Draw()
+            pads.append(pad)
 
     # Font sizes (uniform across pads)
     label_size = 14
     title_size = 18
 
     # Draw hists
-    for i, (pad, h) in enumerate(zip(pads, hists), start=1):
-        row = (i - 1) // ncols  # 0 = top, 1 = bottom
-        col = (i - 1) % ncols   # 0..3
+    i = 0
+    for col in range(len(hists)):
+        for row in range(len(hists[0])):
+            i+=1
+            h = hists[col][row]
+            pad = pads[i-1]
 
-        pad.cd()
-        MNVPLOTTER.axis_maximum = 0.25
-        MNVPLOTTER.axis_title_font_x = 43
-        MNVPLOTTER.axis_title_font_y = 43
-        MNVPLOTTER.axis_label_font = 43
-        MNVPLOTTER.axis_title_size_x = 18
-        MNVPLOTTER.axis_label_size = 14
-        MNVPLOTTER.axis_title_size_y = 18
-        MNVPLOTTER.title_font = 43
-        MNVPLOTTER.extra_top_margin = 0
-        MNVPLOTTER.extra_bottom_margin = 0
-        MNVPLOTTER.extra_right_margin = 0
-        MNVPLOTTER.extra_left_margin = 0
-        MNVPLOTTER.headroom = 0
-        MNVPLOTTER.footroom = 0
-        MNVPLOTTER.legend_n_columns = 1
-        MNVPLOTTER.legend_text_size = legend_text_size*1.8
-        MNVPLOTTER.legend_offset_y = -0.065
-        MNVPLOTTER.legend_offset_x = 0.05
+            pad.cd()
+            MNVPLOTTER.axis_maximum = 0.25
+            MNVPLOTTER.axis_title_font_x = 43
+            MNVPLOTTER.axis_title_font_y = 43
+            MNVPLOTTER.axis_label_font = 43
+            MNVPLOTTER.axis_title_size_x = 18
+            MNVPLOTTER.axis_label_size = 14
+            MNVPLOTTER.axis_title_size_y = 18
+            MNVPLOTTER.title_font = 43
+            MNVPLOTTER.extra_top_margin = 0
+            MNVPLOTTER.extra_bottom_margin = 0
+            MNVPLOTTER.extra_right_margin = 0
+            MNVPLOTTER.extra_left_margin = 0
+            MNVPLOTTER.headroom = 0
+            MNVPLOTTER.footroom = 0
+            MNVPLOTTER.legend_n_columns = 1
+            MNVPLOTTER.legend_text_size = legend_text_size*1.8
+            MNVPLOTTER.legend_offset_y = -0.065
+            MNVPLOTTER.legend_offset_x = 0.05
 
-        leg = "TR" if row == 1 and col == 0 else "N"
-        MNVPLOTTER.DrawErrorSummary(h,leg,True,True,0)
+            leg = "TR" if row == 1 and col == 0 else "N"
+            MNVPLOTTER.DrawErrorSummary(h,leg,True,True,0)
 
     c.Update()
     return c
 
-def plot_side_by_side(hists,errs,data,narrow_pads=None, narrow_factor=0.5,chi2=0,penalty=0):
-    if len(hists) != 8:
+def plot_side_by_side(hists,errs,data,narrow_pads=None, narrow_factor=0.5,chi2=0,penalty=0,cName=""):
+    if len(hists) * len(hists[0]) != 8:
         raise ValueError("Need exactly 8 histograms for 2x4 layout")
 
     ROOT.gStyle.SetOptTitle(1)
@@ -380,13 +442,14 @@ def plot_side_by_side(hists,errs,data,narrow_pads=None, narrow_factor=0.5,chi2=0
         narrow_pads = []
 
     # Global min/max for log scale
-    #global_max = max(h.GetMaximum() for h in hists) TODO
-    global_max = 2300
-    [h.GetXaxis().SetRangeUser(1,6) for h in hists]
-    global_min = min(h.GetBinContent(b)
-                     for h in hists
-                     for b in range(1, h.GetNbinsX()+1)
-                     if h.GetBinContent(b) > 0)
+    global_max = max(h.GetMaximum() for row in hists for h in row)
+    #global_max = 2300
+    #[h.GetXaxis().SetRangeUser(1,6) for h in hists]
+    #hists[2].GetXaxis().SetRangeUser(1,6)
+    #hists[3].GetXaxis().SetRangeUser(1,6)
+    #hists[6].GetXaxis().SetRangeUser(1,6)
+    #hists[7].GetXaxis().SetRangeUser(1,6)
+    global_min = max(h.GetMinimum() for row in hists for h in row)
 
     # Margins
     left_margin = 0.2
@@ -395,7 +458,7 @@ def plot_side_by_side(hists,errs,data,narrow_pads=None, narrow_factor=0.5,chi2=0
     top_margin = 0.
 
     # Column widths (relative)
-    ncols, nrows = 4, 2
+    ncols, nrows = len(hists), len(hists[0])
     col_widths = []
     for c in range(ncols):
         w = narrow_factor if c in narrow_pads else 1.0
@@ -405,185 +468,188 @@ def plot_side_by_side(hists,errs,data,narrow_pads=None, narrow_factor=0.5,chi2=0
     row_height = 1.0 / nrows
 
     # Create canvas
-    c = ROOT.TCanvas("cnorm", "2x4 histograms", 1200, 800)
+    c = ROOT.TCanvas(cName, cName, 1200, 800)
 
     # Make pads
     pads = []
-    for i, h in enumerate(hists, start=1):
-        row = (i - 1) // ncols  # 0 = top, 1 = bottom
-        col = (i - 1) % ncols   # 0..3
+    i = 0
+    for col in range(ncols):
+        for row in range(nrows):
+            i+=1
 
-        # Compute pad coords
-        x1 = sum(norm_col_widths[:col])
-        x2 = sum(norm_col_widths[:col+1])
-        y2 = 1.0 - row * row_height
-        y1 = y2 - row_height
+            # Compute pad coords
+            x1 = sum(norm_col_widths[:col])
+            x2 = sum(norm_col_widths[:col+1])
+            y2 = 1.0 - row * row_height
+            y1 = y2 - row_height
 
-        pad = ROOT.TPad(f"pad{i}", "", x1, y1, x2, y2)
+            pad = ROOT.TPad(f"pad{i}", "", x1, y1, x2, y2)
 
-        # Margins
-        pad.SetLeftMargin(left_margin if col == 0 else 0.0)       # only leftmost has y labels
-        pad.SetRightMargin(right_margin if col == ncols-1 else 0.0)
-        pad.SetTopMargin(0.0)        # top row has titles
-        pad.SetBottomMargin(0.0)  # bottom row has x labels
-
-        pad.Draw()
-        pads.append(pad)
+            # Margins
+            pad.SetLeftMargin(left_margin if col == 0 else 0.0)       # only leftmost has y labels
+            pad.SetRightMargin(right_margin if col == ncols-1 else 0.0)
+            pad.SetTopMargin(0.0)        # top row has titles
+            pad.SetBottomMargin(0.0)  # bottom row has x labels
+            pad.Draw()
+            pads.append(pad)
 
     # Font sizes (uniform across pads)
     label_size = 14
     title_size = 18
 
     # Draw hists
-    for i, (pad, h) in enumerate(zip(pads, hists), start=1):
-        row = (i - 1) // ncols
-        col = (i - 1) % ncols
+    i = 0
+    for col in range(ncols):
+        for row in range(nrows):
+            h = hists[col][row]
 
-        pad.cd()
-        fraction = .6
-        top_y1 = 0.4 if row == 1 else 0.28
-        top = ROOT.TPad(f"DATAMC{i}", "", 0, top_y1, 1, 1)
-        bottom = ROOT.TPad(f"Ratio{i}", "", 0, 0, 1, top_y1)
+            pads[i].cd()
+            i+=1
 
-        top.Draw()
-        bottom.Draw()
+            fraction = .6
+            top_y1 = 0.4 if row == 1 else 0.28
+            top = ROOT.TPad(f"DATAMC{i}", "", 0, top_y1, 1, 1)
+            bottom = ROOT.TPad(f"Ratio{i}", "", 0, 0, 1, top_y1)
 
-        top.cd()
-        top.SetLogy(False)
+            top.Draw()
+            bottom.Draw()
 
-        h.SetMaximum(global_max * 1.2)
-        h.SetMinimum(0)
+            top.cd()
 
-        ROOT.gStyle.SetTitleFont(43,"");
-        ROOT.gStyle.SetTitleFontSize(28);
+            h.SetMaximum(global_max * 1.2)
+            h.SetMinimum(1)
+            top.SetLogy(True)
 
-        err = errs[i-1]
-        d = data[i-1]
+            ROOT.gStyle.SetTitleFont(43,"");
+            ROOT.gStyle.SetTitleFontSize(28);
 
-        h.GetXaxis().SetTitleFont(43)
-        h.GetYaxis().SetTitleFont(43)
-        h.GetXaxis().SetLabelFont(43)
-        h.GetYaxis().SetLabelFont(43)
-        h.GetXaxis().SetLabelSize(label_size)
-        h.GetXaxis().SetTitleSize(title_size)
-        h.GetYaxis().SetLabelSize(label_size)
-        h.GetYaxis().SetTitleSize(title_size)
-        d.GetXaxis().SetTitleFont(43)
-        d.GetYaxis().SetTitleFont(43)
-        d.GetXaxis().SetLabelFont(43)
-        d.GetYaxis().SetLabelFont(43)
-        d.GetXaxis().SetLabelSize(label_size)
-        d.GetXaxis().SetTitleSize(title_size)
-        d.GetYaxis().SetLabelSize(label_size)
-        d.GetYaxis().SetTitleSize(title_size)
+            err = errs[col][row]
+            d = data[col][row]
 
-        top.SetBottomMargin(0.0)
-        top.SetTopMargin(0.18 if row == 0 else 0.02)   # enough for title
-        bottom.SetTopMargin(0.0)
-        bottom.SetBottomMargin(0.3 if row == 1 else 0) # enough for axis labels/title
+            h.GetXaxis().SetTitleFont(43)
+            h.GetYaxis().SetTitleFont(43)
+            h.GetXaxis().SetLabelFont(43)
+            h.GetYaxis().SetLabelFont(43)
+            h.GetXaxis().SetLabelSize(label_size)
+            h.GetXaxis().SetTitleSize(title_size)
+            h.GetYaxis().SetLabelSize(label_size)
+            h.GetYaxis().SetTitleSize(title_size)
+            d.GetXaxis().SetTitleFont(43)
+            d.GetYaxis().SetTitleFont(43)
+            d.GetXaxis().SetLabelFont(43)
+            d.GetYaxis().SetLabelFont(43)
+            d.GetXaxis().SetLabelSize(label_size)
+            d.GetXaxis().SetTitleSize(title_size)
+            d.GetYaxis().SetLabelSize(label_size)
+            d.GetYaxis().SetTitleSize(title_size)
 
-        top.SetLeftMargin(left_margin if col == 0 else 0.0)       # only leftmost has y labels
-        top.SetRightMargin(right_margin if col == ncols-1 else 0.0)
+            top.SetBottomMargin(0.0)
+            top.SetTopMargin(0.18 if row == 0 else 0.02)   # enough for title
+            bottom.SetTopMargin(0.0)
+            bottom.SetBottomMargin(0.3 if row == 1 else 0) # enough for axis labels/title
 
-        bottom.SetLeftMargin(left_margin if col == 0 else 0.0)       # only leftmost has y labels
-        bottom.SetRightMargin(right_margin if col == ncols-1 else 0.0)
+            top.SetLeftMargin(left_margin if col == 0 else 0.0)       # only leftmost has y labels
+            top.SetRightMargin(right_margin if col == ncols-1 else 0.0)
 
-        # Hide y-axis except first col
-        if col != 0:
-            h.GetYaxis().SetLabelSize(0)
-            h.GetYaxis().SetTitleSize(0)
-            d.GetYaxis().SetLabelSize(0)
-            d.GetYaxis().SetTitleSize(0)
+            bottom.SetLeftMargin(left_margin if col == 0 else 0.0)       # only leftmost has y labels
+            bottom.SetRightMargin(right_margin if col == ncols-1 else 0.0)
 
-        # Hide x-axis labels except bottom row
-        if row != 1:
-            h.GetXaxis().SetLabelSize(0)
-            h.GetXaxis().SetTitleSize(0)
-            d.GetXaxis().SetLabelSize(0)
-            d.GetXaxis().SetTitleSize(0)
+            # Hide y-axis except first col
+            if col != 0:
+                h.GetYaxis().SetLabelSize(0)
+                h.GetYaxis().SetTitleSize(0)
+                d.GetYaxis().SetLabelSize(0)
+                d.GetYaxis().SetTitleSize(0)
 
-        # Titles: only show on top row
-        if row != 0:
-            h.SetTitle("")
+            # Hide x-axis labels except bottom row
+            if row != 1:
+                h.GetXaxis().SetLabelSize(0)
+                h.GetXaxis().SetTitleSize(0)
+                d.GetXaxis().SetLabelSize(0)
+                d.GetXaxis().SetTitleSize(0)
 
-        # Force ticks at multiples of 5
-        if i in [2, 6]:
-            h.GetXaxis().SetNdivisions(303)
-            d.GetXaxis().SetNdivisions(303)
-        else:
-            h.GetXaxis().SetNdivisions(505)
-            d.GetXaxis().SetNdivisions(505)
+            # Titles: only show on top row
+            if row != 0:
+                h.SetTitle("")
 
-        h.GetXaxis().SetTickSize()
-        h.GetXaxis().SetTickLength()
-        d.GetXaxis().SetTickSize()
-        d.GetXaxis().SetTickLength()
-        h.GetYaxis().SetTickSize()
-        h.GetYaxis().SetTickLength()
-        d.GetYaxis().SetTickSize()
-        d.GetYaxis().SetTickLength()
-        d.SetLineWidth(2)
-        h.Draw("HIST")
-
-        err.SetLineColor(ROOT.kRed)
-        err.SetLineWidth(2)
-        err.SetMarkerStyle(0)
-        err.SetFillColorAlpha(ROOT.kPink + 1, 0.3)
-        err.Draw("E2 SAME")
-        d.SetLineColor(ROOT.kBlack)
-        d.Draw("SAME")
-
-        if row == 0 and col == 0:
-            leg = ROOT.TLegend(.6,.4)
-            leg.SetBorderSize(0)
-            leg.SetTextSize(legend_text_size*3)
-            leg.AddEntry(h,"Monte Carlo Prediction","l")
-            leg.AddEntry(d,"Data","p")
-            leg.DrawClone()
-
-        if row == 1 and col == 0:
-            latex = ROOT.TLatex()
-            latex.SetNDC()                # Use normalized device coordinates (0–1)
-            latex.SetTextSize(legend_text_size*3)       # Adjust text size
-            latex.SetTextAlign(13)        # Align left, vertically centered
-
-            x, y = 0.45, 0.65             # Starting coordinates (NDC)
-            if penalty == 0:
-                latex.DrawLatex(x, y, "#chi^{2} = "+"{:.2f}".format(chi2))
+            # Force ticks at multiples of 5
+            if i in [2, 6]:
+                h.GetXaxis().SetNdivisions(303)
+                d.GetXaxis().SetNdivisions(303)
             else:
-                latex.DrawLatex(x, y, "#chi^{2} = "+"{:.2f} + {:.2f}".format(chi2,penalty))
+                h.GetXaxis().SetNdivisions(505)
+                d.GetXaxis().SetNdivisions(505)
 
-        bottom.cd()
-        
-        nullErrors = h.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
-        for whichBin in range(0, nullErrors.GetXaxis().GetNbins()+1): 
-            nullErrors.SetBinError(whichBin, max(nullErrors.GetBinContent(whichBin), 1e-9))
-            nullErrors.SetBinContent(whichBin, 1)
+            h.GetXaxis().SetTickSize()
+            h.GetXaxis().SetTickLength()
+            d.GetXaxis().SetTickSize()
+            d.GetXaxis().SetTickLength()
+            h.GetYaxis().SetTickSize()
+            h.GetYaxis().SetTickLength()
+            d.GetYaxis().SetTickSize()
+            d.GetYaxis().SetTickLength()
+            d.SetLineWidth(2)
+            h.Draw("HIST")
 
-        #Error envelope for the MC
-        nullErrors.SetLineWidth(0)
-        nullErrors.SetMarkerStyle(0)
-        nullErrors.SetFillColorAlpha(ROOT.kPink + 1, 0.3)
-        #nullErrors.SetMinimum(.5) TODO
-        nullErrors.SetMinimum(0.6)
-        #nullErrors.SetMaximum(1.5) TODO
-        nullErrors.SetMaximum(1.85)
+            err.SetLineColor(ROOT.kRed)
+            err.SetLineWidth(2)
+            err.SetMarkerStyle(0)
+            err.SetFillColorAlpha(ROOT.kPink + 1, 0.3)
+            err.Draw("E2 SAME")
+            d.SetLineColor(ROOT.kBlack)
+            d.Draw("SAME")
 
-        nullErrors.SetTitle("")
-        nullErrors.GetYaxis().SetTitle("Data/MC")
-        nullErrors.GetYaxis().SetNdivisions(505)
+            if row == 0 and col == 0:
+                leg = ROOT.TLegend(.6,.4)
+                leg.SetBorderSize(0)
+                leg.SetTextSize(legend_text_size*3)
+                leg.AddEntry(h,"Monte Carlo Prediction","l")
+                leg.AddEntry(d,"Data","p")
+                leg.DrawClone()
 
-        ratio = d.Clone(f"ratio_{i}")
-        ratio.Divide(ratio,h)
+            if row == 1 and col == 0:
+                latex = ROOT.TLatex()
+                latex.SetNDC()                # Use normalized device coordinates (0–1)
+                latex.SetTextSize(legend_text_size*3)       # Adjust text size
+                latex.SetTextAlign(13)        # Align left, vertically centered
 
-        straightLine = nullErrors.Clone()
-        straightLine.SetLineColor(ROOT.kRed)
-        straightLine.SetLineWidth(2)
-        straightLine.SetFillColor(0)
-        straightLine.DrawClone("HIST SAME")
+                x, y = 0.45, 0.65             # Starting coordinates (NDC)
+                if penalty == 0:
+                    latex.DrawLatex(x, y, "#chi^{2} = "+"{:.2f}".format(chi2))
+                else:
+                    latex.DrawLatex(x, y, "#chi^{2} = "+"{:.2f} + {:.2f}".format(chi2,penalty))
 
-        nullErrors.DrawClone("SAME E2")
-        ratio.DrawClone("SAME E1")
+            bottom.cd()
+            
+            nullErrors = h.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
+            for whichBin in range(0, nullErrors.GetXaxis().GetNbins()+1): 
+                nullErrors.SetBinError(whichBin, max(nullErrors.GetBinContent(whichBin), 1e-9))
+                nullErrors.SetBinContent(whichBin, 1)
+
+            #Error envelope for the MC
+            nullErrors.SetLineWidth(0)
+            nullErrors.SetMarkerStyle(0)
+            nullErrors.SetFillColorAlpha(ROOT.kPink + 1, 0.3)
+            #nullErrors.SetMinimum(.5) TODO
+            nullErrors.SetMinimum(0.55)
+            #nullErrors.SetMaximum(1.5) TODO
+            nullErrors.SetMaximum(1.25)
+
+            nullErrors.SetTitle("")
+            nullErrors.GetYaxis().SetTitle("Data/MC")
+            nullErrors.GetYaxis().SetNdivisions(505)
+
+            ratio = d.Clone(f"ratio_{i}")
+            ratio.Divide(ratio,h)
+
+            straightLine = nullErrors.Clone()
+            straightLine.SetLineColor(ROOT.kRed)
+            straightLine.SetLineWidth(2)
+            straightLine.SetFillColor(0)
+            straightLine.DrawClone("HIST SAME")
+
+            nullErrors.DrawClone("SAME E2")
+            ratio.DrawClone("SAME E1")
 
     c.Update()
     return c

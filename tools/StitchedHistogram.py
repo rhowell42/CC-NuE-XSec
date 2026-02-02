@@ -1,24 +1,17 @@
 import os
 import copy
 from collections import OrderedDict
-from itertools import compress
 import json
-import argparse
-import logging, sys
 import ROOT
 import PlotUtils
-
 import numpy as np
 
-import math
-from array import array
-
+from itertools import compress
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS, ERROR_GROUPS_CONFIG
-from tools import Utilities
-from tools.PlotLibrary import HistHolder
 ccnueroot = os.environ.get('CCNUEROOT')
 
 from tools.Helper import *
+from config.AnalysisConfig import AnalysisConfig
 
 minBinCont = 1
 errorbandDict = { #keys are the errorbands that need to be renamed, values are what to rename them to
@@ -41,6 +34,7 @@ errorbandDict = { #keys are the errorbands that need to be renamed, values are w
         "RPALow":"RPA_LowQ2",
         "Target_Mass":"Target_Mass_CH",
         }
+sample_pdgs = ["numu","nue","anumu","anue"]
 
 class StitchedHistogram:
     def __init__(self,name,dirty=False):
@@ -72,6 +66,9 @@ class StitchedHistogram:
         self.numu_templates = {}
         self.swap_templates = {}
 
+        self.preservation_hist_container = {}
+        self.preservation_hists = {}
+
         self.mc_flux_universes = []
         self.A = None # matrix of universes - MC CV
 
@@ -87,7 +84,7 @@ class StitchedHistogram:
         self.nue_template = None
         self.numu_template = None
         self.swap_template = None
-
+        
         self.nue_hist = None # nue flavor component
         self.numu_hist = None # numu flavor component
         self.swap_hist = None # flavor swapped numu -> nue sample
@@ -100,7 +97,9 @@ class StitchedHistogram:
 
         self.is_processed = False
 
-        self.use_1000_flux_universes = False
+        self.n_flux_universes = 100
+
+        self.use_1000_flux_universes = True
 
     def __del__(self):
         self.data_hists = {}
@@ -116,8 +115,8 @@ class StitchedHistogram:
         self.data_hist = None
         self.pseudo_hist = None
 
-    def Use1000Universes(self,use):
-        self.use_1000_flux_universes = use
+    def SetNFluxUniverses(self,n):
+        self.n_flux_universes = n
 
     def AddTemplates(self,name,nue=None,numu=None,swap=None):
         if name not in self.keys:
@@ -132,6 +131,26 @@ class StitchedHistogram:
         self.nue_templates[name] = nue.Clone() if nue is not None else holder.Clone()
         self.numu_templates[name] = numu.Clone() if numu is not None else holder.Clone()
         self.swap_templates[name] = swap.Clone() if swap is not None else holder.Clone()
+
+    def AddPreservationHists(self,sample,nuPdg,hist_dict):
+        # Store preservation hists keyed by plotName:
+        # hist_dict = {"plot name": hist}
+        # preservation_hist_container["plot name"] = { "fhc_numu_selection": {"numu" : hist}}
+        for plotName in hist_dict.keys():
+            if plotName in self.preservation_hist_container.keys():
+                self.preservation_hist_container[plotName][sample] = {nuPdg:hist_dict[plotName].Clone()}
+            else:
+                self.preservation_hist_container[plotName] = {sample:{nuPdg:hist_dict[plotName].Clone()}}
+                
+    def AddScatteringPreservationHists(self,sample,hist_dict):
+        # Store preservation hists keyed by plotName:
+        # hist_dict = {"plot name": {"numu":hist1,"nue":hist2,"anumu":hist3,"anue":hist4}
+        # preservation_hist_container["plot name"] = { "fhc_elastic": {"numu" : hist1,...}}
+        for plotName in hist_dict.keys():
+            if plotName in self.preservation_hist_container.keys():
+                self.preservation_hist_container[plotName][sample] = hist_dict[plotName]
+            else:
+                self.preservation_hist_container[plotName] = {sample:hist_dict[plotName]}
 
     def AddScatteringFlavors(self,name,hist):
         if name in self.nueel_flavors.keys():
@@ -164,7 +183,6 @@ class StitchedHistogram:
 
             cv = np.array(self.mc_hist)[1:-1]
             self.A = self.mc_flux_universes - np.array([cv for i in range(nhists)])
-            np.savetxt("csvs/ryan_Amatrix.csv",self.A,delimiter=',')
 
     def SetCovarianceMatrices(self):
         if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist) and type(self.mc_hist) == PlotUtils.MnvH1D:
@@ -180,11 +198,6 @@ class StitchedHistogram:
 
             self.inv_covariance = np.linalg.inv(covariance)
             self.inv_covariance_sans_flux = np.linalg.inv(cov_sans_flux)
-
-            np.savetxt("csvs/ryan_Cov.csv",covariance,delimiter=',')
-            np.savetxt("csvs/ryan_CovSansFlux.csv",cov_sans_flux,delimiter=',')
-            np.savetxt("csvs/ryan_InvCov.csv",self.inv_covariance,delimiter=',')
-            np.savetxt("csvs/ryan_InvCovSansFlux.csv",self.inv_covariance_sans_flux,delimiter=',')
         else:
             raise ValueError("MC and Data histograms must be defined before setting inv_covariance matrix")
 
@@ -226,13 +239,23 @@ class StitchedHistogram:
 
     def EmptyHist(self,h):
         h_ret = h.Clone()
-        for i in range(0,h.GetNbinsX()+1):
-            h_ret.SetBinContent(i,0)
-            h_ret.SetBinError(i,0)
-            for name in h_ret.GetVertErrorBandNames():
-                h_ret.GetVertErrorBand(name).SetBinContent(i,0)
-                for univ in range(h_ret.GetVertErrorBand(name).GetNHists()):
-                    h_ret.GetVertErrorBand(name).GetHist(univ).SetBinContent(i,0)
+        if type(h_ret) == ROOT.TH1D or type(h_ret) == PlotUtils.MnvH1D:
+            for i in range(0,h.GetNbinsX()+1):
+                h_ret.SetBinContent(i,0)
+                h_ret.SetBinError(i,0)
+                for name in h_ret.GetVertErrorBandNames():
+                    h_ret.GetVertErrorBand(name).SetBinContent(i,0)
+                    for univ in range(h_ret.GetVertErrorBand(name).GetNHists()):
+                        h_ret.GetVertErrorBand(name).GetHist(univ).SetBinContent(i,0)
+        elif type(h_ret) == ROOT.TH2D or type(h_ret) == PlotUtils.MnvH2D:
+            for i in range(0,h.GetNbinsX()+1):
+                for j in range(0,h.GetNbinsY()+1):
+                    h_ret.SetBinContent(i,j,0)
+                    h_ret.SetBinError(i,j,0)
+                    for name in h_ret.GetVertErrorBandNames():
+                        h_ret.GetVertErrorBand(name).SetBinContent(i,j,0)
+                        for univ in range(h_ret.GetVertErrorBand(name).GetNHists()):
+                            h_ret.GetVertErrorBand(name).GetHist(univ).SetBinContent(i,j,0)
 
         return(h_ret)
 
@@ -494,6 +517,30 @@ class StitchedHistogram:
         if len(list(self.nue_templates.keys())) > 0:
             self.StitchThis2D() # combine 2D templates
 
+        if len(list(self.preservation_hist_container.keys())) > 0:
+            # Construct one empty stitched hist for each plot name in preservation hists
+            for plotName in self.preservation_hist_container.keys():
+                histDict = self.preservation_hist_container[plotName]
+                self.preservation_hists[plotName] = {}
+                for sample in histDict.keys():
+                    refKey = list(histDict[sample].keys())[0]
+                    refHist = histDict[sample][refKey]
+                    if type(refHist) == PlotUtils.MnvH2D:
+                        nBinsY = refHist.GetNbinsY()
+                        yLow = refHist.GetYaxis().GetBinLowEdge(1)
+                        yUp = refHist.GetYaxis().GetBinLowEdge(nBinsY + 1)
+                        stitched_hist = ROOT.TH2D(plotName,plotName,n_bins_new,0,n_bins_new,nBinsY,yLow,yUp)
+                        for pdg in ["numu","nue","anumu","anue"]:
+                            self.preservation_hists[plotName][pdg] = stitched_hist.Clone()
+                        break
+                    elif type(refHist) == PlotUtils.MnvH1D:
+                        stitched_hist = ROOT.TH1D(plotName,plotName,n_bins_new,0,n_bins_new)
+                        for pdg in ["numu","nue","anumu","anue"]:
+                            self.preservation_hists[plotName][pdg] = stitched_hist.Clone()
+                        break
+
+            self.StitchPreservationHists() # combine histograms used for data preservation
+
         # ----- Do some errorband cleaning ----- #
         if not self.is_processed:
             print("Processing error systematics...")
@@ -523,6 +570,10 @@ class StitchedHistogram:
         self.FillErrorBandsFromDict()
         self.SetCovarianceMatrices()
         self.SetAMatrix()
+
+        self.SetPlottingStyle()
+        if AnalysisConfig.debug:
+            self.DebugPlots()
 
     def Write(self,filename):
         print("Writing histograms to {}...".format(filename))
@@ -838,7 +889,7 @@ class StitchedHistogram:
             self.pseudo_hist.SetBinError(i,err_mc)
 
             # no statistical error on elastic scattering special production
-            if 'elastic' in h or 'imd' in h or "nue" in h:
+            if 'elastic' in h or 'imd' in h:# or "nue" in h:
                 self.mc_hists[h].SetBinError(sample_i,0)
                 self.mc_hist.SetBinError(i,0)
                 self.nue_hist.SetBinError(i,0)
@@ -868,6 +919,49 @@ class StitchedHistogram:
                 self.beam_id.SetBinError(i,self.beam_ids[h].GetBinError(sample_i))
                 self.ratio_id.SetBinError(i,self.ratio_ids[h].GetBinError(sample_i))
                 self.elastic_id.SetBinError(i,self.elastic_ids[h].GetBinError(sample_i))
+
+    def StitchPreservationHists(self):
+        # preservation_hist_container["plot name"] = { "fhc_numu_selection": {"numu" : hist, ...}, ...}
+        # preservation_hists = {"plot name": {"numu" : hist1,
+        #                                     "nue"  : hist2,
+        #                                     "anumu": hist3,
+        #                                     "anue" : hist4 }, ...}
+        for plotName in self.preservation_hists.keys():
+            for pdgKey in self.preservation_hists[plotName].keys():
+                stitched_hist = self.preservation_hists[plotName][pdgKey]
+                histDict = self.preservation_hist_container[plotName]
+                for i in range(1,stitched_hist.GetNbinsX()+1):
+                    h = self.bin_dictionary[i]['sample']
+                    sample_i = self.bin_dictionary[i]['bin'] 
+
+                    emptyHist = False
+                    if h in histDict.keys() and pdgKey in histDict[h].keys():
+                        hist = histDict[h][pdgKey]
+                    elif 'ratio' in h:
+                        beam = h[:3]
+                        flavor = pdgKey.replace("a","")
+                        newH = beam+"_"+flavor+"_selection"
+                        if (newH in histDict.keys() and pdgKey in histDict[newH].keys()):
+                            hist = histDict[newH][pdgKey]
+                        else:
+                            hist = self.EmptyHist(self.mc_hists[h])
+                            emptyHist = True
+                    else:
+                        hist = self.EmptyHist(self.mc_hists[h])
+                        emptyHist = True
+
+                    # ----- do stitching ----- #
+                    if type(stitched_hist) == ROOT.TH2D:
+                        for j in range(1,hist.GetNbinsY()+1):
+                            if emptyHist:
+                                stitched_hist.SetBinContent(i,j,0)
+                            else:
+                                bin_mc = hist.GetBinContent(sample_i,j)
+                                stitched_hist.SetBinContent(i,j,bin_mc)
+                    elif type(stitched_hist) == ROOT.TH1D:
+                        bin_mc = hist.GetBinContent(sample_i)
+                        stitched_hist.SetBinContent(i,bin_mc)    
+
             
     def FillErrorBandsFromDict(self):
         for i in range(1,self.mc_hist.GetNbinsX()+1):
@@ -941,20 +1035,12 @@ class StitchedHistogram:
                             self.numu_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
                             self.swap_hists[h1].AddMissingErrorBandsAndFillWithCV(self.mc_hists[h1])
 
-                if (self.use_1000_flux_universes):
-                    self.LongFlux(self.mc_hists[h1])
-                    self.LongFlux(self.data_hists[h1])
-                    if not self.dirty:
-                        self.LongFlux(self.nue_hists[h1])
-                        self.LongFlux(self.numu_hists[h1])
-                        self.LongFlux(self.swap_hists[h1])
-                else:
-                    self.ShortFlux(self.mc_hists[h1])
-                    self.ShortFlux(self.data_hists[h1])
-                    if not self.dirty:
-                        self.ShortFlux(self.nue_hists[h1])
-                        self.ShortFlux(self.numu_hists[h1])
-                        self.ShortFlux(self.swap_hists[h1])
+                self.FillOutFlux(self.mc_hists[h1])
+                self.FillOutFlux(self.data_hists[h1])
+                if not self.dirty:
+                    self.FillOutFlux(self.nue_hists[h1])
+                    self.FillOutFlux(self.numu_hists[h1])
+                    self.FillOutFlux(self.swap_hists[h1])
 
         if type(self.mc_hist) == PlotUtils.MnvH1D:
             if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist):
@@ -966,34 +1052,39 @@ class StitchedHistogram:
             else:
                 raise ValueError("Histograms are not all set when trying to sync error bands")
 
+    def FillOutFlux(self,h):
+        name = "Flux"
+        if h.GetVertErrorBand(name).GetNHists() > self.n_flux_universes:
+            self.ShortFlux(h)
+        elif h.GetVertErrorBand(name).GetNHists() < self.n_flux_universes:
+            self.LongFlux(h)
+
     def ShortFlux(self,h):
         name = "Flux"
-        if h.GetVertErrorBand(name).GetNHists() > 100:
-            h_hists = h.GetVertErrorBand(name).GetHists()
-            h_hists = [h_hists[i] for i in range(100)]
-            useSpread = h.GetVertErrorBand(name).GetUseSpreadError()
-            errband = h.GetVertErrorBand(name)
-            h.PopVertErrorBand(name)
-            h.AddVertErrorBand(name,h_hists)
-            h.GetVertErrorBand(name).SetUseSpreadError(useSpread)
-            for i in range(h.GetNbinsX()+1):
-                h.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
+        h_hists = h.GetVertErrorBand(name).GetHists()
+        h_hists = [h_hists[i] for i in range(self.n_flux_universes)]
+        useSpread = h.GetVertErrorBand(name).GetUseSpreadError()
+        errband = h.GetVertErrorBand(name)
+        h.PopVertErrorBand(name)
+        h.AddVertErrorBand(name,h_hists)
+        h.GetVertErrorBand(name).SetUseSpreadError(useSpread)
+        for i in range(h.GetNbinsX()+1):
+            h.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
 
 
     def LongFlux(self,h):
         name = "Flux"
-        if h.GetVertErrorBand(name).GetNHists() < 1000:
-            cvClone = h.GetCVHistoWithStatError()
-            h_hists = h.GetVertErrorBand(name).GetHists()
-            h_hists = [h_hists[i] for i in range(h.GetVertErrorBand(name).GetNHists())]
-            h_hists.extend([cvClone.Clone() for i in range(1000-h.GetVertErrorBand(name).GetNHists())])
-            useSpread = h.GetVertErrorBand(name).GetUseSpreadError()
-            errband = h.GetVertErrorBand(name)
-            h.PopVertErrorBand(name)
-            h.AddVertErrorBand(name,h_hists)
-            h.GetVertErrorBand(name).SetUseSpreadError(useSpread)
-            for i in range(h.GetNbinsX()+1):
-                h.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
+        cvClone = h.GetCVHistoWithStatError()
+        h_hists = h.GetVertErrorBand(name).GetHists()
+        h_hists = [h_hists[i] for i in range(h.GetVertErrorBand(name).GetNHists())]
+        h_hists.extend([cvClone.Clone() for i in range(self.n_flux_universes-h.GetVertErrorBand(name).GetNHists())])
+        useSpread = h.GetVertErrorBand(name).GetUseSpreadError()
+        errband = h.GetVertErrorBand(name)
+        h.PopVertErrorBand(name)
+        h.AddVertErrorBand(name,h_hists)
+        h.GetVertErrorBand(name).SetUseSpreadError(useSpread)
+        for i in range(h.GetNbinsX()+1):
+            h.GetVertErrorBand(name).SetBinContent(i,errband.GetBinContent(i))
 
     def ReweightCV(self,histogram,fluxSolution,cv=None,mc=None):
         if cv is None:
@@ -1001,7 +1092,6 @@ class StitchedHistogram:
         
         band = histogram.GetVertErrorBand("Flux")
         nhists = band.GetNHists()
-        nhists = 1000 if self.use_1000_flux_universes else 100
         universes = np.array([np.array(band.GetHist(l))[1:-1] for l in range(nhists)])
         cv_table = np.array([cv for l in range(len(universes))])
         A = universes - cv_table
@@ -1051,115 +1141,58 @@ class StitchedHistogram:
         reweight(name,self.mc_hist)
         reweight(name,self.data_hist)
 
-    def PlotStitchedHistogram(self,fluxSolution=None,plotName="sample",bin_width_norm=False,chi2=0,penalty=0):
-        margin = .12
-        bottomFraction = .2
-        MNVPLOTTER = PlotUtils.MnvPlotter()
-        MNVPLOTTER.draw_normalized_to_bin_width=False
-        MNVPLOTTER.error_summary_group_map.clear();
-        for k,v in CONSOLIDATED_ERROR_GROUPS.items():
-            vec = ROOT.vector("std::string")()
-            for vs in v :
-                vec.push_back(vs)
-            MNVPLOTTER.error_summary_group_map[k]= vec
-
-        self.SetPlottingStyle()
-
-        h_mc = self.mc_hist.Clone()
-        h_data = self.data_hist.Clone()
-
-        if fluxSolution is not None:
-            mc = np.array(h_mc)[1:-1]
-            band = h_mc.GetVertErrorBand("Flux")
-            nhists = band.GetNHists()
-            universes = np.array([np.array(band.GetHist(i))[1:-1] for i in range(nhists)])
-            cv_table = np.array([mc for i in range(len(universes))])
-            A = universes - cv_table
-
-            new_cv = mc + fluxSolution @ A
-            weights = h_mc.GetCVHistoWithStatError()
-            for i in range(1,weights.GetNbinsX()+1):
-                weight = weights.GetBinContent(i) / new_cv[i-1] if new_cv[i-1] != 0 else weights.GetBinContent(i)
-                weights.SetBinContent(i,weight)
-                weights.SetBinError(i,0)
-
-            h_mc.DivideSingle(h_mc,weights)
-            h_mc.PopVertErrorBand("Flux")
-            h_mc.AddMissingErrorBandsAndFillWithCV(h_data)
-
-        if bin_width_norm:
-            mc_hists = []
-            mc_errs = []
-            data_hists = []
-            ticks = []
-
-            for h in self.stitchKeys:
-                mc_temp = self.mc_hists[h].Clone()
-                weights = self.ReweightCV(mc_temp,fluxSolution=fluxSolution)
-                mc_temp.PopVertErrorBand("Flux")
-
-                mc_errs_temp = mc_temp.GetCVHistoWithError()
-                data_temp = self.data_hists[h].Clone()
-                if "elastic" in h:
-                    mc_temp.Scale(2,"width")
-                    mc_errs_temp.Scale(2,"width")
-                    data_temp.Scale(2,"width")
-                    ticks.append([0,5,10,15,20])
-                elif "ratio" not in h:
-                    mc_temp.Scale(1,"width")
-                    mc_errs_temp.Scale(1,"width")
-                    data_temp.Scale(1,"width")
-                    if "imd" in h:
-                        ticks.append([0,5,50])
-                    else:
-                        ticks.append([0,5,50,15,20])
-                else:
-                    ticks.append([0,5,10,15,20])
-
-                mc_hists.append(mc_temp)
-                mc_errs.append(mc_errs_temp)
-                data_hists.append(data_temp)
-
-            if any("ratio" in h for h in self.mc_hists):
-                mc_hists.insert(3, mc_hists.pop(6))
-                mc_errs.insert(3, mc_errs.pop(6))
-                data_hists.insert(3, data_hists.pop(6))
-                names = ["#nu+e","#nu_{#mu}+e^{-}#rightarrow #mu^{-}+#nu_{e}","CC #nu_{#mu}", "CC #nu_{#mu}/#nu_{e}","#nu+e","IMD","CC #nu_{#mu}", "CC #nu_{#mu}/#nu_{e}"]
-            else:
-                names = ["#nu+e","#nu_{#mu}+e^{-}#rightarrow #mu^{-}+#nu_{e}","CC #nu_{#mu}", "CC #nu_{e}","#nu+e","IMD","CC #nu_{#mu}", "CC #nu_{e}"]
-
-            for i in range(len(mc_hists)):
-                mc_hists[i].SetTitle(names[i])
-                if i < 4:
-                    mc_hists[i].GetYaxis().SetTitle("#nu-mode    Events/GeV")
-                else:
-                    mc_hists[i].GetYaxis().SetTitle("#bar{#nu}-mode    Events/GeV")
-
-            canvas = plot_side_by_side(mc_hists,mc_errs,data_hists,narrow_pads=[1,4],chi2=chi2,penalty=penalty)
-            canvas.Print("plots/{}.png".format(plotName))
-
-            err_canvas = plot_errs_side_by_side(mc_hists,[1,4],0.5,MNVPLOTTER)
-            err_canvas.Print("plots/{}_errors.png".format(plotName))
-
-    def PlotSamples(self,fluxSolution=None,plotName="sample"):
-        margin = .12
-        bottomFraction = .2
-        MNVPLOTTER = PlotUtils.MnvPlotter()
-        MNVPLOTTER.draw_normalized_to_bin_width=False
-        self.SetPlottingStyle()
-
-        useSamples = len(self.data_hists) > 0
-        names = self.data_hists.keys() if useSamples else self.data_hists.keys()
+    def WriteCSVs(self):
+        dataprint = np.array(self.data_hist)[1:-1] # store MC bin contents excluding over/underflow bins
+        mcprint = np.array(self.mc_hist)[1:-1]
         
-        for name in names:
-            if not useSamples:
-                h_mc = self.mc_hists[name].Clone()
-                h_data = self.data_hists[name].Clone()
-            else:
-                h_mc = self.mc_hists[name].Clone()
-                h_data = self.data_hists[name].Clone()
+        np.savetxt("csvs/mc_cv.csv",mcprint,delimiter=',')
+        np.savetxt("csvs/data_cv.csv",dataprint,delimiter=',')
+        np.savetxt("csvs/ryan_Cov.csv",self.covariance,delimiter=',')
+        np.savetxt("csvs/ryan_CovSansFlux.csv",self.covariance_sans_flux,delimiter=',')
+        np.savetxt("csvs/ryan_InvCov.csv",self.inv_covariance,delimiter=',')
+        np.savetxt("csvs/ryan_InvCovSansFlux.csv",self.inv_covariance_sans_flux,delimiter=',')
+        np.savetxt("csvs/ryan_Amatrix.csv",self.A,delimiter=',')
+        print("Finished writing CV files")
+        for plotName in self.preservation_hists.keys():
+            for pdgKey in self.preservation_hists[plotName].keys():
+                hist = self.preservation_hists[plotName][pdgKey]
+                x_bins = hist.GetNbinsX()
+                y_bins = hist.GetNbinsY()
+                bins = np.zeros((x_bins,y_bins))
+                for y_bin in range(y_bins):
+                    for x_bin in range(x_bins): 
+                        bins[x_bin,y_bin] = hist.GetBinContent(x_bin + 1,y_bin + 1)
 
-            if fluxSolution is not None:
+                filename = plotName.replace(" ","_")
+                filename = filename.replace("/","_")
+                filename = "csvs/"+filename+"_"+pdgKey+".csv"
+                np.savetxt(filename,bins,delimiter=',')
+        print("Finished writing Preservation files")
+
+    def GetSampleGrid(self,fluxSolution,ratio=False):
+        if ratio:
+            columns = ["elastic","imd","numu_selection","ratio"]
+        else:
+            columns = ["elastic","imd","numu_selection","nue_selection"]
+
+        rows = ["fhc","rhc"]
+
+        mc_hists = []
+        mc_errs = []
+        data_hists = []
+        ticks = []
+
+        for column in columns:
+            row_mc_hists = []
+            row_mc_errs = []
+            row_data_hists = []
+            row_ticks = []
+
+            for row in rows:
+                histKey = row+"_"+column
+                h_mc = self.mc_hists[histKey].Clone()
+                h_data = self.data_hists[histKey].Clone()
+
                 mc = np.array(h_mc)[1:-1]
                 band = h_mc.GetVertErrorBand("Flux")
                 nhists = band.GetNHists()
@@ -1178,59 +1211,76 @@ class StitchedHistogram:
                 h_mc.PopVertErrorBand("Flux")
                 h_mc.AddMissingErrorBandsAndFillWithCV(h_data)
 
-            if 'elastic' in name:
-                h_mc.Scale(2,'width')
-                h_data.Scale(2,'width')
-            elif 'ratio' not in name:
-                h_mc.Scale(1,'width')
-                h_data.Scale(1,'width')
+                mc_temp = self.mc_hists[histKey].Clone()
+                weights = self.ReweightCV(mc_temp,fluxSolution=fluxSolution)
+                mc_temp.PopVertErrorBand("Flux")
 
-            overall = ROOT.TCanvas(name)
-            top = ROOT.TPad("DATAMC", "DATAMC", 0, bottomFraction, 1, 1)
-            bottom = ROOT.TPad("Ratio", "Ratio", 0, 0, 1, bottomFraction+margin)
+                mc_errs_temp = mc_temp.GetCVHistoWithError()
+                data_temp = self.data_hists[histKey].Clone()
 
-            top.Draw()
-            bottom.Draw()
+                if "elastic" in column:
+                    mc_temp.Scale(2,"width")
+                    mc_errs_temp.Scale(2,"width")
+                    data_temp.Scale(2,"width")
+                    ticks.append([0,5,10,15,20])
+                elif "ratio" not in column:
+                    mc_temp.Scale(1,"width")
+                    mc_errs_temp.Scale(1,"width")
+                    data_temp.Scale(1,"width")
+                    if "imd" in column:
+                        ticks.append([0,5,50])
+                    else:
+                        ticks.append([0,5,50,15,20])
+                else:
+                    ticks.append([0,5,10,15,20])
 
-            top.cd()
+                row_mc_hists.append(mc_temp)
+                row_mc_errs.append(mc_errs_temp)
+                row_data_hists.append(data_temp)
+                row_ticks.append(ticks)
 
-            MNVPLOTTER.DrawDataMCWithErrorBand(h_data,h_mc,1,"TR")
-         
-            bottom.cd()
-            bottom.SetTopMargin(0)
-            bottom.SetBottomMargin(0.3)
+                if row == "fhc":
+                    mc_temp.GetYaxis().SetTitle("#nu-mode    Events/GeV")
+                else:
+                    mc_temp.GetYaxis().SetTitle("#bar{#nu}-mode    Events/GeV")
 
-            ratio = h_data.Clone()
-            ratio.Divide(ratio, h_mc)
+                newTitle = mc_temp.GetTitle()
+                newTitle = newTitle[4:]
+                mc_temp.SetTitle(newTitle)
 
-            #Now fill mcRatio with 1 for bin content and fractional error
-            mcRatio = h_mc.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
-            for whichBin in range(1, mcRatio.GetXaxis().GetNbins()+1): 
-                mcRatio.SetBinError(whichBin, max(mcRatio.GetBinContent(whichBin), 1e-9))
-                mcRatio.SetBinContent(whichBin, 1)
+            mc_hists.append(row_mc_hists)
+            mc_errs.append(row_mc_errs)
+            data_hists.append(row_data_hists)
+            ticks.append(row_ticks)
 
-            #Error envelope for the MC
-            mcRatio.SetLineColor(ROOT.kRed)
-            mcRatio.SetLineWidth(2)
-            mcRatio.SetMarkerStyle(0)
-            mcRatio.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
-            mcRatio.GetYaxis().SetTitle("Data/Null Hypothesis")
-            mcRatio.SetMinimum(0)
-            mcRatio.SetMaximum(2)
-            RatioAxis(mcRatio,MNVPLOTTER)
+        return(mc_hists,mc_errs,data_hists,ticks)
 
-            mcRatio.Draw("E2")
-            
-            ratio.SetLineColor(ROOT.kBlack)
-            #ratio.SetLineWidth(3)
-            ratio.Draw('E1 X0 SAME')
+    def PlotStitchedHistogram(self,fluxSolution,plotName="sample",chi2=0,penalty=0):
+        margin = .12
+        bottomFraction = .2
+        MNVPLOTTER = PlotUtils.MnvPlotter()
+        MNVPLOTTER.draw_normalized_to_bin_width=False
+        MNVPLOTTER.error_summary_group_map.clear();
+        for k,v in CONSOLIDATED_ERROR_GROUPS.items():
+            vec = ROOT.vector("std::string")()
+            for vs in v :
+                vec.push_back(vs)
+            MNVPLOTTER.error_summary_group_map[k]= vec
 
-            straightLine = mcRatio.Clone()
-            straightLine.SetFillStyle(0)
-            straightLine.Draw("HIST SAME")
-            ROOT.gStyle.SetOptTitle(1)
-            overall.Print("plots/{}_{}.png".format(name,plotName))
+        h_mc = self.mc_hist.Clone()
+        h_data = self.data_hist.Clone()
+           
+        mc_hists,mc_errs,data_hists,ticks = self.GetSampleGrid(fluxSolution,ratio=False)
+        canvas = plot_side_by_side(mc_hists,mc_errs,data_hists,narrow_pads=[1,4],chi2=chi2,penalty=penalty,cName="c1")
+        canvas.Print("plots/sample_{}.png".format(plotName))
+        err_canvas = plot_errs_side_by_side(mc_hists,[1,4],0.5,MNVPLOTTER,"c2")
+        err_canvas.Print("plots/sample_{}_errors.png".format(plotName))
 
+        mc_hists,mc_errs,data_hists,ticks = self.GetSampleGrid(fluxSolution,ratio=True)
+        canvas = plot_side_by_side(mc_hists,mc_errs,data_hists,narrow_pads=[1,4],chi2=chi2,penalty=penalty,cName="c3")
+        canvas.Print("plots/ratio_{}.png".format(plotName))
+        err_canvas = plot_errs_side_by_side(mc_hists,[1,4],0.5,MNVPLOTTER,"c4")
+        err_canvas.Print("plots/ratio_{}_errors.png".format(plotName))
 
     def DebugPlots(self,name=""):
         c1 = ROOT.TCanvas()
@@ -1254,6 +1304,18 @@ class StitchedHistogram:
         self.swap_template.Draw("colz")
         c1.Print(dirname+"swap_template"+name+".png")
 
+        for plot in self.preservation_hists.keys():
+            for pdg in self.preservation_hists[plot].keys():
+                hist = self.preservation_hists[plot][pdg]
+                if type(hist) == ROOT.TH2D:
+                    option = "colz"
+                else:
+                    option = "hist"
+
+                c1 = ROOT.TCanvas()
+                hist.Draw(option)
+                c1.Print(dirname+plot.replace("/","")+"_"+pdg+".png")
+
         MNVPLOTTER = PlotUtils.MnvPlotter()
         MNVPLOTTER.axis_maximum = 1
         MNVPLOTTER.error_summary_group_map.clear();
@@ -1273,3 +1335,220 @@ class StitchedHistogram:
             c1.Print(dirname+key+"mc_errsummary.png")
             MNVPLOTTER.DrawErrorSummary(self.data_hists[key],"TR",True,True,0)
             c1.Print(dirname+key+"data_errsummary.png")
+
+
+    def OscillateHistogram(self,m,U_e4,U_mu4,U_tau4,fitPseudodata=False,fitFluxUniverses=False):
+        # elastic_id is 1 only for the nueel samples
+        # ratio_id is 1 only for the ratio samples
+        # if 0 is False, if 1 is True
+        hist_nue_energy = self.nue_hist.Clone()
+        hist_numu_energy = self.numu_hist.Clone()
+        hist_swap_energy = self.swap_hist.Clone()
+        hist_nutau_id = self.elastic_id.Clone()
+        hist_ratio_id = self.ratio_id.Clone()
+        hist_inv_ratio_id = hist_ratio_id.Clone()
+
+        InvertID(hist_inv_ratio_id)
+
+        if fitPseudodata:
+            hist = self.GetPseudoHistogram()
+        else:
+            hist = self.GetMCHistogram()
+
+        nue_weights = hist.GetCVHistoWithStatError().Clone()
+        numu_weights = hist.GetCVHistoWithStatError().Clone()
+        nuenutau_weights = hist.GetCVHistoWithStatError().Clone()
+        numunue_weights = hist.GetCVHistoWithStatError().Clone()
+        numunutau_weights = hist.GetCVHistoWithStatError().Clone()
+
+        for i in range(0,hist.GetNbinsX() + 1):
+            nue_sin = sin_average(i,m,self.nue_template)
+            numu_sin = sin_average(i,m,self.numu_template)
+            swap_sin = sin_average(i,m,self.swap_template)
+
+            P_ee = float(1 - 4*U_e4*(1-U_e4)*nue_sin)
+
+            P_mue = float(4*(U_e4)*(U_mu4)*swap_sin)
+
+            P_mumu = float(1 - 4*U_mu4*(1-U_mu4)*numu_sin)
+
+            P_mutau = float(4*U_tau4*U_mu4*numu_sin)
+
+            P_etau = float(4*U_e4*U_tau4*nue_sin)
+
+            nue_weights.SetBinContent(i,P_ee)
+            numu_weights.SetBinContent(i,P_mumu)
+            nuenutau_weights.SetBinContent(i,P_etau)
+            numunue_weights.SetBinContent(i,P_mue)
+            numunutau_weights.SetBinContent(i,P_mutau)
+
+            nue_weights.SetBinError(i,0)
+            numu_weights.SetBinError(i,0)
+            nuenutau_weights.SetBinError(i,0)
+            numunue_weights.SetBinError(i,0)
+            numunutau_weights.SetBinError(i,0)
+            hist_ratio_id.SetBinError(i,0)
+            hist_nutau_id.SetBinError(i,0)
+
+        numu = hist_numu_energy.Clone()
+        numu.MultiplySingle(numu,numu_weights)
+
+        nue = hist_nue_energy.Clone()
+        nue.MultiplySingle(nue,nue_weights)
+
+        numunue = hist_swap_energy.Clone()
+        numunue.MultiplySingle(numunue,numunue_weights)
+        nue.Add(numunue)
+
+        numunutau = hist_numu_energy.Clone()
+        numunutau.MultiplySingle(numunutau,numunutau_weights)
+
+        nuenutau  = hist_nue_energy.Clone()
+        nuenutau.MultiplySingle(nuenutau,nuenutau_weights)
+        nutau = numunutau.Clone()
+        nutau.Add(nuenutau)
+        nutau.MultiplySingle(nutau,hist_nutau_id)
+
+        ratio = numu.Clone()
+        ratio.Divide(ratio,nue)
+        ratio.MultiplySingle(ratio,hist_ratio_id)
+
+        nue.MultiplySingle(nue,hist_inv_ratio_id)
+        numu.MultiplySingle(numu,hist_inv_ratio_id)
+
+        osc = numu.Clone()
+        osc.Add(nue)
+        osc.Add(ratio)
+        if nutau.Integral() > 0:
+            osc.Add(nutau)
+
+        self.SetOscHistogram(osc)
+
+
+    def OscillateSubHistogram(self,name,m,U_e4,U_mu4,U_tau4):
+        # elastic_id is 1 only for the nueel samples
+        # ratio_id is 1 only for the ratio samples
+        # if 0 is False, if 1 is True
+        hist_nueTemp = self.nue_templates[name]
+        hist_numuTemp = self.numu_templates[name]
+        hist_swapTemp = self.swap_templates[name]
+
+        hist_nue_energy = self.nue_hists[name].Clone()
+        hist_numu_energy = self.numu_hists[name].Clone()
+        hist_swap_energy = self.swap_hists[name].Clone()
+
+        hist = self.nue_hists[name].Clone()
+
+        nue_weights = hist.GetCVHistoWithStatError().Clone()
+        numu_weights = hist.GetCVHistoWithStatError().Clone()
+        nuenutau_weights = hist.GetCVHistoWithStatError().Clone()
+        numunue_weights = hist.GetCVHistoWithStatError().Clone()
+        numunutau_weights = hist.GetCVHistoWithStatError().Clone()
+
+        for i in range(0,hist.GetNbinsX() + 1):
+            nue_sin = sin_average(i,m,hist_nueTemp,False)
+            numu_sin = sin_average(i,m,hist_numuTemp,False)
+            swap_sin = sin_average(i,m,hist_swapTemp,False)
+
+            P_ee = float(1 - 4*U_e4*(1-U_e4)*nue_sin)
+            
+            if ('elastic' in name):
+                scale = 1
+                P_mue = float(4*(U_e4)*(U_mu4)*swap_sin) * scale
+            else:
+                P_mue = float(4*(U_e4)*(U_mu4)*swap_sin)
+
+            P_mumu = float(1 - 4*U_mu4*(1-U_mu4)*numu_sin)
+
+            P_mutau = float(4*U_tau4*U_mu4*numu_sin)
+
+            P_etau = float(4*U_e4*U_tau4*nue_sin)
+
+            nue_weights.SetBinContent(i,P_ee)
+            numu_weights.SetBinContent(i,P_mumu)
+            nuenutau_weights.SetBinContent(i,P_etau)
+            numunue_weights.SetBinContent(i,P_mue)
+            numunutau_weights.SetBinContent(i,P_mutau)
+
+            nue_weights.SetBinError(i,0)
+            numu_weights.SetBinError(i,0)
+            nuenutau_weights.SetBinError(i,0)
+            numunue_weights.SetBinError(i,0)
+            numunutau_weights.SetBinError(i,0)
+
+        numu = hist_numu_energy.Clone()
+        numu.MultiplySingle(numu,numu_weights)
+
+        nue = hist_nue_energy.Clone()
+        nue.MultiplySingle(nue,nue_weights)
+
+        numunue = hist_swap_energy.Clone()
+        numunue.MultiplySingle(numunue,numunue_weights)
+
+        numunutau = hist_numu_energy.Clone()
+        numunutau.MultiplySingle(numunutau,numunutau_weights)
+
+        nuenutau  = hist_nue_energy.Clone()
+        nuenutau.MultiplySingle(nuenutau,nuenutau_weights)
+        nutau = numunutau.Clone()
+        nutau.Add(nuenutau)
+
+        total = nue.Clone()
+        total.Reset()
+
+        nue.SetFillColor(ROOT.kRed)
+        numu.SetFillColor(ROOT.kBlue)
+        numunue.SetFillColor(ROOT.kBlue)
+        nutau.SetFillColor(ROOT.kGray)
+
+        nue.SetLineColor(ROOT.kRed)
+        numu.SetLineColor(ROOT.kBlue)
+        numunue.SetLineColor(ROOT.kBlue)
+        nutau.SetLineColor(ROOT.kGray)
+
+        nue.SetLineWidth(0)
+        numu.SetLineWidth(0)
+        numunue.SetLineWidth(0)
+        nutau.SetLineWidth(0)
+        self.data_hists[name].SetLineWidth(1)
+
+        nue.SetFillStyle(3244)
+        numu.SetFillStyle(3744)
+        numunue.SetFillStyle(3244)
+        nutau.SetFillStyle(3409)
+
+        oscHists = []
+        nue.SetTitle("#nu_{e}")
+        numu.SetTitle("#nu_{#mu}")
+        numunue.SetTitle("#nu_{#mu}#rightarrow #nu_{e}")
+        nutau.SetTitle("#nu_{#mu}#rightarrow #nu_{#tau}")
+        self.data_hists[name].SetTitle("Oscillated {}".format(name))
+
+        if 'elastic' in name:
+            oscHists.append(nue)
+            oscHists.append(numunue)
+            oscHists.append(numu)
+            oscHists.append(nutau)
+            total.Add(numu)
+            total.Add(numunue)
+            total.Add(nutau)
+            total.Add(nue)
+        elif 'imd' in name or 'numu' in name:
+            oscHists.append(numu)
+            total.Add(numu)
+        elif 'ratio' in name:
+            oscHists.append(nue)
+            oscHists.append(numunue)
+            oscHists.append(numu)
+            total.Add(nue)
+            total.Add(numunue)
+            total.Add(numu)
+        elif 'nue' in name:
+            oscHists.append(nue)
+            oscHists.append(numunue)
+            total.Add(nue)
+            total.Add(numunue)
+        else:
+            print("No self added for {}".format(name))
+
+        return(oscHists,total)

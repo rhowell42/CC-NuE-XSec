@@ -701,6 +701,15 @@ PLOT_SETTINGS= {
             lambda event: event.kin_cal.true_E_lep],
         "tags":reco_tags
     },
+    "Electron Energy vs True Energy":
+    {
+        "name" : "nue_scattering_migration",
+        "title" : "#nu + e Scattering; True Electron Energy; True Neutrino Energy; NEvents",
+        "binning" : [PlotConfig.NUE_SCATTERING_BINNING,PlotConfig.NEUTRINO4_EE_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.true_E_lep,
+            lambda event: event.mc_incomingE/1000],
+        "tags":reco_tags
+    },
     "Available Energy vs True W":
     {
         "name" : "Eavail_trueW",

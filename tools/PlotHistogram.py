@@ -15,9 +15,9 @@ import multiprocessing
 import threading
 nthreads = 4
 from array import array
-from Tools.FitTools import *
-from Tools.Histogram import *
-from Tools.Helper import *
+from tools.Fitters import *
+from tools.StitchedHistogram import *
+from tools.Helper import *
 
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
@@ -34,28 +34,6 @@ ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 legend_text_size = .035
 
-def UndoBinWidthNorm(histogram):
-    for i in range(0,histogram.GetNbinsX()+1):
-        width = histogram.GetBinWidth(i)
-        cont = histogram.GetBinContent(i)
-        new_cont = cont*width
-        if new_cont != 0:
-            histogram.SetBinContent(i,new_cont)
-
-        for name in histogram.GetVertErrorBandNames():
-            band = histogram.GetVertErrorBand(name)
-            cont = band.GetBinContent(i)
-            new_cont = cont*width
-            if new_cont != 0:
-                band.SetBinContent(i,new_cont)
-
-            for j in range(band.GetNHists()):
-                hist = band.GetHist(j)
-                cont = hist.GetBinContent(i)
-                new_cont = cont*width
-                if new_cont != 0:
-                    hist.SetBinContent(i,new_cont)
-
 class PlottingContainer:
     def __init__(self,tag,histogram):
         self.tag = tag
@@ -64,7 +42,7 @@ class PlottingContainer:
         self.lam = 1
         self.flux_solution = None
         self.osc_parameters = {"m":0,"ue4":0,"umu4":0,"utau4":0}
-        self.invCov = None
+        self.invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True)
 
         self.exclude_samples = ["", "", "ratio"]
         self.titles = ["#nu+e, IMD, CC #nu_{#mu}, CC #nu_{#mu}/#nu_{e} #lambda = 1","#nu+e, IMD, CC #nu_{#mu}, CC #nu_{#mu}/#nu_{e} #lambda = 12", "#nu+e, IMD, CC #nu_{#mu} #lambda = 1"]
@@ -595,15 +573,15 @@ class PlottingContainer:
 
         overall.Print("plots/{}_stitched.png".format(name))
 
-    def PlotOscillationEffects(self,parameters,name="",plotSamples=False,usePseudo=False):
+    def PlotOscillationEffects(self,parameters,name="",useMarg=False,plotSamples=False,usePseudo=False):
         histogram = copy.deepcopy(self.histogram)
-        OscillateHistogram(histogram, parameters['m'], parameters['ue4'], parameters['umu4'], parameters['utau4'])
         exclude = self.exclude
         lam = self.lam
 
-        invCov=self.invCov
-        chi2_model,model_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,useOsc=True,setHists=True,usePseudo=usePseudo,exclude=exclude,lam=lam)
-        chi2_null,null_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,usePseudo=usePseudo,setHists=True,exclude=exclude,lam=lam)
+        statistic = Statistics(histogram,exclude=exclude,lam=lam)
+        chi2_model,model_pen = statistic.Chi2DataMC(marginalize=useMarg,useOsc=True,usePseudo=usePseudo)
+        chi2_null,null_pen = statistic.Chi2DataMC(marginalize=useMarg,usePseudo=usePseudo)
+
         plot_texts = ["Null Hyp. #chi^{2} = "+"{:.2f} + {:.2f}".format(chi2_null-null_pen,null_pen),
                 "Osc. Model #chi^{2} = "+"{:.2f} + {:.2f}".format(chi2_model-model_pen,model_pen),
                 "#Delta m^{2} = "+"{}".format(parameters["m"])+" eV^{2}",
@@ -718,9 +696,8 @@ class PlottingContainer:
 
         plots = histogram.keys
         histogram = copy.deepcopy(self.histogram)
-        nullSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo,exclude=exclude,lam=lam)
-        OscillateHistogram(histogram, parameters['m'], parameters['ue4'], parameters['umu4'], parameters['utau4'])
-        oscSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo,useOsc=True,exclude=exclude,lam=lam)
+        nullSolution = statistic.GetFluxFitter(useOsc=False).GetFluxSolution()
+        oscSolution = statistic.GetFluxFitter(useOsc=True).GetFluxSolution()
         #plots.append("fhc_ratio")
         #plots.append("rhc_ratio")
         #histogram.titles["fhc_ratio"] = "FHC CC #nu_{#mu}/#nu_{e} Ratio"
@@ -751,8 +728,8 @@ class PlottingContainer:
 
             hists = []
             if 'ratio' in plot:
-                numu_hists,numu_total_hist = OscillateSubHistogram(histogram,plot[:3]+'_numu_selection',parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
-                nue_hists,nue_total_hist = OscillateSubHistogram(histogram,plot[:3]+'_nue_selection',parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
+                numu_hists,numu_total_hist = histogram.OscillateSubHistogram(plot[:3]+'_numu_selection',parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
+                nue_hists,nue_total_hist = histogram.OscillateSubHistogram(plot[:3]+'_nue_selection',parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
 
                 total_hist = numu_total_hist.Clone()
                 total_hist.Divide(total_hist,nue_total_hist)
@@ -798,7 +775,7 @@ class PlottingContainer:
                 subSample = histogram.mc_hists[plot[:3]+'_numu_selection'].Clone()
                 subSample.Divide(subSample,histogram.mc_hists[plot[:3]+'_nue_selection'])
             else:
-                hists,total_hist = OscillateSubHistogram(histogram,plot,parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
+                hists,total_hist = histogram.OscillateSubHistogram(plot,parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
                 h_data = histogram.data_hists[plot].Clone()
                 subSample = histogram.mc_hists[plot].Clone()
 
@@ -807,11 +784,10 @@ class PlottingContainer:
 
             null_hist = histogram.mc_hists[plot].Clone()
 
-            weights1 = ReweightCV(null_hist, fluxSolution=nullSolution)
+            statistic.GetFluxFitter(useOsc=False).ReweightToFluxSolution(null_hist)
             null_hist.PopVertErrorBand("Flux")
 
-            weights2 = ReweightCV(total_hist,fluxSolution=oscSolution)
-
+            statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolution(total_hist)
             total_hist.PopVertErrorBand("Flux")
             total_hist.AddMissingErrorBandsAndFillWithCV(h_data)
 
@@ -819,7 +795,7 @@ class PlottingContainer:
             for hist in hists:
                 if hist.Integral() <= 0:
                     continue
-                weights = ReweightCV(hist,fluxSolution=oscSolution)
+                statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolution(hist)
                 if 'elastic' in plot:
                     hist.Scale(2,'width')
                 elif 'ratio' not in plot:

@@ -171,7 +171,6 @@ class PlotProcessor():
             for v in map(lambda wgt,*args: (list(args),wgt), wgt, *value):
                 self.FillHist(universe,*v)
         else:
-            print("filling histogram",universe.LatexName(),value,wgt)
             self.FillHist(universe,value,wgt)
 
     def FillHist(self,universe,value,wgt):

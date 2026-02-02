@@ -15,9 +15,9 @@ import multiprocessing
 import threading
 nthreads = 4
 from array import array
-from Tools.FitTools import *
-from Tools.Histogram import *
-from Tools.Helper import *
+from tools.Fitters import *
+from tools.StitchedHistogram import *
+from tools.Helper import *
 
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
