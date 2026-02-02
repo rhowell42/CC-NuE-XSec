@@ -60,7 +60,12 @@ def submitJob(tupleName,tag):
   my_wrapper.write( "cd $CCNUEROOT/oscillations\n")
   my_wrapper.write( "export USER=$(whoami)\n")
   my_wrapper.write( "source py3env/bin/activate\n")
-  my_wrapper.write( "py3env/bin/python3 makeSurface.py --grid --exclude_systematic %s --delta_m ${PROCESS} --output $CONDOR_DIR_HISTS 2>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log %s \n" % (gridargs.exclude_systematic,tupleName,tag,tupleName,tag,argstring) )
+
+  # Wrapper command doesn't like when exclude_systematic is empty
+  if len(gridargs.exclude_systematic) > 0: 
+      my_wrapper.write( "py3env/bin/python3 makeSurface.py --grid --exclude_systematic %s --delta_m ${PROCESS} --output $CONDOR_DIR_HISTS 2>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log %s \n" % (gridargs.exclude_systematic,tupleName,tag,tupleName,tag,argstring) )
+  else:
+      my_wrapper.write( "py3env/bin/python3 makeSurface.py --grid  --delta_m ${PROCESS} --output $CONDOR_DIR_HISTS 2>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log %s \n" % (tupleName,tag,tupleName,tag,argstring) )
 
   my_wrapper.write("exit $?\n")
   my_wrapper.close()

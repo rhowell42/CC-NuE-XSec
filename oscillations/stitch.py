@@ -4,7 +4,7 @@ from collections import OrderedDict
 import logging, sys
 import ROOT
 import PlotUtils
-from tools.FitTools import *
+from tools.Fitters import *
 from tools.StitchedHistogram import *
 from tools.Helper import *
 import numpy as np
@@ -31,6 +31,8 @@ errsToRemove = ["LowQ2Pi","elETracker"]
 # This helps python and ROOT not fight over deleting something, by stopping ROOT from trying to own the histogram. Thanks, Phil!
 # Specifically, w/o this, this script seg faults in the case where I try to instantiate FluxReweighterWithWiggleFit w/ nuE constraint set to False for more than one playlist
 ROOT.TH1.AddDirectory(False)
+
+binwidthScale = False
 
 def addSignalHists(hist,cates):
     h_tot = hist.hists["Total"]
@@ -67,12 +69,12 @@ def loadSwapFiles(sample,numuSample,sampleName):
     swap_hist = HistHolder(sample["selection_variable"],swap_file,"Signal",True,swap_pot,mc_pot)
     swap_template = HistHolder(sample["selection_template"],swap_file,"Signal",True,swap_pot,mc_pot)
 
-    preservation_hists  = []
+    preservation_hists  = {}
     for plotName in sample["preservation_templates"]:
         temp = HistHolder(plotName,swap_file,"Signal",True,swap_pot,mc_pot)
         temp.POTScale(binwidthScale)
         temp = addSignalHists(temp, cates)
-        preservation_hists.append(temp)
+        preservation_hists[plotName] = temp
 
     swap_hist = addSignalHists(swap_hist,cates)
     swap_template = addSignalHists(swap_template,cates)
@@ -96,13 +98,13 @@ def loadFiles(sample,sampleName=""):
     data_hist = HistHolder(sample["selection_variable"],data_file,"Signal",False,data_pot,standPOT)
     template_hist = HistHolder(sample["selection_template"],mc_file,"Signal",True,mc_pot,standPOT)
 
-    preservation_hists  = []
+    preservation_hists  = {}
     for plotName in sample["preservation_templates"]:
         temp = HistHolder(plotName,mc_file,"Signal",True,mc_pot,standPOT)
         temp.POTScale(binwidthScale)
         temp = addSignalHists(temp,cates)
         if (temp):
-            preservation_hists.append(temp)
+            preservation_hists[plotName] = temp
 
     data_hist.POTScale(binwidthScale)
     mc_hist.POTScale(binwidthScale)
@@ -122,35 +124,48 @@ def loadFiles(sample,sampleName=""):
     #print("mc:",mc_hist)
     #print("template:",template_hist)
     #print("preservation:",preservation_hists)
-    return data_hist, mc_hist, template_hist, preservation_hists 
+    return data_hist, mc_hist, template_hist, preservation_hists
 
+def ChangeEnergyScaleSystematic(cv,universe,oldScale,newScale):
+    for i in range(cv.GetNbinsX()+1):
+        difference = universe.GetBinContent(i) - cv.GetBinContent(i)
+        newOffset = difference * newScale/oldScale
+        newContent = cv.GetBinContent(i) + newOffset
+        universe.SetBinContent(i,newContent)
 
-if __name__ == "__main__":
-    binwidthScale = False
-
+def CreateFromSamples(sampleJson):
     fhc_scale_CV = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Electron_Scale_electron_scale_MAD.root").Get("EN4")
     fhc_scale_p1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_p1sig")
     fhc_scale_m1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/nu_e/kin_dist_mcFHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_m1sig")
-    fhc_scale_p1sig = fhc_scale_p1sig/fhc_scale_CV
-    fhc_scale_m1sig = fhc_scale_m1sig/fhc_scale_CV
+
     rhc_scale_CV = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Electron_Scale_electron_scale_MAD.root").Get("EN4")
     rhc_scale_p1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_p1sig")
     rhc_scale_m1sig = ROOT.TFile.Open("/exp/minerva/data/users/rhowell/antinu_e/kin_dist_mcRHC_Electron_Scale_electron_scale_MAD.root").Get("EN4_m1sig")
+
+    # Change the 2% electron energy scale to 1%; not perfect for edge case of 0
+    ChangeEnergyScaleSystematic(fhc_scale_CV,fhc_scale_p1sig,0.2,0.1)
+    ChangeEnergyScaleSystematic(fhc_scale_CV,fhc_scale_m1sig,0.2,0.1)
+    ChangeEnergyScaleSystematic(rhc_scale_CV,rhc_scale_p1sig,0.2,0.1)
+    ChangeEnergyScaleSystematic(rhc_scale_CV,rhc_scale_m1sig,0.2,0.1)
+
+    fhc_scale_p1sig = fhc_scale_p1sig/fhc_scale_CV
+    fhc_scale_m1sig = fhc_scale_m1sig/fhc_scale_CV
+
     rhc_scale_p1sig = rhc_scale_p1sig/rhc_scale_CV
     rhc_scale_m1sig = rhc_scale_m1sig/rhc_scale_CV
 
     selectionSamples = {}
-    with open("SAMPLE_CONFIG.json", "r") as file:
+    with open(sampleJson, "r") as file:
         selectionSamples = json.load(file)
             
-    fhc_numu_selection_data, fhc_numu_selection_mc, fhc_numu_selection_template, fhc_numu_preservation_list = loadFiles(selectionSamples["fhc_ccnumu"],"fhc_ccnumu")
-    rhc_numu_selection_data, rhc_numu_selection_mc, rhc_numu_selection_template, rhc_numu_preservation_list = loadFiles(selectionSamples["rhc_ccnumu"],"rhc_ccnumu")
+    fhc_numu_selection_data, fhc_numu_selection_mc, fhc_numu_selection_template, fhc_numu_preservation_dict = loadFiles(selectionSamples["fhc_ccnumu"],"fhc_ccnumu")
+    rhc_numu_selection_data, rhc_numu_selection_mc, rhc_numu_selection_template, rhc_numu_preservation_dict = loadFiles(selectionSamples["rhc_ccnumu"],"rhc_ccnumu")
 
-    fhc_nue_selection_data, fhc_nue_selection_mc, fhc_nue_selection_template, fhc_nue_preservation_list = loadFiles(selectionSamples["fhc_ccnue"],"fhc_ccnue")
-    rhc_nue_selection_data, rhc_nue_selection_mc, rhc_nue_selection_template, rhc_nue_preservation_list = loadFiles(selectionSamples["rhc_ccnue"],"rhc_ccnue")
+    fhc_nue_selection_data, fhc_nue_selection_mc, fhc_nue_selection_template, fhc_nue_preservation_dict = loadFiles(selectionSamples["fhc_ccnue"],"fhc_ccnue")
+    rhc_nue_selection_data, rhc_nue_selection_mc, rhc_nue_selection_template, rhc_nue_preservation_dict = loadFiles(selectionSamples["rhc_ccnue"],"rhc_ccnue")
 
-    fhc_nue_selection_swap, fhc_nue_selection_swap_template, fhc_nue_swap_preservation_list = loadSwapFiles(selectionSamples["fhc_ccnue"],selectionSamples["fhc_ccnumu"],"fhc_ccnue_swap")
-    rhc_nue_selection_swap, rhc_nue_selection_swap_template, rhc_nue_swap_preservation_list = loadSwapFiles(selectionSamples["rhc_ccnue"],selectionSamples["rhc_ccnumu"],"rhc_ccnue_swap")
+    fhc_nue_selection_swap, fhc_nue_selection_swap_template, fhc_nue_swap_preservation_dict = loadSwapFiles(selectionSamples["fhc_ccnue"],selectionSamples["fhc_ccnumu"],"fhc_ccnue_swap")
+    rhc_nue_selection_swap, rhc_nue_selection_swap_template, rhc_nue_swap_preservation_dict = loadSwapFiles(selectionSamples["rhc_ccnue"],selectionSamples["rhc_ccnumu"],"rhc_ccnue_swap")
  
     fhc_elastic_template_nue = ROOT.TFile(selectionSamples["fhc_elastic"]["mc"]["template_file"]).Get(selectionSamples["fhc_elastic"]["mc"]["template_hist_prefix"]+"nue")
     fhc_elastic_template_numu = ROOT.TFile(selectionSamples["fhc_elastic"]["mc"]["template_file"]).Get(selectionSamples["fhc_elastic"]["mc"]["template_hist_prefix"]+"numu")
@@ -216,6 +231,16 @@ if __name__ == "__main__":
     rhcnueelanue = ROOT.TFile.Open(selectionSamples["rhc_elastic"]["mc"]["pdg_hist_file"]).Get(selectionSamples["rhc_elastic"]["mc"]["pdg_hist_prefix"]+'anue')
     rhcnueelanumu = ROOT.TFile.Open(selectionSamples["rhc_elastic"]["mc"]["pdg_hist_file"]).Get(selectionSamples["rhc_elastic"]["mc"]["pdg_hist_prefix"]+'anumu')
 
+    fhcnueel_preservation_nue = ROOT.TFile.Open(selectionSamples["fhc_elastic"]["mc"]["preservation_hist_file"]).Get(selectionSamples["fhc_elastic"]["mc"]["preservation_hist_prefix"]+'nue')
+    fhcnueel_preservation_numu = ROOT.TFile.Open(selectionSamples["fhc_elastic"]["mc"]["preservation_hist_file"]).Get(selectionSamples["fhc_elastic"]["mc"]["preservation_hist_prefix"]+'numu')
+    fhcnueel_preservation_anue = ROOT.TFile.Open(selectionSamples["fhc_elastic"]["mc"]["preservation_hist_file"]).Get(selectionSamples["fhc_elastic"]["mc"]["preservation_hist_prefix"]+'anue')
+    fhcnueel_preservation_anumu = ROOT.TFile.Open(selectionSamples["fhc_elastic"]["mc"]["preservation_hist_file"]).Get(selectionSamples["fhc_elastic"]["mc"]["preservation_hist_prefix"]+'anumu')
+    
+    rhcnueel_preservation_nue = ROOT.TFile.Open(selectionSamples["rhc_elastic"]["mc"]["preservation_hist_file"]).Get(selectionSamples["rhc_elastic"]["mc"]["preservation_hist_prefix"]+'nue')
+    rhcnueel_preservation_numu = ROOT.TFile.Open(selectionSamples["rhc_elastic"]["mc"]["preservation_hist_file"]).Get(selectionSamples["rhc_elastic"]["mc"]["preservation_hist_prefix"]+'numu')
+    rhcnueel_preservation_anue = ROOT.TFile.Open(selectionSamples["rhc_elastic"]["mc"]["preservation_hist_file"]).Get(selectionSamples["rhc_elastic"]["mc"]["preservation_hist_prefix"]+'anue')
+    rhcnueel_preservation_anumu = ROOT.TFile.Open(selectionSamples["rhc_elastic"]["mc"]["preservation_hist_file"]).Get(selectionSamples["rhc_elastic"]["mc"]["preservation_hist_prefix"]+'anumu')
+
     # ---------------------- Fix Flavor Weights -----------------------------
     f1 = fhcnueelnue.Clone()
     f1.Add(fhcnueelanue)
@@ -270,7 +295,7 @@ if __name__ == "__main__":
     
     # ---------------------- Create Stitched CV Histograms -----------------------------
     sample_histogram = StitchedHistogram("sample")
-    sample_histogram.Use1000Universes(True)
+    sample_histogram.SetNFluxUniverses(100)
 
     sample_histogram.AddScatteringFlavors("electron_fhc_elastic",fhcnueelnue)
     sample_histogram.AddScatteringFlavors("electron_rhc_elastic",rhcnueelnue)
@@ -301,6 +326,30 @@ if __name__ == "__main__":
     sample_histogram.AddTemplates("rhc_numu_selection",numu=rhc_numu_selection_template)
     sample_histogram.AddTemplates("rhc_nue_selection",nue=rhc_nue_selection_template,swap=rhc_nue_selection_swap_template)
 
+    sample_histogram.AddPreservationHists("fhc_numu_selection","numu",fhc_numu_preservation_dict)
+    sample_histogram.AddPreservationHists("fhc_nue_selection","nue",fhc_nue_preservation_dict)
+    sample_histogram.AddPreservationHists("rhc_numu_selection","anumu",rhc_numu_preservation_dict)
+    sample_histogram.AddPreservationHists("rhc_nue_selection","anue",rhc_nue_preservation_dict)
+
+    sample_histogram.AddScatteringPreservationHists("fhc_elastic",{"True Energy vs Biased Neutrino Energy":{
+        "numu":fhcnueel_preservation_numu,
+        "nue":fhcnueel_preservation_nue,
+        "anumu":fhcnueel_preservation_anumu,
+        "anue":fhcnueel_preservation_anue},"True Energy vs L/E":{
+            "numu":fhc_elastic_template_numu,
+            "nue":fhc_elastic_template_nue,
+            "anumu":fhc_elastic_template_anumu,
+            "anue":fhc_elastic_template_anue}})
+    sample_histogram.AddScatteringPreservationHists("rhc_elastic",{"True Energy vs Biased Neutrino Energy":{
+        "numu":rhcnueel_preservation_numu,
+        "nue":rhcnueel_preservation_nue,
+        "anumu":rhcnueel_preservation_anumu,
+        "anue":rhcnueel_preservation_anue},"True Energy vs L/E":{
+            "numu":rhc_elastic_template_numu,
+            "nue":rhc_elastic_template_nue,
+            "anumu":rhc_elastic_template_anumu,
+            "anue":rhc_elastic_template_anue}})
+
     # ----- Process Systematics and Synchronize across histograms ----- #
     sample_histogram.CleanErrorBands(errsToRemove)
     old_histogram = copy.deepcopy(sample_histogram)
@@ -317,38 +366,18 @@ if __name__ == "__main__":
     # ----- Stitch histograms together ----- #
     sample_histogram.Stitch()
 
-    mnv_data = sample_histogram.data_hist.Clone()
-    mnv_mc   = sample_histogram.mc_hist.Clone()
+    return(sample_histogram)
 
-    dataprint = np.array(mnv_data)[1:-1] # store MC bin contents excluding over/underflow bins
-    mcprint = np.array(mnv_mc)[1:-1]
-    np.savetxt("csvs/mc_cv.csv",mcprint,delimiter=',')
-    np.savetxt("csvs/data_cv.csv",dataprint,delimiter=',')
+if __name__ == "__main__":
+    sample_histogram = CreateFromSamples("SAMPLE_CONFIG.json")
+    sample_histogram.WriteCSVs()
     
     filename = "{}/oscillations/rootfiles/NuE_stitched_hists.root".format(ccnueroot)
-
     sample_histogram.Write(filename)
-    #sample_histogram.SetPlottingStyle()
-    #sample_histogram.DebugPlots()
     
-    invCov=sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
-    nullSolution,nullPen = FluxSolution(sample_histogram,invCov=invCov)
+    statistic = Statistics(sample_histogram)
+    chi2,penalty = statistic.Chi2DataMC()
 
-    chi2, penalty = Chi2DataMC(sample_histogram,fluxSolution=nullSolution,invCov=invCov,exclude='ratio',lam=1,marginalize=True)
-    chi2-=penalty
-    #chi2, penalty = Chi2DataMC(sample_histogram,marginalize=False)
-    sample_histogram.PlotStitchedHistogram(nullSolution,"bin_width_normalized_ratio",True,chi2,penalty)
-    #sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="NewSamples")
-
-    if False:
-        old_histogram.Stitch()
-        invCov=old_histogram.GetInverseCovarianceMatrix(sansFlux=True)
-        chi2, penalty = Chi2DataMC(old_histogram,fluxSolution=nullSolution,invCov=invCov,exclude='ratio',lam=1,marginalize=True)
-        chi2-=penalty
-        #chi2, penalty = Chi2DataMC(sample_histogram,marginalize=False)
-        old_histogram.PlotStitchedHistogram(nullSolution,"bin_width_normalized_noratio",True,chi2,penalty)
-        #sample_histogram.PlotSamples(fluxSolution=nullSolution,plotName="NewSamplesNoRatio")
-
-    #sample_histogram.PlotSamples(nullSolution)
-    #DataMCCVPlot(mnv_data,mnv_mc,"mc_stitched_v2.png")
-
+    fluxSolution = statistic.GetFluxFitter().GetFluxSolution()
+    
+    sample_histogram.PlotStitchedHistogram(fluxSolution,"bin_width_normalized_ratio",chi2,penalty)

@@ -23,8 +23,9 @@ from array import array
 
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
-from Tools.Histogram import *
-from Tools.PlotHistogram import *
+from tools.StitchedHistogram import *
+from tools.PlotHistogram import *
+from tools.Fitters import *
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
@@ -62,25 +63,30 @@ if __name__ == "__main__":
     sample_histogram = StitchedHistogram("sample")
     sample_histogram.Load(file_path)
 
-    invCov = sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
+    if True:
+        stat = Statistics(sample_histogram,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
+        chi2_null,penalty = stat.Chi2DataMC(marginalize=True)
+        print("null chi2: {:.3f}".format(chi2_null))
 
-    chi2_null,penalty = Chi2DataMC(sample_histogram,invCov=invCov,marginalize=True,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
-    print("null chi2: {:.3f}".format(chi2_null))
+        fitter = OscillationFitter(sample_histogram,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
+        chi2_fit,res = fitter.DoFit()
 
-    fitter = Fitter(sample_histogram,invCov=invCov,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
-    chi2_fit,res = fitter.DoFit()
+        print("Data fit: delta chi2 = {:.3f} = {:.3f} - {:.3f}".format(chi2_null-chi2_fit,chi2_null,chi2_fit))
+        print("Best fit params:")
+        print("   delta m^2 = {:.3f} eV^2 +- {:.4f}".format(res['m'],0))
+        print("   U_e4^2    = {:.3f}      +- {:.4f}".format(res['ue4'],0))
+        print("   U_mu4^2   = {:.5f}    +- {:.4f}".format(res['umu4'],0))
+        print("   U_tau4^2  = {:.3f}      +- {:.4f}".format(res['utau4'],0))
 
-    print("Data fit: delta chi2 = {:.3f} = {:.3f} - {:.3f}".format(chi2_null-chi2_fit,chi2_null,chi2_fit))
-    print("Best fit params:")
-    print("   delta m^2 = {:.3f} eV^2 +- {:.4f}".format(res['m'],0))
-    print("   U_e4^2    = {:.3f}      +- {:.4f}".format(res['ue4'],0))
-    print("   U_mu4^2   = {:.5f}    +- {:.4f}".format(res['umu4'],0))
-    print("   U_tau4^2  = {:.3f}      +- {:.4f}".format(res['utau4'],0))
-    sample_histogram.SetPlottingStyle()
+    #Data fit: delta chi2 = 9.804 = 139.977 - 130.172
+    res = {"m":13.142,
+           "ue4":0.036,
+           "umu4":0.02251,
+           "utau4":0.660}
+    sample_histogram.OscillateHistogram(res['m'], res['ue4'], res['umu4'], res['utau4'])
 
     plotter = PlottingContainer("fitted_histogram",sample_histogram)
     plotter.SetExclude(AnalysisConfig.exclude)
-    plotter.SetInverseCovariance(invCov)
     plotter.SetLambda(AnalysisConfig.lambdaValue)
 
     plotter.PlotOscillationEffects(res,AnalysisConfig.ntuple_tag,plotSamples=True)

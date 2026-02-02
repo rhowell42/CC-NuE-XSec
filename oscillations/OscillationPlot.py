@@ -8,8 +8,8 @@ import math
 from array import array
 
 from tools.PlotLibrary import HistHolder
-from Tools.Histogram import *
-from Tools.FitTools import *
+from tools.StitchedHistogram import *
+from tools.Fitters import *
 from config.AnalysisConfig import AnalysisConfig
 ccnueroot = os.environ.get('CCNUEROOT')
 
