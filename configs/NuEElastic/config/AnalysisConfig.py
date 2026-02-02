@@ -21,8 +21,8 @@ import sys
 import pprint
 import re
 
-BLUEARC = "/exp/minerva/data/users/{}/antinu_e".format(os.environ["USER"])
-GIRDOUTPUT ="/pnfs/minerva/persistent/"
+BLUEARC = "/exp/minerva/data/users/{}/nueel".format(os.environ["USER"])
+GIRDOUTPUT ="/pnfs/minerva/scratch/"
 
 
 SIDEBANDS=["dEdX"]

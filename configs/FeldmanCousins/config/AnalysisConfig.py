@@ -292,6 +292,11 @@ parser.add_argument("--count",
                     nargs = 2,
                     default = [None,None])
 
+parser.add_argument("--debug",
+                    help="print debug plots to check that histogram stitching works.",
+                    action="store_true",
+                    default=False)
+
 parser.add_argument("--cal_POT","--cal-POT",
                     help="recount POT even if POT info is available",
                     dest = "POT_cal",
