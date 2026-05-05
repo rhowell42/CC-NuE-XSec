@@ -51,11 +51,11 @@ class OscillationFitter():
         bounds = np.array([[0.0,1.0],[0.0,0.15],[0.0,0.41],[0,0.66]], dtype = float)
         cons = optimize.LinearConstraint([[0,1,1,1]],-np.inf,1)
 
-        null = optimize.minimize(fun=self.CalChi2,x0=x0,tol=self.tol,options={"maxiter":20},method="SLSQP",bounds=bounds,constraints=cons)
+        null = optimize.minimize(fun=self.CalChi2,x0=x0,tol=self.tol,options={"maxiter":40},method="SLSQP",bounds=bounds,constraints=cons)
         null_chi2 = float(null.fun)
         print("fit near null: {}".format(null.fun))
 
-        res = optimize.differential_evolution(func=self.CalChi2,tol=self.tol,bounds=bounds,polish=False,x0=x0,maxiter=50,disp=True,constraints=cons)
+        res = optimize.differential_evolution(func=self.CalChi2,tol=self.tol,bounds=bounds,polish=False,x0=x0,maxiter=100,disp=True,constraints=cons)
         new_x0 = res.x
         print("best fit: {}".format(res.fun))
 
@@ -75,18 +75,31 @@ class OscillationFitter():
         U_mu4 = x[2]
         U_tau4 = x[3]
         self.hist.OscillateHistogram(ms,U_e4,U_mu4,U_tau4,False,False)
-
         chi2,penalty = self.statistic.Chi2DataMC(marginalize=True,useOsc=True)
         return(chi2)
 
 class FluxFitter():
-    def __init__(self,histogram,exclude,lam,usePseudo,useOsc=False):
+    def __init__(self,histogram,exclude,lam,usePseudo=False,useOsc=False):
         self.hist = histogram
         self.exclude = exclude
         self.lam = lam
 
         if usePseudo:
             self.dataHist = histogram.GetPseudoHistogram()
+        else:
+            self.dataHist = histogram.GetDataHistogram()
+
+        if useOsc:
+            self.mcHist = histogram.GetOscillatedHistogram()
+        else:
+            self.mcHist = histogram.GetMCHistogram()
+
+        self.SolveFluxSolution()
+
+    def SetHistogram(self,hist):
+        self.hist = histogram
+        if usePseudo:
+            self.dataHist= histogram.GetPseudoHistogram()
         else:
             self.dataHist = histogram.GetDataHistogram()
 
@@ -134,7 +147,7 @@ class FluxFitter():
     def ReweightToFluxSolution(self,histogram):
         mc = np.array(histogram)[1:-1]
         band = histogram.GetVertErrorBand("Flux")
-        nhists = band.GetNHists()
+        nhists = self.mcHist.GetVertErrorBand("Flux").GetNHists()
         universes = np.array([np.array(band.GetHist(l))[1:-1] for l in range(nhists)])
         cv_table = np.array([mc for l in range(len(universes))])
         A = universes - cv_table
@@ -163,6 +176,9 @@ class Statistics():
         else:
             return(self.nulFluxFitter)
 
+    def SetHistogram(self,histogram):
+        self.hist = histogram
+
     def Chi2DataMC(self,marginalize=True,usePseudo=False,useOsc=False): 
         ##### Get self.hists to calculate chi2 between #####
         if useOsc:
@@ -190,6 +206,7 @@ class Statistics():
         # Do we want to marginalize over the flux systematic before calculating chi2
         if marginalize:
             fluxFitter = FluxFitter(self.hist,self.exclude,self.lam,usePseudo,useOsc)
+            oldMc = mc
             mc,penalty = fluxFitter.MarginalizeFlux()
             invCov = self.hist.GetInverseCovarianceMatrix(sansFlux=True)
 

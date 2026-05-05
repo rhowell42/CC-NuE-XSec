@@ -162,6 +162,10 @@ class StitchedHistogram:
         if name in self.swap_hists.keys():
             print("{} has already been added to swapped sample dictionary. Doing nothing.".format(name))
         else:
+            beam = name[:3]
+            scaleIntegral = self.numu_hists[beam+"_numu_selection"].Integral()
+            swapIntegral = hist.Integral()
+            hist.Scale(scaleIntegral/swapIntegral)
             self.swap_hists[name] = hist.Clone()
 
     def SetDataHistogram(self,hist):
@@ -1163,10 +1167,19 @@ class StitchedHistogram:
                     for x_bin in range(x_bins): 
                         bins[x_bin,y_bin] = hist.GetBinContent(x_bin + 1,y_bin + 1)
 
-                filename = plotName.replace(" ","_")
-                filename = filename.replace("/","_")
-                filename = "csvs/"+filename+"_"+pdgKey+".csv"
+                fileExt = plotName.replace(" ","_")
+                fileExt = fileExt.replace("/","_")
+                fileExt+= "_"+pdgKey
+                filename = "csvs/"+fileExt+".csv"
                 np.savetxt(filename,bins,delimiter=',')
+
+                c1 = ROOT.TCanvas()
+                option = "hist"
+                if type(hist) == ROOT.TH2D:
+                    option = "colz"
+                hist.Draw()
+                c1.Print("plots/debug_{}.png".format(fileExt))
+
         print("Finished writing Preservation files")
 
     def GetSampleGrid(self,fluxSolution,ratio=False):

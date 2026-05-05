@@ -605,6 +605,33 @@ PLOT_SETTINGS= {
                           lambda event: event.prong_axis_vertex[0][2] - event.vtx[2]],
         "tags":reco_tags
     },
+    "Lepton Momentum Resolution vs Vertex X":
+    {
+        "name" : "res_lep_mom_vs_vertex_x",
+        "title": "Momentum Reconstruction vs Vertex-X; (Reco - True)/True Lepton Momentum; Vertex X [ mm ]; NEvents",
+        "binning":[[i/10 for i in range(-10,10)],[i for i in range(-900,900,200)]],
+        "value_getter" : [lambda event: (event.kin_cal.reco_P_lep - event.kin_cal.true_P_lep)/event.kin_cal.true_P_lep,
+                          lambda event: event.prong_axis_vertex[0][0]],
+        "tags":reco_tags
+    },
+    "Lepton Momentum Resolution vs Vertex Y":
+    {
+        "name" : "res_lep_mom_vs_vertex_y",
+        "title": "Momentum Reconstruction vs Vertex-Y; (Reco - True)/True Lepton Momentum; Vertex Y [ mm ]; NEvents",
+        "binning":[[i/10 for i in range(-10,10)],[i for i in range(-900,900,200)]],
+        "value_getter" : [lambda event: (event.kin_cal.reco_P_lep - event.kin_cal.true_P_lep)/event.kin_cal.true_P_lep,
+                          lambda event: event.prong_axis_vertex[0][1]],
+        "tags":reco_tags
+    },
+    "Lepton Momentum Resolution vs Vertex Z":
+    {
+        "name" : "res_lep_mom_vs_vertex_z",
+        "title": "Momentum Reconstruction vs Vertex-Z; (Reco - True)/True Lepton Momentum; Vertex Z [ mm ]; NEvents",
+        "binning":[[i/10 for i in range(-10,10)],[i for i in range(5500,8600,300)]],
+        "value_getter" : [lambda event: (event.kin_cal.reco_P_lep - event.kin_cal.true_P_lep)/event.kin_cal.true_P_lep,
+                          lambda event: event.prong_axis_vertex[0][2]],
+        "tags":reco_tags
+    },
     "Prong Distance":
     {
         "name" : "proton_electron_distance",
@@ -840,6 +867,7 @@ class HistHolder:
     def __init__(self, name, f, sideband, is_mc, pot=1.0,data_pot=None): 
         self.plot_name = TranslateSettings(name)["name"]
         self.dimension = len(TranslateSettings(name)["value_getter"])
+        self.title = TranslateSettings(name)["title"]
         self.is_mc = is_mc
         self.hists= {}
         self.sideband=sideband
@@ -850,6 +878,11 @@ class HistHolder:
         
         if f is not None: 
             self.valid = self.ReadHistograms(f)
+
+    def __str__(self):
+        return f"""HistHolder(plot_name='{self.plot_name}', dimension='{self.dimension}', is_mc='{self.is_mc}', 
+        hists='{self.hists}', sideband='{self.sideband}', pot_scale='{self.pot_scale}', valid='{self.valid}',
+        bin_width_scaled='{self.bin_width_scaled}', POT_scaled='{self.POT_scaled}')"""
 
     def ReadHistograms(self,f):
         variant_arg = [self.plot_name]

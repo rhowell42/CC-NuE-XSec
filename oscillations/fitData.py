@@ -63,7 +63,7 @@ if __name__ == "__main__":
     sample_histogram = StitchedHistogram("sample")
     sample_histogram.Load(file_path)
 
-    if True:
+    if False:
         stat = Statistics(sample_histogram,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
         chi2_null,penalty = stat.Chi2DataMC(marginalize=True)
         print("null chi2: {:.3f}".format(chi2_null))
@@ -77,12 +77,18 @@ if __name__ == "__main__":
         print("   U_e4^2    = {:.3f}      +- {:.4f}".format(res['ue4'],0))
         print("   U_mu4^2   = {:.5f}    +- {:.4f}".format(res['umu4'],0))
         print("   U_tau4^2  = {:.3f}      +- {:.4f}".format(res['utau4'],0))
+    else:
 
-    #Data fit: delta chi2 = 9.804 = 139.977 - 130.172
-    res = {"m":13.142,
-           "ue4":0.036,
-           "umu4":0.02251,
-           "utau4":0.660}
+        #Data fit: delta chi2 = 9.804 = 139.977 - 130.172
+        res = {"m":13.142,
+               "ue4":0.036,
+               "umu4":0.02251,
+               "utau4":0.660}
+        res = {"m":7,
+               "ue4":0.14,
+               "umu4":0.01,
+               "utau4":0.0}
+
     sample_histogram.OscillateHistogram(res['m'], res['ue4'], res['umu4'], res['utau4'])
 
     plotter = PlottingContainer("fitted_histogram",sample_histogram)
@@ -90,4 +96,6 @@ if __name__ == "__main__":
     plotter.SetLambda(AnalysisConfig.lambdaValue)
 
     plotter.PlotOscillationEffects(res,AnalysisConfig.ntuple_tag,plotSamples=True)
-    #plotter.PlotFluxMarginalizationEffects(res,"bestfit")
+    plotter.PlotScatteringIntegrals()
+    plotter.PlotFluxReweight("FHC")
+    plotter.PlotFluxReweight("RHC")

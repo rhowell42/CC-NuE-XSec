@@ -63,20 +63,22 @@ def loadSwapFiles(sample,numuSample,sampleName):
     AnalysisConfig.selection_tag = numuSample["selection_tag"]
     AnalysisConfig.playlist = numuSample["playlist"]
 
-    type_path_map["mc"] = AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,False,False)
-    print("Loading files for {}".format(sampleName)) 
-    swap_file,mc_file,pot_scale,swap_pot,mc_pot = Utilities.getSwapFilesAndPOTScale(type_path_map)
-    swap_hist = HistHolder(sample["selection_variable"],swap_file,"Signal",True,swap_pot,mc_pot)
-    swap_template = HistHolder(sample["selection_template"],swap_file,"Signal",True,swap_pot,mc_pot)
+    type_path_map["data"] = AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,True,False)
+    print("Loading swap files for {}".format(sampleName)) 
+    swap_file,mc_file,pot_scale,swap_pot,data_pot = Utilities.getSwapFilesAndPOTScale(type_path_map)
+    swap_hist = HistHolder(sample["selection_variable"],swap_file,"Signal",True,swap_pot,data_pot)
+    swap_template = HistHolder(sample["selection_template"],swap_file,"Signal",True,swap_pot,data_pot)
 
     preservation_hists  = {}
     for plotName in sample["preservation_templates"]:
-        temp = HistHolder(plotName,swap_file,"Signal",True,swap_pot,mc_pot)
+        temp = HistHolder(plotName,swap_file,"Signal",True,data_pot,swap_pot)
         temp.POTScale(binwidthScale)
         temp = addSignalHists(temp, cates)
         preservation_hists[plotName] = temp
 
+    swap_hist.POTScale(binwidthScale)
     swap_hist = addSignalHists(swap_hist,cates)
+    print(sampleName, "integral: {}".format(swap_hist.Integral()))
     swap_template = addSignalHists(swap_template,cates)
     return swap_hist, swap_template, preservation_hists 
 
@@ -119,6 +121,7 @@ def loadFiles(sample,sampleName=""):
 
     data_hist = data_hist.GetHist()
     mc_hist = addSignalHists(mc_hist,cates)
+    print(sampleName, "integral: {}".format(mc_hist.Integral()))
     template_hist = addSignalHists(template_hist,cates)
     #print("data:",data_hist)
     #print("mc:",mc_hist)
@@ -295,15 +298,12 @@ def CreateFromSamples(sampleJson):
     
     # ---------------------- Create Stitched CV Histograms -----------------------------
     sample_histogram = StitchedHistogram("sample")
-    sample_histogram.SetNFluxUniverses(100)
+    sample_histogram.SetNFluxUniverses(110)
 
     sample_histogram.AddScatteringFlavors("electron_fhc_elastic",fhcnueelnue)
     sample_histogram.AddScatteringFlavors("electron_rhc_elastic",rhcnueelnue)
     sample_histogram.AddScatteringFlavors("muon_fhc_elastic",fhcnueelnumu)
     sample_histogram.AddScatteringFlavors("muon_rhc_elastic",rhcnueelnumu)
-
-    sample_histogram.AddSwappedSample('fhc_nue_selection',fhc_nue_selection_swap)
-    sample_histogram.AddSwappedSample('rhc_nue_selection',rhc_nue_selection_swap)
 
     # ----- Initialize histogram objects with all samples ----- #
     sample_histogram.AddHistograms('fhc_elastic',fhc_elastic_mc,fhc_elastic_data)
@@ -325,6 +325,9 @@ def CreateFromSamples(sampleJson):
     sample_histogram.AddTemplates("rhc_imd",numu=rhc_imd_template)
     sample_histogram.AddTemplates("rhc_numu_selection",numu=rhc_numu_selection_template)
     sample_histogram.AddTemplates("rhc_nue_selection",nue=rhc_nue_selection_template,swap=rhc_nue_selection_swap_template)
+
+    sample_histogram.AddSwappedSample('fhc_nue_selection',fhc_nue_selection_swap)
+    sample_histogram.AddSwappedSample('rhc_nue_selection',rhc_nue_selection_swap)
 
     sample_histogram.AddPreservationHists("fhc_numu_selection","numu",fhc_numu_preservation_dict)
     sample_histogram.AddPreservationHists("fhc_nue_selection","nue",fhc_nue_preservation_dict)
@@ -371,7 +374,8 @@ def CreateFromSamples(sampleJson):
 if __name__ == "__main__":
     sample_histogram = CreateFromSamples("SAMPLE_CONFIG.json")
     sample_histogram.WriteCSVs()
-    
+    exit()
+
     filename = "{}/oscillations/rootfiles/NuE_stitched_hists.root".format(ccnueroot)
     sample_histogram.Write(filename)
     

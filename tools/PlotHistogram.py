@@ -120,66 +120,117 @@ class PlottingContainer:
         mg.Add(g3)
         mg.Add(g4)
 
-        for i,exclude in enumerate(self.exclude_samples):
-            fluxSolution,nullPen = FluxSolution(self.histogram,invCov=self.invCov,exclude=exclude,lam=self.lams[i])
+        histogram = copy.deepcopy(self.histogram)
+        statistic = Statistics(histogram,exclude=self.exclude,lam=self.lam)
+        statistic.Chi2DataMC(marginalize=True)
 
-            subSample = self.histogram.mc_hists["fhc_elastic"].Clone()
-            weights = ReweightCV(subSample,fluxSolution=fluxSolution)
-            new_fhc = subSample.Integral()
+        #for i,exclude in enumerate(self.exclude_samples):
+        #    subSample = self.histogram.mc_hists["fhc_elastic"].Clone()
+        #    statistic.GetFluxFitter().ReweightToFluxSolution(subSample)
+        #    new_fhc = subSample.Integral()
 
-            subSample = self.histogram.mc_hists["rhc_elastic"].Clone()
-            weights = ReweightCV(subSample,fluxSolution=fluxSolution)
-            new_rhc = subSample.Integral()
+        #    subSample = self.histogram.mc_hists["rhc_elastic"].Clone()
+        #    statistic.GetFluxFitter().ReweightToFluxSolution(subSample)
+        #    new_rhc = subSample.Integral()
 
-            g_ = ROOT.TGraph()
-            ROOT.SetOwnership(g_, False)
-            g_.SetPoint(0,new_fhc,new_rhc)
-            g_.SetTitle(self.titles[i])
-            g_.SetMarkerStyle(29)
-            g_.SetMarkerSize(3)
-            g_.SetLineWidth(0)
-            g_.SetMarkerColorAlpha(self.colors[i],0.4)
-            mg.Add(g_)
+        #    g_ = ROOT.TGraph()
+        #    ROOT.SetOwnership(g_, False)
+        #    g_.SetPoint(0,new_fhc,new_rhc)
+        #    g_.SetTitle(self.titles[i])
+        #    g_.SetMarkerStyle(29)
+        #    g_.SetMarkerSize(3)
+        #    g_.SetLineWidth(0)
+        #    g_.SetMarkerColorAlpha(self.colors[i],0.4)
+        #    mg.Add(g_)
+        subSample = self.histogram.mc_hists["fhc_elastic"].Clone()
+        statistic.GetFluxFitter().ReweightToFluxSolution(subSample)
+        new_fhc = subSample.Integral()
+
+        subSample = self.histogram.mc_hists["rhc_elastic"].Clone()
+        statistic.GetFluxFitter().ReweightToFluxSolution(subSample)
+        new_rhc = subSample.Integral()
+
+        g_ = ROOT.TGraph()
+        ROOT.SetOwnership(g_, False)
+        g_.SetPoint(0,new_fhc,new_rhc)
+        g_.SetTitle("Profiled Flux Solution - New")
+        g_.SetMarkerStyle(29)
+        g_.SetMarkerSize(3)
+        g_.SetLineWidth(0)
+        g_.SetMarkerColorAlpha(ROOT.kRed,0.4)
+        mg.Add(g_)
+
+        # TODO old sample with just 100 universes
+        gOld = ROOT.TGraph()
+        ROOT.SetOwnership(gOld, False)
+        gOld.SetPoint(0,1187,780)
+        gOld.SetTitle("Profiled Flux Solution - Old")
+        gOld.SetMarkerStyle(29)
+        gOld.SetMarkerSize(3)
+        gOld.SetLineWidth(0)
+        gOld.SetMarkerColorAlpha(ROOT.kBlue,0.4)
+        mg.Add(gOld)
 
         mg.Draw("AP")
         pad = ROOT.gPad
         pad.BuildLegend()
         c0.Print("plots/integrated_elastic_events.png")
 
-    def PlotRHCFluxReweight(self):
-        f_numu = ROOT.TFile.Open(plotutils+'/data/flux/flux-g4numiv6-pdg-14-minervame6A.root')
-        rhc_numu = f_numu.Get("flux_E_unweighted")
+    def PlotFluxReweight(self,beam):
+        beam = beam.upper()
+        if beam == "FHC":
+            fileExt = "minervame1D1M1NWeightedAve.root"
+            pdgPref = ""
+            oldNueRatio = [1.16,1.02,.914,.893,.925,.910,.855,.855,.878,.961,.995,.989,1.01,1.08,1.11,1.12,1.08,1.09,1.13,1.18]
+            oldNumuRatio = [0.9069767961765031, 0.995348802548998, 0.8953489622339715, 0.8813954763376145, 0.9116278871708561, 0.90232570518215, 0.8488372006372495, 0.851162852591075, 0.893023310280146, 0.972093134663935, 1.0162790313935335, 1.009302288445355, 1.0302325172898905, 1.0906977647829694, 1.130232570518215, 1.1325582224720405, 1.097674507731148, 1.065116232030783, 1.139534965420219, 1.2]
+        elif beam == "RHC":
+            fileExt = "minervame6A.root"
+            pdgPref = "-"
+            oldNumuRatio = [1.10,1.02,.999,.918,.947,.954,.907,.941,.981,1.02,1.03,.992,1.01,1.03,1.02,1.03,.954,1.02,1.01,.951]
+            oldNueRatio = [1.18,.893,1.16,1.05,.993,.984,1.03,1.02,1.06,1.08,1.11,1.08,1.06,1.29,1.31,1.31,1.3,1.3,1.3,1.3]
+            oldNumuRatio = [0.8302326237465395, 0.981395316652641, 0.972093134663935, 0.9186046301190345, 0.948837253865574, 0.9604650878081056, 0.9232559340266855, 0.9511629058193996, 1.000000106456649, 1.055814050042077, 1.0674418839846085, 1.0395349121918944, 1.046511655140073, 1.1046512506793265, 1.1279069185643895, 1.0906977647829694, 1.032558169243716, 1.069767535938434, 1.1232558275700364, 1.088372112829144]
+
+        f_numu = ROOT.TFile.Open(plotutils+'/data/flux/flux-g4numiv6-pdg'+pdgPref+"14-"+fileExt)
+        numu = f_numu.Get("flux_E_unweighted")
         f_numu.Close()
-        f_nue = ROOT.TFile.Open(plotutils+'/data/flux/flux-g4numiv6-pdg-12-minervame6A.root')
-        rhc_nue = f_nue.Get("flux_E_unweighted")
+        f_nue = ROOT.TFile.Open(plotutils+'/data/flux/flux-g4numiv6-pdg'+pdgPref+"12-"+fileExt)
+        nue = f_nue.Get("flux_E_unweighted")
         f_nue.Close()
-        rhc_numu_univ = rhc_numu.GetVertErrorBand("Flux")
-        rhc_nue_univ = rhc_nue.GetVertErrorBand("Flux")
 
         numu_fluxes = []
         nue_fluxes = []
 
-        for i,exclude in enumerate(self.exclude_samples):
-            fluxSolution,nullPen = FluxSolution(self.histogram,invCov=self.invCov,exclude=exclude,lam=self.lams[i])
+        histogram = copy.deepcopy(self.histogram)
+        statistic = Statistics(histogram,exclude=self.exclude,lam=self.lam)
+        statistic.Chi2DataMC(marginalize=True)
 
-            new_rhc_numu = rhc_numu.Clone()
-            new_rhc_nue = rhc_nue.Clone()
-            weights = ReweightCV(new_rhc_numu,fluxSolution=fluxSolution)
-            weights = ReweightCV(new_rhc_nue,fluxSolution=fluxSolution)
+        #for i,exclude in enumerate(self.exclude_samples):
+        #    new_numu = numu.Clone()
+        #    new_nue = nue.Clone()
+        #    statistic.GetFluxFitter().ReweightToFluxSolution(new_numu)
+        #    statistic.GetFluxFitter().ReweightToFluxSolution(new_nue)
 
-            nue_fluxes.append(new_rhc_nue)
-            numu_fluxes.append(new_rhc_numu)
+        #    nue_fluxes.append(new_nue)
+        #    numu_fluxes.append(new_numu)
+        new_numu = numu.Clone()
+        new_nue = nue.Clone()
+        statistic.GetFluxFitter().ReweightToFluxSolution(new_numu)
+        statistic.GetFluxFitter().ReweightToFluxSolution(new_nue)
+
+        nue_fluxes.append(new_nue)
+        numu_fluxes.append(new_numu)
+        titles = ["Profiled Flux Solution - New"]
 
         new_bins = array('d',list(range(0,21)))
-        UndoBinWidthNorm(rhc_nue)
-        UndoBinWidthNorm(rhc_numu)
+        UndoBinWidthNorm(nue)
+        UndoBinWidthNorm(numu)
 
-        rhc_numu = rhc_numu.Rebin(20,"hnew",new_bins)
-        rhc_numu.Scale(1,"width")
-        rhc_nue = rhc_nue.Rebin(20,"hnew",new_bins)
-        rhc_nue.Scale(1,"width")
+        numu = numu.Rebin(20,"hnew",new_bins)
+        numu.Scale(1,"width")
+        nue = nue.Rebin(20,"hnew",new_bins)
+        nue.Scale(1,"width")
 
-        titles = self.titles.copy()
+        colors = [ROOT.kBlue,ROOT.kRed]
 
         for i in range(len(numu_fluxes)):
             UndoBinWidthNorm(numu_fluxes[i])
@@ -190,75 +241,33 @@ class PlottingContainer:
             nue_fluxes[i] = nue_fluxes[i].Rebin(20,str(i),new_bins)
             nue_fluxes[i].Scale(1,'width')
 
-        rhc_numu.GetXaxis().SetRangeUser(0,20)
-        rhc_numu.GetXaxis().SetTitle("Neutrino Energy")
-        rhc_numu.SetTitle("RHC anti #nu_{#mu} Flux Prediction")
+        oldNumuFlux = numu_fluxes[0].Clone()
+        for i in range(oldNumuFlux.GetNbinsX()+1):
+            if i < len(oldNumuRatio):
+                oldNumuFlux.SetBinContent(i+1,numu.GetBinContent(i+1)*oldNumuRatio[i])
+        oldNueFlux = nue_fluxes[0].Clone()
+        for i in range(oldNueFlux.GetNbinsX()+1):
+            if i < len(oldNueRatio):
+                oldNueFlux.SetBinContent(i+1,nue.GetBinContent(i+1)*oldNueRatio[i])
 
-        rhc_nue.GetXaxis().SetRangeUser(0,20)
-        rhc_nue.GetXaxis().SetTitle("Neutrino Energy")
-        rhc_nue.SetTitle("RHC anti #nu_{e} Flux Prediction")
-
-        PlotWithRatio(MNVPLOTTER,"plots/RHC_NuMuFlux_Reweight.png",rhc_numu,hists=numu_fluxes,titles=titles,colors=self.colors)
-        PlotWithRatio(MNVPLOTTER,"plots/RHC_NuEFlux_Reweight.png",rhc_nue,hists=nue_fluxes,titles=titles,colors=self.colors)
-
-    def PlotFluxReweight(self):
-        self.PlotRHCFluxReweight()
-        self.PlotFHCFluxReweight()
-
-    def PlotFHCFluxReweight(self):
-        f_numu = ROOT.TFile.Open(plotutils+'/data/flux/flux-g4numiv6-pdg14-minervame1D1M1NWeightedAve.root')
-        fhc_numu = f_numu.Get("flux_E_unweighted")
-        f_numu.Close()
-        f_nue = ROOT.TFile.Open(plotutils+'/data/flux/flux-g4numiv6-pdg12-minervame1D1M1NWeightedAve.root')
-        fhc_nue = f_nue.Get("flux_E_unweighted")
-        f_nue.Close()
-        fhc_numu_univ = fhc_numu.GetVertErrorBand("Flux")
-        fhc_nue_univ = fhc_nue.GetVertErrorBand("Flux")
-
-        numu_fluxes = []
-        nue_fluxes = []
-
-        for i,exclude in enumerate(self.exclude_samples):
-            fluxSolution,nullPen = FluxSolution(self.histogram,invCov=self.invCov,exclude=exclude,lam=self.lams[i])
-
-            new_fhc_numu = fhc_numu.Clone()
-            new_fhc_nue = fhc_nue.Clone()
-            weights = ReweightCV(new_fhc_numu,fluxSolution=fluxSolution)
-            weights = ReweightCV(new_fhc_nue,fluxSolution=fluxSolution)
-
-            nue_fluxes.append(new_fhc_nue)
-            numu_fluxes.append(new_fhc_numu)
-
-        new_bins = array('d',list(range(0,21)))
-        UndoBinWidthNorm(fhc_nue)
-        UndoBinWidthNorm(fhc_numu)
-
-        fhc_numu = fhc_numu.Rebin(20,"hnew",new_bins)
-        fhc_numu.Scale(1,"width")
-        fhc_nue = fhc_nue.Rebin(20,"hnew",new_bins)
-        fhc_nue.Scale(1,"width")
-
-        titles = self.titles.copy()
-
+        numu_fluxes.append(oldNumuFlux)
+        nue_fluxes.append(oldNueFlux)
+        titles.append("Profiled Flux Solution - Old")
+        
         for i in range(len(numu_fluxes)):
-            UndoBinWidthNorm(numu_fluxes[i])
-            numu_fluxes[i] = numu_fluxes[i].Rebin(20,str(i),new_bins)
-            numu_fluxes[i].Scale(1,'width')
+            print(titles[i], np.array(numu_fluxes[i]) / np.array(numu))
+            #print(np.array(nue_fluxes[i]) / np.array(nue))
 
-            UndoBinWidthNorm(nue_fluxes[i])
-            nue_fluxes[i] = nue_fluxes[i].Rebin(20,str(i),new_bins)
-            nue_fluxes[i].Scale(1,'width')
+        numu.GetXaxis().SetRangeUser(0,20)
+        numu.GetXaxis().SetTitle("Neutrino Energy")
+        numu.SetTitle(beam+" #nu_{#mu} Flux Prediction")
 
-        fhc_numu.GetXaxis().SetRangeUser(0,20)
-        fhc_numu.GetXaxis().SetTitle("Neutrino Energy")
-        fhc_numu.SetTitle("FHC #nu_{#mu} Flux Prediction")
+        nue.GetXaxis().SetRangeUser(0,20)
+        nue.GetXaxis().SetTitle("Neutrino Energy")
+        nue.SetTitle(beam+" #nu_{e} Flux Prediction")
 
-        fhc_nue.GetXaxis().SetRangeUser(0,20)
-        fhc_nue.GetXaxis().SetTitle("Neutrino Energy")
-        fhc_nue.SetTitle("FHC #nu_{e} Flux Prediction")
-
-        PlotWithRatio(MNVPLOTTER,"plots/FHC_NuMuFlux_Reweight.png",fhc_numu,hists=numu_fluxes,titles=titles,colors=self.colors)
-        PlotWithRatio(MNVPLOTTER,"plots/FHC_NuEFlux_Reweight.png",fhc_nue,hists=nue_fluxes,titles=titles,colors=self.colors)
+        PlotWithRatio(MNVPLOTTER,"plots/"+beam+"_NuMuFlux_Reweight.png",numu,hists=numu_fluxes,titles=titles,colors=colors)
+        PlotWithRatio(MNVPLOTTER,"plots/"+beam+"_NuEFlux_Reweight.png",nue,hists=nue_fluxes,titles=titles,colors=colors)
 
     def PlotProfileEffects(self):
         c1 = ROOT.TCanvas("C2", "canvas2", 1024, 640)
@@ -466,13 +475,15 @@ class PlottingContainer:
         exclude = self.exclude
         lam = self.lam
 
+        statistic = Statistics(histogram,exclude=exclude,lam=lam)
+        chi2_model,model_pen = statistic.Chi2DataMC(marginalize=True)
+        chi2_null,null_pen = statistic.Chi2DataMC(marginalize=False)
+
         h_null = histogram.GetMCHistogram()
-        invCov=self.invCov
-        chi2_null,null_pen = Chi2DataMC(histogram,invCov=histogram.GetInverseCovarianceMatrix(sansFlux=False))
-        chi2_model,model_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,setHists=True,exclude=exclude,lam=lam)
+        h_data = histogram.GetDataHistogram()
 
         h_prof = histogram.GetMCHistogram()
-        h_data = histogram.GetDataHistogram()
+        statistic.GetFluxFitter(useOsc=False).ReweightToFluxSolution(h_prof)
 
         c1 = ROOT.TCanvas()
         margin = .12
@@ -573,7 +584,7 @@ class PlottingContainer:
 
         overall.Print("plots/{}_stitched.png".format(name))
 
-    def PlotOscillationEffects(self,parameters,name="",useMarg=False,plotSamples=False,usePseudo=False):
+    def PlotOscillationEffects(self,parameters,name="",useMarg=True,plotSamples=False,usePseudo=False):
         histogram = copy.deepcopy(self.histogram)
         exclude = self.exclude
         lam = self.lam
@@ -593,6 +604,10 @@ class PlottingContainer:
         h_null = histogram.GetMCHistogram()
         h_osc = histogram.GetOscillatedHistogram()
         h_data = histogram.GetPseudoHistogram() if usePseudo else histogram.GetDataHistogram()
+        h_prof = h_null.Clone()
+        h_prof.SetLineColor(ROOT.kGreen)
+        statistic.GetFluxFitter(useOsc=False).ReweightToFluxSolution(h_prof)
+        statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolution(h_osc)
 
         c1 = ROOT.TCanvas()
         margin = .12
@@ -610,6 +625,7 @@ class PlottingContainer:
         h_null.SetTitle(name)
         
         h_null.Draw("hist")
+        h_prof.Draw("hist")
         h_osc.Draw("hist same")
         h_data.Draw("same")
 
@@ -649,9 +665,11 @@ class PlottingContainer:
 
         nullRatio =  h_data.Clone()
         oscRatio =  h_osc.Clone()
+        profRatio = h_prof.Clone()
 
         nullRatio.Divide(nullRatio,h_null)
         oscRatio.Divide(oscRatio, h_null)
+        profRatio.Divide(profRatio, h_null)
 
         bottom.cd()
         bottom.SetTopMargin(0)
@@ -664,6 +682,8 @@ class PlottingContainer:
 
         nullRatio.SetLineColor(ROOT.kBlack)
         nullRatio.SetLineWidth(3)
+
+        profRatio.SetLineWidth(3)
 
         #Error envelope for the MC
         nullErrors.SetLineWidth(0)
@@ -679,6 +699,7 @@ class PlottingContainer:
         #Draw the data ratios
         nullRatio.Draw("same")
         oscRatio.Draw('same hist l')
+        profRatio.Draw("same hist l")
 
         #Draw a flat line at 1 for oscRatio of MC to itself
         straightLine = nullErrors.Clone()

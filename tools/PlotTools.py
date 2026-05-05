@@ -11,6 +11,7 @@ from functools import partial
 from config.AnalysisConfig import AnalysisConfig
 from config.SignalDef import SIGNAL_DEFINATION
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS 
+from tools.PlotLibrary import TranslateSettings, PLOT_SETTINGS
 
 MNVPLOTTER = PlotUtils.MnvPlotter()
 #config MNVPLOTTER:
@@ -385,10 +386,10 @@ def PrepareHist2D(data_hists,mc_hists,Grouping):
             hnew.Add(h_list[i])
         return hnew
     if not(mc_hists.valid):
-        raise KeyError("No MC histogram to plot migration")
+        raise KeyError("No MC histogram to plot 2d histogram for {}".format(Grouping.keys()))
     mc_list,color,title = mc_hists.GetCateList(Grouping)
     totalHist = ReSumHists(mc_list)
-    totalHist.SetTitle("Combined Signal")
+    totalHist.SetTitle(mc_hists.title)
     hists = [totalHist]
     plotfunction = lambda mnvplotter,mc_hist: mc_hist.DrawCopy("colz")
     return plotfunction,hists
