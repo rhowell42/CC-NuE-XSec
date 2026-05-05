@@ -240,4 +240,7 @@ HISTS_TO_MAKE = [
     "True Energy vs Biased Neutrino Energy",
     "Estimator vs Front dEdX",
     "Biased Neutrino Energy",
+    #"Lepton Momentum Resolution vs Vertex X",
+    #"Lepton Momentum Resolution vs Vertex Y",
+    #"Lepton Momentum Resolution vs Vertex Z",
 ]

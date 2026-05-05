@@ -393,6 +393,8 @@ DefaultPlotters={
                "args": (SignalDecomposition,)},
     "rebin_stacked":{"func":PlotTools.RebinPrepareStack,
                "args": (Categories,)},
+    "hist2d":{"func":PlotTools.PrepareHist2D,
+        "args": (SignalDecomposition,)},
     "diff":{"func":PlotTools.PrepareDiff},
     "migration":{"func":PlotTools.PrepareMigration,
                     "args": (SignalOnly,)},
@@ -663,18 +665,24 @@ PLOTS_TO_MAKE = [
     #{"name":"True Energy vs Biased Neutrino Energy"},
     #     "plot_type" : "category_hist"},
 
+    #{"name":"Lepton Momentum Resolution vs Vertex X",
+    #    "plot_type":"hist2d"},
+    #{"name":"Lepton Momentum Resolution vs Vertex Y",
+    #    "plot_type":"hist2d"},
+    #{"name":"Lepton Momentum Resolution vs Vertex Z",
+    #    "plot_type":"hist2d"},
 
-
+    # ------- Paper Plots -------
     {"name":"Estimator vs Front dEdX",
         "plot_type":"2Dstacked"},
-    {"name":"Estimator vs Front dEdX",
-     "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
-    {"name":"Estimator vs Front dEdX",
-        "plot_type":"ratio",
-     "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
-    {"name":"Biased Neutrino Energy"},
-    {"name":"Biased Neutrino Energy",
-         "plot_type" : "err"},
+    #{"name":"Estimator vs Front dEdX",
+    # "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
+    #{"name":"Estimator vs Front dEdX",
+    #    "plot_type":"ratio",
+    # "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
+    #{"name":"Biased Neutrino Energy"},
+    #{"name":"Biased Neutrino Energy",
+    #     "plot_type" : "err"},
 
 
     #{"name":"Q2"},
