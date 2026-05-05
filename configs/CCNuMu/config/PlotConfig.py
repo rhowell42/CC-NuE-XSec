@@ -234,9 +234,14 @@ def Printvar(event):
 #assert set(INT_COLORS.keys())==set(INT_NAMES.keys())
 
 HISTS_TO_MAKE = [
-### Plots for Paper ###
-    "Reco Energy vs L/E",
-    "True Energy vs L/E",
-    "True Energy vs Biased Neutrino Energy",
-    "Biased Neutrino Energy",
+    ### Plots for Paper ###
+    #"Reco Energy vs L/E",
+    #"True Energy vs L/E",
+    #"True Energy vs Biased Neutrino Energy",
+    #"Biased Neutrino Energy",
+    
+    # -------- Plots for lepton momentum bug --------
+    "Lepton Momentum Resolution vs Vertex X",
+    "Lepton Momentum Resolution vs Vertex Y",
+    "Lepton Momentum Resolution vs Vertex Z",
 ]
