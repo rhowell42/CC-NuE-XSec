@@ -277,7 +277,7 @@ SignalChargedBackground = {
 ThesisCategories = {
     "Signal" :
     {
-        "title" : "CC anti #nu_{e}",
+        "title" : "CC (anti) #nu_{e}",
         "cate":{"CCNu","CCNuEQE","CCNuEDelta","CCNuE2p2h","CCNuEDIS","CCNuE"},
         "color": COLORS1[0]
     },
@@ -417,13 +417,24 @@ DefaultPlotters={
 }
 
 PROB_PLOTS = [
-    {"name":"True Energy vs Neutrino Length Travelled"},
     {"name":["Biased Neutrino Energy"]},
     {"name":"True Energy Inverse vs Biased Neutrino Energy",
       "plot_type" : "migration"},
 ]
 
 PLOTS_TO_MAKE = [
+    ###### ME STERILE PAPER PLOTS ########
+    {"name":"Estimator vs Front dEdX",
+        "plot_type":"2Dstacked",
+        "args": (ThesisCategories,)}, 
+    {"name":"Estimator vs Front dEdX",
+        "plot_type":"2Dstacked",
+        "args": (SignalDecomposition,)}, 
+    {"name":"True Energy vs Biased Neutrino Energy",
+            "plot_type" : 'category_hist'},
+    {"name":"True Energy vs L/E",
+            "plot_type" : 'category_hist'},
+
     ###### NEUTRINO4 PLOTS ########
     #{"name":"electron_energy",
     #    "plot_type" : "sigdep"},
@@ -431,8 +442,6 @@ PLOTS_TO_MAKE = [
     #{"name":"True Energy vs Biased Neutrino Energy",
     #        "plot_type" : "category_hist"},
 
-    #{"name":"True Energy vs Biased Neutrino Energy",
-    #        "plot_type" : 'category_hist'},
     #{"name":"Reco Energy vs L/E",
     #    "plot_type" : "migration"},
 
@@ -447,14 +456,14 @@ PLOTS_TO_MAKE = [
     #    "plot_type":"2Dstacked"},
     #{"name":"Estimator vs Front dEdX",
     # "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
-    {"name":"Estimator vs Front dEdX",
-        "plot_type":"2Dstacked"},
-    {"name":"Estimator vs Front dEdX",
-     "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
-    {"name":"Estimator vs Front dEdX",
-        "plot_type":"ratio",
-     "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
-    {"name":"Biased Neutrino Energy"},
+    #{"name":"Estimator vs Front dEdX",
+    #    "plot_type":"2Dstacked"},
+    #{"name":"Estimator vs Front dEdX",
+    # "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
+    #{"name":"Estimator vs Front dEdX",
+    #    "plot_type":"ratio",
+    # "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
+    #{"name":"Biased Neutrino Energy"},
 
     #{"name":"Biased Neutrino Energy",
     #     "plot_type" : "err"},
