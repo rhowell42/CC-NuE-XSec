@@ -50,13 +50,13 @@ def plotRecoKin(mc, chainwrapper, outfile):
             print(counter)
             if setAlarm:
                 signal.alarm(900)
+        if AnalysisConfig.testing:
+            if counter == 1:
+                Utilities.printProgressBar(0, 1000, prefix = 'Progress:', suffix = 'Complete', length = 50)
+            elif counter > 1:
+                Utilities.printProgressBar(counter + 1, 1000, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
         for universe in chain.from_iterable(iter(universes.values())):
-            if AnalysisConfig.testing:
-                if counter == 1:
-                    Utilities.printProgressBar(0, 1000, prefix = 'Progress:', suffix = 'Complete', length = 50)
-                elif counter > 1:
-                    Utilities.printProgressBar(counter + 1, 1000, prefix = 'Progress:', suffix = 'Complete', length = 50)
             universe.SetEntry(counter)
             universe.ResetWeight()
             if mc and AnalysisConfig.skip_2p2h and universe.mc_intType==8:
@@ -92,12 +92,13 @@ def plotTruthKin(chainwrapper,outfile):
         #half an hour for a event, should be much more than needed unless stuck in I/O
         if counter %100000 == 0:
             print(counter)
+        if AnalysisConfig.testing:
+            if counter == 1:
+                Utilities.printProgressBar(0, 1000, prefix = 'Progress:', suffix = 'Complete', length = 50)
+            elif counter > 1:
+                Utilities.printProgressBar(counter + 1, 1000, prefix = 'Progress:', suffix = 'Complete', length = 50)
+
         for universe in chain.from_iterable(iter(universes.values())):
-            if AnalysisConfig.testing:
-                if counter == 1:
-                    Utilities.printProgressBar(0, 1000, prefix = 'Progress:', suffix = 'Complete', length = 50)
-                elif counter > 1:
-                    Utilities.printProgressBar(counter + 1, 1000, prefix = 'Progress:', suffix = 'Complete', length = 50)
             universe.SetEntry(counter)
             universe.ResetWeight()
 
