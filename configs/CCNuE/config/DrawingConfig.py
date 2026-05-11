@@ -429,6 +429,7 @@ PLOTS_TO_MAKE = [
             "plot_type" : 'category_hist'},
     {"name":"True Energy vs L/E",
             "plot_type" : 'category_hist'},
+    {"name":"Biased Neutrino Energy"},
 
     # ------- Paper Plots -------
     #{"name":"Estimator vs Front dEdX",

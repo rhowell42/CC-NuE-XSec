@@ -434,6 +434,7 @@ PLOTS_TO_MAKE = [
             "plot_type" : 'category_hist'},
     {"name":"True Energy vs L/E",
             "plot_type" : 'category_hist'},
+    {"name":"Biased Neutrino Energy"},
 
     ###### NEUTRINO4 PLOTS ########
     #{"name":"electron_energy",

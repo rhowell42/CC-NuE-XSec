@@ -254,7 +254,7 @@ parser.add_argument("--signal",
 parser.add_argument("--plot_tag", "--plot-tag",
                     dest = "plot_tag",
                     help="Add ending tag for plots to distinguish them.",
-                    default=BLUEARC
+                    default=""
 )
 parser.add_argument("-t", "--test", "--testing",
                     dest="testing",
