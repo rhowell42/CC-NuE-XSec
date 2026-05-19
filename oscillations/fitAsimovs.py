@@ -6,7 +6,7 @@ import numpy as np
 np.set_printoptions(precision=1)
 np.set_printoptions(linewidth=1520)
 np.set_printoptions(threshold=sys.maxsize)
-from scipy import optimize, integrate
+from scipy import optimize, integrate, linalg
 from scipy.stats import multivariate_normal
 import argparse
 ccnueroot = os.environ.get('CCNUEROOT')
@@ -58,12 +58,36 @@ def ThrowSystematics(histogram,throwFlux=False,useDataSubMCCov=True,n_samples=50
         covMatrix = np.asarray(matrix(covMatrixTmp))[1:-1,1:-1] # convert to numpy array, exclude over/underflow bins
 
     if throwFlux:
-        fluxCov = histogram.GetCovarianceMatrix() - histogram.GetCovarianceMatrix(sansFlux=True)
-        fluxCov = fluxCov @ np.conj(fluxCov.T)
-        flux_throws = multivariate_normal.rvs(mean=pred_vals,cov=fluxCov) # randomly sample covariance matrix around null hypothesis
+        # Isolate the flux covariance matrix
+        flux_cov_matrix = histogram.GetCovarianceMatrix() - histogram.GetCovarianceMatrix(sansFlux=True)
 
-        sansFluxCov = histogram.GetCovarianceMatrix(sansFlux=True)
-        sys_throws  = multivariate_normal.rvs(mean=flux_throws,cov=sansFluxCov,size=n_samples) # randomly sample covariance matrix around null hypothesis
+        # Get flux Cholesky factor (Lower triangular matrix 'L')
+        L_flux = linalg.cholesky(flux_cov_matrix, lower=True)
+
+        # Get the non-flux systematic covariance and its Cholesky factor
+        sans_flux_matrix = histogram.GetCovarianceMatrix(sansFlux=True)
+        L_sans = linalg.cholesky(sans_flux_matrix, lower=True)
+
+        num_bins = len(pred_vals)
+
+        # Generate standard normal random numbers for both steps
+        z_flux = np.random.normal(0, 1, size=(num_bins, n_samples))
+        z_sans = np.random.normal(0, 1, size=(num_bins, n_samples))
+
+        # Correlated flux throws around the predicted mean
+        flux_throws = pred_vals[:, np.newaxis] + (L_flux @ z_flux)
+
+        # Correlated systematic throws around the flux throws
+        ran_throws = flux_throws + (L_sans @ z_sans)
+
+        # Ensure no expected bin counts are negative before Poisson sampling
+        ran_throws = np.clip(ran_throws, a_min=0, a_max=None)
+
+        # Throw Poisson statistical noise using the systematic universes as the means
+        sys_throws = np.random.poisson(lam=ran_throws)
+
+        # Transpose to get the standard shape: (n_samples, num_bins)
+        sys_throws = sys_throws.T
     else:
         sys_throws = multivariate_normal.rvs(mean=pred_vals,cov=covMatrix,size=n_samples) # randomly sample covariance matrix around null hypothesis
 
