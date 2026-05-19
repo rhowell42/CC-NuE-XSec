@@ -78,13 +78,10 @@ def ThrowSystematics(histogram,throwFlux=False,useDataSubMCCov=True,n_samples=50
         flux_throws = pred_vals[:, np.newaxis] + (L_flux @ z_flux)
 
         # Correlated systematic throws around the flux throws
-        ran_throws = flux_throws + (L_sans @ z_sans)
+        sys_throws = flux_throws + (L_sans @ z_sans)
 
         # Ensure no expected bin counts are negative before Poisson sampling
-        ran_throws = np.clip(ran_throws, a_min=0, a_max=None)
-
-        # Throw Poisson statistical noise using the systematic universes as the means
-        sys_throws = np.random.poisson(lam=ran_throws)
+        sys_throws = np.clip(sys_throws, a_min=0, a_max=None)
 
         # Transpose to get the standard shape: (n_samples, num_bins)
         sys_throws = sys_throws.T
@@ -98,7 +95,7 @@ def ThrowPoissons(lambdas,histogram):
     for lam in lambdas:
         while lam[lam<0].any():
             logging.error("Negative value in sys throws, rerunning this throw...")
-            lam = ThrowSystematics(histogram,n_samples=1) 
+            lam = ThrowSystematics(histogram, throwFlux = True, n_samples=1) 
         throw = np.random.poisson(lam)
         throws.append(throw)
     throws = np.array(throws)
