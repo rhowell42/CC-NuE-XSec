@@ -4,12 +4,13 @@
 *.bak
 __pycache__/
 *.log
-*.txt
 grid_wrappers/
 *.d
 *.so
 *.root
 *.png
-oscillations/csvs/*
-oscillations/chi2s/*
-oscillations/*json
+*.json
+oscillations/**/*.txt
+oscillations/**/*.npy
+oscillations/py3env
+oscillations/csvs
